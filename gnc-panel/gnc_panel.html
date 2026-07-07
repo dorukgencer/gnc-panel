@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="tr" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Paneli — GNC Insight</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<style>
+  :root {
+    --gnc-accent: #ea580c;
+    --gnc-accent-rgb: 234, 88, 12;
+    --gnc-accent-dark: #c2410c;
+    --gnc-success: #22c55e;
+    --gnc-success-rgb: 34, 197, 94;
+    --gnc-warning: #f59e0b;
+    --gnc-danger: #ef4444;
+    --gnc-danger-rgb: 239, 68, 68;
+    --sidebar-w: 240px;
+    --topbar-h: 64px;
+  }
+  [data-bs-theme="dark"] {
+    --bs-body-bg: #000;
+    --bs-body-color: #c8c8cc;
+    --bs-secondary-bg: #0a0a0a;
+    --bs-tertiary-bg: #050505;
+    --bs-border-color: rgba(255, 255, 255, 0.08);
+    --bs-emphasis-color: #fff;
+    --gnc-card-bg: #0a0a0a;
+    --gnc-card-bg-elevated: #131313;
+    --gnc-text-faded: #b8b8bc;
+    --gnc-text-dim: #888892;
+    --gnc-input-bg: rgba(255, 255, 255, 0.03);
+    --gnc-btn-text: #000;
+    --sidebar-bg: #050505;
+    --sidebar-hover: rgba(255, 255, 255, 0.04);
+  }
+  [data-bs-theme="light"] {
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #555;
+    --bs-secondary-bg: #f8f9fa;
+    --bs-tertiary-bg: #f1f3f5;
+    --bs-border-color: rgba(0, 0, 0, 0.08);
+    --bs-emphasis-color: #1a1a1a;
+    --gnc-accent: #c2410c;
+    --gnc-accent-rgb: 194, 65, 12;
+    --gnc-accent-dark: #9a3412;
+    --gnc-card-bg: #f8f9fa;
+    --gnc-card-bg-elevated: #ffffff;
+    --gnc-text-faded: #666;
+    --gnc-text-dim: #999;
+    --gnc-input-bg: rgba(0, 0, 0, 0.02);
+    --gnc-btn-text: #fff;
+    --sidebar-bg: #f1f3f5;
+    --sidebar-hover: rgba(0, 0, 0, 0.04);
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: var(--bs-body-bg);
+    margin: 0;
+    overflow-x: hidden;
+  }
+  .bi { line-height: 1; vertical-align: -0.125em; }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed; top: 0; left: 0;
+    width: var(--sidebar-w); height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--bs-border-color);
+    display: flex; flex-direction: column;
+    z-index: 1000; transition: transform 0.3s ease;
+  }
+  .sidebar-header { padding: 22px 20px; border-bottom: 1px solid var(--bs-border-color); }
+  .sidebar-logo {
+    font-size: 14px; font-weight: 700;
+    color: var(--bs-emphasis-color);
+    letter-spacing: 3px; text-decoration: none;
+  }
+  .sidebar-logo .accent { color: var(--gnc-accent); }
+  .sidebar-logo-tag {
+    font-size: 10px; color: var(--gnc-text-dim);
+    text-transform: uppercase; letter-spacing: 2px;
+    font-weight: 700; margin-top: 4px; display: block;
+  }
+  .sidebar-nav { flex: 1; padding: 18px 12px; overflow-y: auto; }
+  .nav-section-title {
+    font-size: 10px; color: var(--gnc-text-dim);
+    text-transform: uppercase; letter-spacing: 2px;
+    font-weight: 700; padding: 12px 12px 8px; margin: 0;
+  }
+  .nav-link-gnc {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 12px; color: var(--bs-body-color);
+    text-decoration: none; border-radius: 6px;
+    font-size: 13.5px; font-weight: 500; margin-bottom: 2px;
+    cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-link-gnc i {
+    font-size: 17px; width: 20px;
+    color: var(--gnc-text-dim);
+    display: flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .nav-link-gnc:hover { background: var(--sidebar-hover); color: var(--bs-emphasis-color); }
+  .nav-link-gnc:hover i { color: var(--gnc-accent); }
+  .nav-link-gnc.active { background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); font-weight: 700; }
+  .nav-link-gnc.active i { color: var(--gnc-accent); }
+  .sidebar-footer { padding: 14px 12px; border-top: 1px solid var(--bs-border-color); }
+  .membership-info {
+    background: var(--gnc-card-bg-elevated);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 6px; padding: 12px 14px; font-size: 12px;
+  }
+  .membership-tier {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--gnc-accent); font-weight: 700; font-size: 11px;
+    letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .membership-tier .bi { font-size: 12px; }
+  .membership-days { color: var(--bs-emphasis-color); font-size: 12px; font-weight: 700; }
+  .membership-days span { color: var(--gnc-text-dim); font-weight: 300; }
+
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; }
+  .sidebar-overlay.show { display: block; }
+
+  .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    height: var(--topbar-h);
+    background: rgba(0, 0, 0, 0.85);
+    border-bottom: 1px solid var(--bs-border-color);
+    display: flex; align-items: center; padding: 0 28px;
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(20px);
+  }
+  [data-bs-theme="light"] .topbar { background: rgba(255, 255, 255, 0.85); }
+  .topbar-title { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.5px; }
+  .topbar-toggle {
+    background: none; border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color); width: 38px; height: 38px;
+    border-radius: 6px; display: none; align-items: center;
+    justify-content: center; margin-right: 16px; cursor: pointer; font-size: 18px; line-height: 1;
+  }
+  .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .topbar-icon-btn {
+    background: none; border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color); width: 38px; height: 38px;
+    border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .topbar-icon-btn:hover { color: var(--gnc-accent); border-color: var(--gnc-accent); }
+  .user-pill {
+    background: var(--gnc-input-bg); border: 1px solid var(--bs-border-color);
+    color: var(--bs-emphasis-color); padding: 7px 6px 7px 14px;
+    border-radius: 100px; font-size: 12.5px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px; text-decoration: none;
+  }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gnc-accent); color: var(--gnc-btn-text);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  }
+  .theme-toggle {
+    width: 40px; height: 22px; border-radius: 13px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-secondary-bg); cursor: pointer; position: relative; padding: 0;
+  }
+  .toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--gnc-accent);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  [data-bs-theme="light"] .toggle-thumb { transform: translateX(18px); }
+
+  /* CONTENT */
+  .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+  .section-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; gap: 10px; flex-wrap: wrap;
+  }
+  .section-title {
+    font-size: 12px; color: var(--bs-emphasis-color); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px; margin: 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title i { color: var(--gnc-accent); font-size: 13px; line-height: 1; }
+  .status-update {
+    font-size: 10.5px; color: var(--gnc-text-dim); font-weight: 700;
+    letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;
+  }
+  .status-update::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gnc-success); box-shadow: 0 0 0 3px rgba(var(--gnc-success-rgb), 0.15);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .page-intro {
+    font-size: 12px; color: var(--gnc-text-faded); line-height: 1.6;
+    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
+    border-left: 3px solid var(--gnc-accent); border-radius: 10px;
+    padding: 13px 16px; margin-bottom: 24px;
+  }
+  .page-intro b { color: var(--bs-emphasis-color); }
+
+  /* Ozet serit */
+  .ozet-strip {
+    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
+    border-radius: 12px; padding: 18px 22px; margin-bottom: 26px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .ozet-block { border-right: 1px solid var(--bs-border-color); padding-right: 16px; }
+  .ozet-block:last-child { border-right: none; }
+  .ozet-block .et { font-size: 10px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+  .ozet-block .dg { font-size: 20px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: -0.3px; margin-top: 5px; }
+  .ozet-block .alt { font-size: 11px; color: var(--gnc-text-faded); margin-top: 2px; font-weight: 300; }
+
+  /* Sektor kutulari */
+  .kutu-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .sektor-kutu {
+    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
+    border-radius: 12px; padding: 16px; position: relative; overflow: hidden;
+    transition: transform 0.12s, border-color 0.12s;
+  }
+  .sektor-kutu:hover { transform: translateY(-2px); border-color: rgba(var(--gnc-accent-rgb), 0.4); }
+  .sektor-kutu .ust-cizgi { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .sektor-kutu .kod { font-size: 15px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.4px; }
+  .sektor-kutu .ad { font-size: 11px; color: var(--gnc-text-dim); margin: 3px 0 14px; min-height: 28px; line-height: 1.35; }
+  .sk-satir { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--bs-border-color); }
+  .sk-satir:first-of-type { border-top: none; }
+  .sk-satir .lbl { font-size: 10.5px; color: var(--gnc-text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .sk-satir .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .up { color: var(--gnc-success); } .down { color: var(--gnc-danger); } .flat { color: var(--gnc-text-dim); }
+
+  /* Takvim */
+  .tk-liste { display: flex; flex-direction: column; gap: 12px; }
+  .tk-kart {
+    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
+    border-radius: 12px; padding: 16px 20px;
+    display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 20px; align-items: center;
+  }
+  .tk-kart .isim { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
+  .tk-kart .seri { font-size: 10px; color: var(--gnc-text-dim); margin-top: 3px; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
+  .tk-col { text-align: right; min-width: 76px; }
+  .tk-col .k { font-size: 9.5px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; }
+  .tk-col .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
+  .tk-col .v.small { font-size: 12.5px; font-weight: 500; color: var(--gnc-text-faded); }
+  .tk-badge {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+    padding: 6px 12px; border-radius: 100px; white-space: nowrap;
+    background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); border: 1px solid rgba(var(--gnc-accent-rgb), 0.25);
+  }
+  .tk-badge.gecti { background: var(--gnc-card-bg-elevated); color: var(--gnc-text-dim); border-color: var(--bs-border-color); }
+  .manuel { font-size: 9px; color: var(--gnc-text-dim); font-weight: 700; }
+
+  .durum-kutu {
+    text-align: center; padding: 60px 20px; color: var(--gnc-text-dim); font-size: 13px;
+    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px;
+  }
+  .durum-kutu b { color: var(--bs-emphasis-color); }
+  .btn-gnc {
+    font-size: 12.5px; font-weight: 700; padding: 9px 16px; border-radius: 6px;
+    border: 1px solid var(--bs-border-color); background: var(--gnc-card-bg-elevated);
+    color: var(--bs-emphasis-color); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-top: 14px;
+  }
+  .btn-gnc:hover { border-color: var(--gnc-accent); color: var(--gnc-accent); }
+  .hidden { display: none; }
+
+  .page-footer { margin-top: 40px; padding: 20px 0 0; border-top: 1px solid var(--bs-border-color); }
+  .footer-disclaimer { font-size: 11px; color: var(--gnc-text-dim); line-height: 1.7; margin: 0; max-width: 820px; }
+  .footer-disclaimer strong { color: var(--gnc-text-faded); font-weight: 700; }
+
+  /* MOBILE */
+  @media (max-width: 992px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .topbar-toggle { display: flex; }
+    .content { padding: 22px; }
+    .ozet-strip { grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ozet-block { border-right: none; padding-right: 0; }
+    .tk-kart { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tk-col { min-width: 0; text-align: left; }
+  }
+  @media (max-width: 480px) {
+    .topbar { padding: 0 16px; height: 56px; }
+    .content { padding: 14px; }
+    .ozet-strip { grid-template-columns: 1fr; padding: 16px; }
+    .ozet-block { border-bottom: 1px solid var(--bs-border-color); border-right: none; padding: 0 0 12px; margin-bottom: 12px; }
+    .ozet-block:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+    .kutu-izgara { grid-template-columns: 1fr 1fr; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="#">
+      GNC <span class="accent">INSIGHT</span>
+      <span class="sidebar-logo-tag">Veri Paneli</span>
+    </a>
+  </div>
+  <nav class="sidebar-nav">
+    <p class="nav-section-title">Piyasa</p>
+    <button class="nav-link-gnc active" data-view="sektorler"><i class="bi bi-grid-3x3-gap-fill"></i><span>BIST Sektörler</span></button>
+    <button class="nav-link-gnc" data-view="takvim"><i class="bi bi-calendar-event"></i><span>Ekonomik Takvim</span></button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="membership-info">
+      <div class="membership-tier"><i class="bi bi-shield-check"></i>Pro Panel</div>
+      <div class="membership-days">Canlı veri <span>· gecikmeli</span></div>
+    </div>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle" aria-label="Menü"><i class="bi bi-list"></i></button>
+    <span class="topbar-title" id="topbarTitle">BIST Sektörler</span>
+    <div class="topbar-actions">
+      <button class="topbar-icon-btn" id="refreshBtn" aria-label="Yenile"><i class="bi bi-arrow-clockwise"></i></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Tema değiştir"><div class="toggle-thumb"></div></button>
+      <a href="#" class="user-pill"><span class="user-name">Doruk</span><span class="user-avatar">D</span></a>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ============ BIST SEKTÖRLER ============ -->
+    <section id="view-sektorler">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-grid-3x3-gap-fill"></i> BIST Sektörler</h2>
+        <span class="status-update" id="sektor-guncelleme">Yükleniyor</span>
+      </div>
+      <div class="page-intro">
+        <b>Resmi BIST sektör endeksleri.</b> Her kutu ilgili sektörün tamamını kapsar; günlük, haftalık ve aylık değişimi gösterir. Veri Yahoo Finance üzerinden en az 15 dk gecikmelidir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
+      </div>
+      <div id="sektor-ozet"></div>
+      <div id="sektor-icerik">
+        <div class="durum-kutu">Sektör verileri çekiliyor…</div>
+      </div>
+    </section>
+
+    <!-- ============ EKONOMİK TAKVİM ============ -->
+    <section id="view-takvim" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-calendar-event"></i> Ekonomik Takvim</h2>
+        <span class="status-update">FRED · canlı</span>
+      </div>
+      <div class="page-intro">
+        <b>Son açıklanan</b> ve <b>önceki</b> değerler FRED'den (St. Louis Fed) canlı çekilir. <b>Beklenti</b> ve <b>sonraki açıklama tarihi</b> ücretsiz kaynakta yayınlanmadığı için elle girilir; bu alanları dosya içindeki <b>TAKVIM</b> listesinden düzenleyebilirsin.
+      </div>
+      <div class="tk-liste" id="takvim-icerik">
+        <div class="durum-kutu">Veriler çekiliyor…</div>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <p class="footer-disclaimer"><strong>Yasal uyarı:</strong> Bu panel yalnızca eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir. Veriler gecikmeli olabilir; işlem kararlarından önce resmi kaynaklarla teyit ediniz.</p>
+    </footer>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* =======================================================================
+   DÜZENLENEBİLİR: Ekonomik takvimde takip edilen veriler.
+   - seri: FRED seri kodu (son açıklanan + önceki buradan canlı gelir)
+   - mod:  'pct'  -> aylık % değişim (fiyat endeksleri: CPI, PCE...)
+           'diff' -> iki dönem farkı (istihdam: NFP = bu ay - geçen ay)
+           'level'-> değerin kendisi (oran/seviye: işsizlik, faiz, güven)
+   - birim: 'yuzde' | 'bin' (bin kişi) | 'puan'
+   - beklenti: piyasa konsensüsü (MANUEL, boş bırakılabilir: null)
+   - sonraki: bir sonraki açıklama tarihi (MANUEL, ISO; boş: "")
+   ======================================================================= */
+const TAKVIM = [
+  { isim:"Enflasyon (CPI, aylık)",     seri:"CPIAUCSL", mod:"pct",   birim:"yuzde", beklenti:0.3,  sonraki:"2026-07-14T15:30:00+03:00" },
+  { isim:"Çekirdek CPI (aylık)",       seri:"CPILFESL", mod:"pct",   birim:"yuzde", beklenti:0.3,  sonraki:"2026-07-14T15:30:00+03:00" },
+  { isim:"Tarım Dışı İstihdam (NFP)",  seri:"PAYEMS",   mod:"diff",  birim:"bin",   beklenti:165,  sonraki:"2026-08-07T15:30:00+03:00" },
+  { isim:"İşsizlik Oranı",             seri:"UNRATE",   mod:"level", birim:"yuzde", beklenti:4.2,  sonraki:"2026-08-07T15:30:00+03:00" },
+  { isim:"Çekirdek PCE (aylık)",       seri:"PCEPILFE", mod:"pct",   birim:"yuzde", beklenti:0.2,  sonraki:"2026-07-31T15:30:00+03:00" },
+  { isim:"Fed Politika Faizi",         seri:"FEDFUNDS", mod:"level", birim:"yuzde", beklenti:null, sonraki:"" },
+  { isim:"Perakende Satışlar (aylık)", seri:"RSAFS",    mod:"pct",   birim:"yuzde", beklenti:0.4,  sonraki:"2026-07-16T15:30:00+03:00" },
+  { isim:"Sanayi Üretimi (aylık)",     seri:"INDPRO",   mod:"pct",   birim:"yuzde", beklenti:0.1,  sonraki:"2026-07-16T16:15:00+03:00" },
+  { isim:"İşsizlik Maaşı Başvuruları", seri:"ICSA",     mod:"level", birim:"bin",   beklenti:230,  sonraki:"2026-07-09T15:30:00+03:00" },
+  { isim:"Michigan Tüketici Güveni",   seri:"UMCSENT",  mod:"level", birim:"puan",  beklenti:52.0, sonraki:"2026-07-24T17:00:00+03:00" },
+];
+
+const DONEM_ETIKET = { g1:"Günlük", h1:"Haftalık", a1:"Aylık" };
+
+function fmtYuzde(x){
+  if(x === null || x === undefined || isNaN(x)) return "—";
+  return (x > 0 ? "+" : "") + Number(x).toFixed(2).replace(".", ",") + "%";
+}
+function fmtDeger(x, birim){
+  if(x === null || x === undefined || isNaN(x)) return "—";
+  if(birim === "bin"){ return (x > 0 ? "+" : "") + Math.round(x).toLocaleString("tr-TR") + " B"; }
+  if(birim === "puan"){ return Number(x).toFixed(1).replace(".", ","); }
+  return Number(x).toFixed(1).replace(".", ",") + "%";
+}
+function yon(x){ return x > 0 ? "up" : x < 0 ? "down" : "flat"; }
+function ustRenk(x){
+  if(x === null || x === undefined || isNaN(x)) return "var(--bs-border-color)";
+  const yog = Math.min(Math.abs(x)/5, 1) * 0.6 + 0.15;
+  return x >= 0 ? "rgba(var(--gnc-success-rgb)," + yog + ")" : "rgba(var(--gnc-danger-rgb)," + yog + ")";
+}
+
+/* ---- BIST SEKTÖRLER ---- */
+async function sektorCek(){
+  const kap = document.getElementById("sektor-icerik");
+  kap.innerHTML = '<div class="durum-kutu">Sektör verileri çekiliyor…</div>';
+  document.getElementById("sektor-ozet").innerHTML = "";
+  try{
+    const res = await fetch('/.netlify/functions/sektor');
+    if(!res.ok) throw new Error();
+    sektorCiz(await res.json());
+  }catch(e){
+    document.getElementById("sektor-guncelleme").textContent = "veri alınamadı";
+    kap.innerHTML = '<div class="durum-kutu">Sektör verisi alınamadı.<br>Bu panel Netlify\'daki <b>sektor</b> fonksiyonuna bağlıdır; siteye yüklendiğinde çalışır.<br><button class="btn-gnc" onclick="sektorCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+  }
+}
+function sektorCiz(veri){
+  const g = new Date(veri.guncelleme);
+  const sektorler = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null).sort((a,b) => b.g1 - a.g1);
+  const xu = veri.endeksler.find(e => e.kod === "XU100");
+  document.getElementById("sektor-guncelleme").textContent =
+    g.toLocaleString("tr-TR") + " · " + sektorler.length + " sektör";
+
+  const enIyi = sektorler[0], enKotu = sektorler[sektorler.length-1];
+  const yukselen = sektorler.filter(s=>s.g1>0).length, dusen = sektorler.filter(s=>s.g1<0).length;
+  document.getElementById("sektor-ozet").innerHTML =
+    '<div class="ozet-strip">' +
+    ozetBlock("XU100 (Günlük)", xu ? fmtYuzde(xu.g1) : "—", xu && xu.son_deger!=null ? xu.son_deger.toLocaleString("tr-TR") : "—", xu?yon(xu.g1):"") +
+    ozetBlock("Öne çıkan", enIyi ? enIyi.kod : "—", enIyi ? enIyi.ad + " · " + fmtYuzde(enIyi.g1) : "", "up") +
+    ozetBlock("Baskılanan", enKotu ? enKotu.kod : "—", enKotu ? enKotu.ad + " · " + fmtYuzde(enKotu.g1) : "", "down") +
+    ozetBlock("Yükselen / Düşen", yukselen + " / " + dusen, "Günlük bazda", "flat") +
+    '</div>';
+
+  document.getElementById("sektor-icerik").innerHTML =
+    '<div class="kutu-izgara">' + sektorler.map(s =>
+      '<div class="sektor-kutu">' +
+        '<div class="ust-cizgi" style="background:' + ustRenk(s.g1) + '"></div>' +
+        '<div class="kod">' + s.kod + '</div>' +
+        '<div class="ad">' + s.ad + '</div>' +
+        ["g1","h1","a1"].map(d =>
+          '<div class="sk-satir"><span class="lbl">' + DONEM_ETIKET[d] + '</span>' +
+          '<span class="val ' + yon(s[d]) + '">' + fmtYuzde(s[d]) + '</span></div>').join("") +
+      '</div>').join("") + '</div>';
+}
+function ozetBlock(et, dg, alt, y){
+  return '<div class="ozet-block"><div class="et">' + et + '</div>' +
+         '<div class="dg ' + y + '" style="color:' + (y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)") + '">' + dg + '</div>' +
+         '<div class="alt">' + alt + '</div></div>';
+}
+
+/* ---- EKONOMİK TAKVİM ---- */
+async function takvimCek(){
+  const kap = document.getElementById("takvim-icerik");
+  kap.innerHTML = '<div class="durum-kutu">Veriler çekiliyor…</div>';
+  try{
+    const sonuclar = await Promise.all(TAKVIM.map(async (ev) => {
+      try{
+        const res = await fetch('/.netlify/functions/fred?series_id=' + encodeURIComponent(ev.seri));
+        const data = await res.json();
+        const obs = (data.observations || []).map(o => parseFloat(o.value)).filter(v => !isNaN(v));
+        const tarihler = (data.observations || []).map(o => o.date);
+        return Object.assign({}, ev, hesapla(ev.mod, obs), { veriTarih: tarihler[0] || null });
+      }catch(e){ return Object.assign({}, ev, { son:null, onceki:null, veriTarih:null }); }
+    }));
+    takvimCiz(sonuclar);
+  }catch(e){
+    kap.innerHTML = '<div class="durum-kutu">Takvim verisi alınamadı.<br>Bu panel Netlify\'daki <b>fred</b> fonksiyonuna bağlıdır.<br><button class="btn-gnc" onclick="takvimCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+  }
+}
+function hesapla(mod, obs){
+  if(obs.length < 2) return { son:null, onceki:null };
+  if(mod === "level") return { son:obs[0], onceki:obs[1] };
+  if(mod === "diff")  return { son:obs[0]-obs[1], onceki:(obs.length>2?obs[1]-obs[2]:null) };
+  if(mod === "pct")   return { son:(obs[0]/obs[1]-1)*100, onceki:(obs.length>2?(obs[1]/obs[2]-1)*100:null) };
+  return { son:null, onceki:null };
+}
+function takvimCiz(liste){
+  const simdi = Date.now();
+  liste.sort((a,b) => (a.sonraki?Date.parse(a.sonraki):Infinity) - (b.sonraki?Date.parse(b.sonraki):Infinity));
+  document.getElementById("takvim-icerik").innerHTML = liste.map(ev => {
+    const yuzdeMod = ev.mod === "pct";
+    const sonStr    = yuzdeMod ? fmtYuzde(ev.son)    : fmtDeger(ev.son, ev.birim);
+    const oncekiStr = yuzdeMod ? fmtYuzde(ev.onceki) : fmtDeger(ev.onceki, ev.birim);
+    const beklStr   = ev.beklenti!=null ? (yuzdeMod?fmtYuzde(ev.beklenti):fmtDeger(ev.beklenti,ev.birim)) : "—";
+    let badge = '<span class="tk-badge gecti">tarih girilmedi</span>';
+    if(ev.sonraki){
+      const fark = Date.parse(ev.sonraki) - simdi;
+      if(fark > 0){
+        const gun = Math.floor(fark/86400000), saat = Math.floor((fark%86400000)/3600000);
+        badge = '<span class="tk-badge"><i class="bi bi-clock"></i> ' + (gun>0?gun+" gün ":"") + saat + " saat</span>";
+      } else { badge = '<span class="tk-badge gecti">açıklandı</span>'; }
+    }
+    return '<div class="tk-kart">' +
+      '<div><div class="isim">' + ev.isim + '</div>' +
+      '<div class="seri">FRED: ' + ev.seri + (ev.veriTarih?" · veri: "+ev.veriTarih:"") + '</div></div>' +
+      '<div class="tk-col"><div class="k">Önceki</div><div class="v small">' + oncekiStr + '</div></div>' +
+      '<div class="tk-col"><div class="k">Beklenti <span class="manuel">·manuel</span></div><div class="v small">' + beklStr + '</div></div>' +
+      '<div class="tk-col"><div class="k">Son açıklanan</div><div class="v ' + (yuzdeMod?yon(ev.son):"") + '">' + sonStr + '</div></div>' +
+      '<div class="tk-col">' + badge + '</div>' +
+    '</div>';
+  }).join("");
+}
+
+/* ---- gorunum gecisi ---- */
+const BASLIK = { sektorler:"BIST Sektörler", takvim:"Ekonomik Takvim" };
+document.querySelectorAll(".nav-link-gnc").forEach(link => {
+  link.addEventListener("click", () => {
+    document.querySelectorAll(".nav-link-gnc").forEach(l => l.classList.remove("active"));
+    link.classList.add("active");
+    const v = link.dataset.view;
+    document.getElementById("view-sektorler").classList.toggle("hidden", v !== "sektorler");
+    document.getElementById("view-takvim").classList.toggle("hidden", v !== "takvim");
+    document.getElementById("topbarTitle").textContent = BASLIK[v];
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebarOverlay").classList.remove("show");
+    if(v === "takvim" && !window._takvimYuklendi){ window._takvimYuklendi = true; takvimCek(); }
+  });
+});
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  const aktif = document.querySelector(".nav-link-gnc.active").dataset.view;
+  if(aktif === "sektorler") sektorCek(); else takvimCek();
+});
+
+/* ---- tema (localStorage hafizali, panelinle ayni) ---- */
+(function(){
+  const htmlEl = document.documentElement;
+  let saved = null;
+  try { saved = localStorage.getItem('gnc-theme'); } catch(e) {}
+  if(saved === 'light' || saved === 'dark') htmlEl.setAttribute('data-bs-theme', saved);
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const next = htmlEl.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+    htmlEl.setAttribute('data-bs-theme', next);
+    try { localStorage.setItem('gnc-theme', next); } catch(e) {}
+  });
+})();
+
+/* ---- mobil sidebar ---- */
+(function(){
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  document.getElementById('sidebarToggle').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+  overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+})();
+
+sektorCek();
+</script>
+</body>
+</html>
