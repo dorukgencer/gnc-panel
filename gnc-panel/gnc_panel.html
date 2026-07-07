@@ -328,18 +328,18 @@
   }
   .tk-row.acik { border-color: rgba(var(--gnc-accent-rgb), 0.4); }
   .tk-ana {
-    display: grid; grid-template-columns: 1.5fr 70px 70px 70px 118px 116px 20px;
-    gap: 12px; align-items: center; padding: 12px 16px; cursor: pointer;
+    display: grid; grid-template-columns: 1.5fr 78px 78px 82px 128px 122px 22px;
+    gap: 14px; align-items: center; padding: 15px 18px; cursor: pointer;
   }
   .tk-ana:hover { background: var(--gnc-card-bg-elevated); }
-  .tk-isim { font-size: 13.5px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 8px; }
+  .tk-isim { font-size: 14.5px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 9px; }
   .tk-yuksek { font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
     color: var(--gnc-accent); background: rgba(var(--gnc-accent-rgb), 0.12); padding: 2px 7px; border-radius: 5px; }
   .tk-seri { font-size: 9.5px; color: var(--gnc-text-dim); margin-top: 3px; letter-spacing: 0.3px; }
   .tk-col { text-align: right; min-width: 62px; }
-  .tk-col .k { font-size: 9px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 3px; }
-  .tk-col .v { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
-  .tk-col .v.small { font-size: 12px; font-weight: 500; color: var(--gnc-text-faded); }
+  .tk-col .k { font-size: 9.5px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 4px; }
+  .tk-col .v { font-size: 15.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
+  .tk-col .v.small { font-size: 13.5px; font-weight: 500; color: var(--gnc-text-faded); }
   .tk-surpriz { text-align: center; }
   .tk-badge {
     display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700;
@@ -371,12 +371,24 @@
     font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
     color: var(--gnc-text-dim); margin-bottom: 10px;
   }
-  .spark { display: flex; align-items: flex-end; gap: 3px; height: 72px; }
-  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 96px; position: relative; }
+  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; position: relative; cursor: pointer; }
+  .spark-bar:hover { filter: brightness(1.35); }
+  .spark-bar::after, .spark-bek::after {
+    content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 7px;
+    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px;
+    font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s; z-index: 30;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .spark-bar:hover::after, .spark-bek:hover::after { opacity: 1; }
+  .spark-bek { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed var(--gnc-text-dim); z-index: 5; }
+  .spark-bek::after { left: 8px; transform: none; }
+  .spark-legend { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 10px; display: flex; align-items: center; gap: 7px; line-height: 1.4; }
+  .lg-cizgi { display: inline-block; width: 18px; border-top: 2px dashed var(--gnc-text-dim); flex-shrink: 0; }
   .spark-bar.up { background: rgba(var(--gnc-success-rgb), 0.75); }
   .spark-bar.down { background: rgba(var(--gnc-danger-rgb), 0.75); }
-  .spark-alt { display: flex; gap: 3px; margin-top: 6px; }
-  .spark-alt span { flex: 1; font-size: 8px; color: var(--gnc-text-dim); text-align: center; }
+  .spark-alt { display: flex; gap: 3px; margin-top: 8px; }
+  .spark-alt span { flex: 1; font-size: 10px; color: var(--gnc-text-dim); text-align: center; }
   .tk-yorum-metin { font-size: 12.5px; line-height: 1.6; color: var(--gnc-text-faded); }
   .tk-yorum-metin b { color: var(--bs-emphasis-color); font-weight: 700; }
   .tk-ai-not { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 10px; font-style: italic; }
@@ -891,7 +903,7 @@ function hesapla(mod, obs){
   }
   const son = seri[0];
   const onceki = seri.length > 1 ? seri[1] : null;
-  const gecmis = seri.slice(0, 12).reverse();     // kronolojik (eski->yeni)
+  const gecmis = seri.slice(0, 18).reverse();     // kronolojik (eski->yeni)
   return { son:son, onceki:onceki, seri_gecmis:gecmis };
 }
 
@@ -935,8 +947,7 @@ function takvimCiz(){
         '<div class="tk-caret"><i class="bi bi-chevron-down"></i></div>' +
       '</div>' +
       '<div class="tk-detay">' +
-        '<div class="tk-gecmis"><div class="baslik">Son ' + ev.seri_gecmis.length + ' dönem</div>' + sparkCiz(ev) +
-          '<a class="tk-fred-btn" href="https://fred.stlouisfed.org/series/' + ev.seri + '" target="_blank" rel="noopener"><i class="bi bi-graph-up"></i> Daha fazla geçmiş veri (FRED)</a>' +
+        '<div class="tk-gecmis"><div class="baslik">Geçmiş dönemler</div>' + sparkCiz(ev) +
         '</div>' +
         '<div class="tk-yorum">' +
           bekBlok(ev, sp) +
@@ -966,16 +977,25 @@ function bekBlok(ev, sp){
 function sparkCiz(ev){
   const g = ev.seri_gecmis || [];
   if(g.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);">Yeterli geçmiş veri yok.</div>';
-  const min = Math.min(...g), max = Math.max(...g), aralik = (max - min) || 1;
+  const bek = (ev.beklenti !== undefined && ev.beklenti !== null) ? ev.beklenti : null;
+  const min = Math.min(...g, ...(bek!=null?[bek]:[]));
+  const max = Math.max(...g, ...(bek!=null?[bek]:[]));
+  const aralik = (max - min) || 1;
+  const H = 96;
+  const et = (v) => ev.mod === "pct" ? fmtYuzde(v) : fmtDeger(v, ev.birim);
   const bar = g.map((v, i) => {
-    const yuk = 8 + ((v - min) / aralik) * 60;
+    const yuk = 10 + ((v - min) / aralik) * (H - 22);
     const yon = i === 0 ? (g[1] >= v ? "down" : "up") : (v >= g[i-1] ? "up" : "down");
-    const etiket = ev.mod === "pct" ? fmtYuzde(v) : fmtDeger(v, ev.birim);
-    return '<div class="spark-bar ' + yon + '" style="height:' + yuk + 'px" title="' + etiket + '"></div>';
+    return '<div class="spark-bar ' + yon + '" style="height:' + yuk + 'px" data-tip="' + et(v) + '"></div>';
   }).join("");
-  const sonEtiket = ev.mod === "pct" ? fmtYuzde(g[g.length-1]) : fmtDeger(g[g.length-1], ev.birim);
-  const ilkEtiket = ev.mod === "pct" ? fmtYuzde(g[0]) : fmtDeger(g[0], ev.birim);
-  return '<div class="spark">' + bar + '</div><div class="spark-alt"><span style="text-align:left">' + ilkEtiket + '</span><span style="text-align:right">' + sonEtiket + '</span></div>';
+  let bekCizgi = "";
+  if(bek != null){
+    const by = 10 + ((bek - min) / aralik) * (H - 22);
+    bekCizgi = '<div class="spark-bek" style="bottom:' + by + 'px" data-tip="Beklenti: ' + et(bek) + '"></div>';
+  }
+  const efsane = bek != null ? '<div class="spark-legend"><span class="lg-cizgi"></span> Gri kesikli çizgi: beklenti seviyesi · renkli çubuklar geçmiş değerler</div>' : '';
+  return '<div class="spark" style="height:' + H + 'px">' + bekCizgi + bar + '</div>' +
+    '<div class="spark-alt"><span style="text-align:left">' + et(g[0]) + '</span><span style="text-align:right">' + et(g[g.length-1]) + '</span></div>' + efsane;
 }
 
 function tkAc(i){
