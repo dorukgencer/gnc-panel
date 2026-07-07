@@ -419,12 +419,12 @@ async function sektorCek(){
   kap.innerHTML = '<div class="durum-kutu">Sektör verileri çekiliyor…</div>';
   document.getElementById("sektor-ozet").innerHTML = "";
   try{
-    const res = await fetch('/.netlify/functions/sektor');
+    const res = await fetch('/sektor_verisi.json?t=' + Date.now());
     if(!res.ok) throw new Error();
     sektorCiz(await res.json());
   }catch(e){
-    document.getElementById("sektor-guncelleme").textContent = "veri alınamadı";
-    kap.innerHTML = '<div class="durum-kutu">Sektör verisi alınamadı.<br>Bu panel Netlify\'daki <b>sektor</b> fonksiyonuna bağlıdır; siteye yüklendiğinde çalışır.<br><button class="btn-gnc" onclick="sektorCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+    document.getElementById("sektor-guncelleme").textContent = "veri henüz yok";
+    kap.innerHTML = '<div class="durum-kutu">Sektör verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>sektor_verisi.json</b> oluşur ve burada görünür.<br><button class="btn-gnc" onclick="sektorCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
   }
 }
 function sektorCiz(veri){
