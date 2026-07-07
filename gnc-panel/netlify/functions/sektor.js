@@ -10,7 +10,6 @@ const https = require('https');
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 const ENDEKSLER = [
-  { kod: 'XU100', ad: 'BIST 100', tip: 'referans' },
   { kod: 'XUSIN', ad: 'Sinai', tip: 'ana_grup' },
   { kod: 'XUMAL', ad: 'Mali', tip: 'ana_grup' },
   { kod: 'XUHIZ', ad: 'Hizmetler', tip: 'ana_grup' },
