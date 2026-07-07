@@ -1,0 +1,32 @@
+name: BIST hisse fiyat verisi guncelle
+
+on:
+  schedule:
+    # Hafta ici gunde 3 kez (UTC): 07:30, 11:00, 15:30 = 10:30, 14:00, 18:30 Turkiye
+    - cron: "30 7 * * 1-5"
+    - cron: "0 11 * * 1-5"
+    - cron: "30 15 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kutuphaneleri yukle
+        run: pip install isyatirimhisse pandas
+      - name: Hisse verisini cek
+        run: python hisse_veri_cek.py
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/sektor_hisse_veri.json
+          git commit -m "Hisse fiyat verisi guncellendi" || echo "Degisiklik yok"
+          git push
