@@ -235,18 +235,74 @@
   .sk-satir .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .up { color: var(--gnc-success); } .down { color: var(--gnc-danger); } .flat { color: var(--gnc-text-dim); }
 
+  /* Ana Sayfa */
+  .topbar-saat { font-size: 13px; font-weight: 700; color: var(--gnc-text-faded); font-variant-numeric: tabular-nums; letter-spacing: 0.5px; margin-right: 4px; }
+  @media (max-width: 640px){ .topbar-saat { display: none; } }
+  .as-ust { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .as-orta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .as-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 14px; padding: 18px 20px; }
+  .as-kart-baslik { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .as-piyasa-durum { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .as-piyasa.acik .as-piyasa-durum { color: var(--gnc-success); }
+  .as-piyasa.kapali .as-piyasa-durum { color: var(--gnc-danger); }
+  .as-piyasa.yarim .as-piyasa-durum { color: var(--gnc-accent); }
+  .as-piyasa-not { font-size: 12px; color: var(--gnc-text-dim); margin-top: 6px; }
+  .as-saat-buyuk { font-size: 30px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+  .kripto-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .kripto-kart { background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; }
+  .kripto-kart .sembol { font-size: 12px; font-weight: 700; color: var(--gnc-text-dim); }
+  .kripto-kart .fiyat { font-size: 16px; font-weight: 700; color: var(--bs-emphasis-color); margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+  .kripto-kart .deg { font-size: 12px; font-weight: 700; }
+  .as-ozet-satir { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--bs-border-color); }
+  .as-ozet-satir:last-child { border-bottom: none; }
+  .as-ozet-satir .et { font-size: 12.5px; color: var(--gnc-text-faded); }
+  .as-ozet-satir .dg { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .as-veri-satir { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 12px; }
+  .as-veri-satir .kaynak { color: var(--gnc-text-faded); }
+  .as-veri-satir .zaman { color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
+  .as-veri-satir .canli { color: var(--gnc-success); font-weight: 700; }
+  @media (max-width: 820px){ .as-ust, .as-orta { grid-template-columns: 1fr; } }
+
   .sektor-kutu { cursor: pointer; }
   .sektor-kutu .tikla { position: absolute; top: 12px; right: 12px; font-size: 12px; color: var(--gnc-text-dim); opacity: 0; transition: opacity .12s; }
   .sektor-kutu:hover .tikla { opacity: 1; color: var(--gnc-accent); }
   .geri-btn { background: none; border: 1px solid var(--bs-border-color); color: var(--bs-body-color); width: 30px; height: 30px; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; vertical-align: middle; }
   .geri-btn:hover { border-color: var(--gnc-accent); color: var(--gnc-accent); }
-  .hisse-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-  .hisse-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 14px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: border-color .12s, transform .12s; }
-  .hisse-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.45); transform: translateY(-1px); }
-  .hisse-kart .kod { font-size: 15px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.4px; }
-  .hisse-kart .ad { font-size: 11px; color: var(--gnc-text-dim); margin-top: 2px; }
-  .hisse-kart .ok { color: var(--gnc-text-dim); font-size: 13px; }
-  .hisse-kart:hover .ok { color: var(--gnc-accent); }
+  .hisse-liste { display: flex; flex-direction: column; gap: 7px; }
+  .hisse-baslik, .hisse-satir { display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr 0.8fr 1fr 1fr 22px; gap: 10px; align-items: center; }
+  .hisse-baslik { padding: 0 16px 8px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); }
+  .hisse-baslik span:not(:first-child), .hisse-satir > div:not(.h-ad):not(.h-ok) { text-align: right; }
+  .hisse-satir { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: border-color .12s; }
+  .hisse-satir:hover { border-color: rgba(var(--gnc-accent-rgb), 0.45); }
+  .h-ad .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.3px; }
+  .h-ad .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; }
+  .hisse-satir .deg { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hisse-satir .fiyat { font-size: 13.5px; font-weight: 700; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
+  .hisse-satir .kucuk { font-size: 12px; color: var(--gnc-text-faded); font-variant-numeric: tabular-nums; }
+  .h-ok { text-align: center; color: var(--gnc-text-dim); font-size: 12px; }
+  .hisse-satir:hover .h-ok { color: var(--gnc-accent); }
+  @media (max-width: 820px){
+    .hisse-baslik { display: none; }
+    .hisse-satir { grid-template-columns: 1fr auto; gap: 6px 10px; }
+    .hisse-satir .deg, .hisse-satir .kucuk, .hisse-satir .fiyat { text-align: left; }
+    .h-ok { display: none; }
+  }
+
+  /* Turkiye takvimi */
+  .tr-liste { display: flex; flex-direction: column; gap: 7px; }
+  .tr-gun { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); margin: 14px 4px 4px; }
+  .tr-satir { display: grid; grid-template-columns: 64px 1fr auto auto; gap: 12px; align-items: center;
+    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 11px 16px; }
+  .tr-satir.gelecek { opacity: 0.72; border-style: dashed; }
+  .tr-saat { font-size: 12px; font-weight: 700; color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
+  .tr-olay { font-size: 13px; font-weight: 600; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 8px; }
+  .tr-onem { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tr-onem.high { background: var(--gnc-danger); } .tr-onem.medium { background: var(--gnc-accent); } .tr-onem.low { background: var(--gnc-text-dim); }
+  .tr-deg { text-align: right; min-width: 70px; }
+  .tr-deg .k { font-size: 8.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--gnc-text-dim); }
+  .tr-deg .v { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
+  .tr-deg .v.bekliyor { color: var(--gnc-accent); font-size: 11px; }
+  @media (max-width: 700px){ .tr-satir { grid-template-columns: 52px 1fr; } .tr-deg { text-align: left; } }
 
   /* Sektor filtre araci */
   .sektor-arac { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
@@ -272,8 +328,8 @@
   }
   .tk-row.acik { border-color: rgba(var(--gnc-accent-rgb), 0.4); }
   .tk-ana {
-    display: grid; grid-template-columns: 1.6fr auto auto auto 150px 22px;
-    gap: 14px; align-items: center; padding: 12px 16px; cursor: pointer;
+    display: grid; grid-template-columns: 1.5fr 70px 70px 70px 118px 116px 20px;
+    gap: 12px; align-items: center; padding: 12px 16px; cursor: pointer;
   }
   .tk-ana:hover { background: var(--gnc-card-bg-elevated); }
   .tk-isim { font-size: 13.5px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 8px; }
@@ -293,7 +349,16 @@
   .tk-badge.alt { background: rgba(var(--gnc-danger-rgb), 0.12); color: var(--gnc-danger); border: 1px solid rgba(var(--gnc-danger-rgb), 0.3); }
   .tk-badge.tam { background: var(--gnc-card-bg-elevated); color: var(--gnc-text-dim); border: 1px solid var(--bs-border-color); }
   .tk-badge.bekle { background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); border: 1px solid rgba(var(--gnc-accent-rgb), 0.25); }
-  .tk-tarih { font-size: 10.5px; color: var(--gnc-text-dim); font-weight: 700; white-space: nowrap; }
+  .tk-tarih { font-size: 10px; color: var(--gnc-text-dim); font-weight: 700; white-space: nowrap; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+  .tk-bekblok { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tk-bekkutu { flex: 1; border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 8px 10px; text-align: center; }
+  .tk-bekkutu .k { font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 4px; }
+  .tk-bekkutu .v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tk-bekkutu.acik-yes { border-color: rgba(var(--gnc-success-rgb),0.4); background: rgba(var(--gnc-success-rgb),0.08); }
+  .tk-bekkutu.acik-no { border-color: rgba(var(--gnc-danger-rgb),0.4); background: rgba(var(--gnc-danger-rgb),0.08); }
+  .tk-fred-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--gnc-accent);
+    text-decoration: none; margin-top: 12px; padding: 7px 12px; border: 1px solid rgba(var(--gnc-accent-rgb),0.3); border-radius: 8px; }
+  .tk-fred-btn:hover { background: rgba(var(--gnc-accent-rgb),0.08); }
   .tk-tarih.yakin { color: var(--gnc-accent); }
   .tk-caret { color: var(--gnc-text-dim); font-size: 14px; transition: transform 0.2s; text-align: center; }
   .tk-row.acik .tk-caret { transform: rotate(180deg); }
@@ -371,8 +436,10 @@
   </div>
   <nav class="sidebar-nav">
     <p class="nav-section-title">Piyasa</p>
-    <button class="nav-link-gnc active" data-view="sektorler"><i class="bi bi-grid-3x3-gap-fill"></i><span>BIST Sektörler</span></button>
-    <button class="nav-link-gnc" data-view="takvim"><i class="bi bi-calendar-event"></i><span>Ekonomik Takvim</span></button>
+    <button class="nav-link-gnc active" data-view="anasayfa"><i class="bi bi-house-door-fill"></i><span>Ana Sayfa</span></button>
+    <button class="nav-link-gnc" data-view="sektorler"><i class="bi bi-grid-3x3-gap-fill"></i><span>BIST Sektörler</span></button>
+    <button class="nav-link-gnc" data-view="takvim"><i class="bi bi-calendar-event"></i><span>Ekonomik Takvim (ABD)</span></button>
+    <button class="nav-link-gnc" data-view="turkiye"><i class="bi bi-flag-fill"></i><span>Türkiye Takvimi</span></button>
   </nav>
   <div class="sidebar-footer">
     <div class="membership-info">
@@ -387,8 +454,9 @@
 <div class="main">
   <header class="topbar">
     <button class="topbar-toggle" id="sidebarToggle" aria-label="Menü"><i class="bi bi-list"></i></button>
-    <span class="topbar-title" id="topbarTitle">BIST Sektörler</span>
+    <span class="topbar-title" id="topbarTitle">Ana Sayfa</span>
     <div class="topbar-actions">
+      <span class="topbar-saat" id="topbarSaat">--:--:--</span>
       <button class="topbar-icon-btn" id="refreshBtn" aria-label="Yenile"><i class="bi bi-arrow-clockwise"></i></button>
       <button class="theme-toggle" id="themeToggle" aria-label="Tema değiştir"><div class="toggle-thumb"></div></button>
       <a href="#" class="user-pill"><span class="user-name">Doruk</span><span class="user-avatar">D</span></a>
@@ -397,8 +465,68 @@
 
   <div class="content">
 
+    <!-- ============ ANA SAYFA ============ -->
+    <section id="view-anasayfa">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-house-door-fill"></i> Ana Sayfa</h2>
+        <span class="status-update" id="as-tarih"></span>
+      </div>
+
+      <div class="as-ust">
+        <div class="as-kart as-piyasa" id="as-piyasa">
+          <div class="as-kart-baslik">BIST Durumu</div>
+          <div class="as-piyasa-durum" id="as-piyasa-durum">—</div>
+          <div class="as-piyasa-not" id="as-piyasa-not"></div>
+        </div>
+        <div class="as-kart as-saat">
+          <div class="as-kart-baslik">Türkiye Saati</div>
+          <div class="as-saat-buyuk" id="as-saat">--:--:--</div>
+          <div class="as-piyasa-not" id="as-saat-tarih"></div>
+        </div>
+      </div>
+
+      <div class="as-kart" style="margin-bottom:16px;">
+        <div class="as-kart-baslik"><i class="bi bi-currency-bitcoin"></i> Kripto Para</div>
+        <div class="kripto-strip" id="kripto-strip"><div class="durum-kutu" style="grid-column:1/-1;">Yükleniyor…</div></div>
+      </div>
+
+      <div class="as-orta">
+        <div class="as-kart">
+          <div class="as-kart-baslik"><i class="bi bi-grid-3x3-gap"></i> BIST Sektör Özeti</div>
+          <div id="as-bist"><div class="durum-kutu">Yükleniyor…</div></div>
+        </div>
+        <div class="as-kart">
+          <div class="as-kart-baslik"><i class="bi bi-calendar-event"></i> Sıradaki Önemli Veri</div>
+          <div id="as-sonraki"><div class="durum-kutu">Yükleniyor…</div></div>
+        </div>
+      </div>
+
+      <div class="as-orta">
+        <div class="as-kart">
+          <div class="as-kart-baslik"><i class="bi bi-clock-history"></i> Veri Durumu</div>
+          <div id="as-veri-durum"><div class="durum-kutu">Yükleniyor…</div></div>
+        </div>
+        <div class="as-kart">
+          <div class="as-kart-baslik"><i class="bi bi-newspaper"></i> Haberler</div>
+          <div class="durum-kutu">Haber akışı yakında eklenecek.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Uygun bir kaynak (Finvest vb.) belirlenip filtreli haber akışı buraya bağlanacak.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TÜRKİYE TAKVİMİ ============ -->
+    <section id="view-turkiye" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-flag-fill"></i> Türkiye Ekonomik Takvimi</h2>
+        <span class="status-update" id="tr-guncelleme"></span>
+      </div>
+      <div class="page-intro">
+        Türkiye makro verileri (kaynak: TCMB EVDS). Her göstergede <b>son açıklanan</b> ve <b>önceki</b> değer görünür; satıra tıklayınca geçmiş grafiği ve verinin nasıl yorumlanacağı açılır. Türkiye tarafında beklenti (konsensüs) kullanılmaz.
+      </div>
+      <div id="tr-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
+    </section>
+
     <!-- ============ BIST SEKTÖRLER ============ -->
-    <section id="view-sektorler">
+    <section id="view-sektorler" class="hidden">
       <div class="section-head">
         <h2 class="section-title"><i class="bi bi-grid-3x3-gap-fill"></i> BIST Sektörler</h2>
         <span class="status-update" id="sektor-guncelleme">Yükleniyor</span>
@@ -646,7 +774,7 @@ function ozetBlock(et, dg, alt, y){
 }
 
 /* ---- SEKTÖR HİSSELERİ ---- */
-let HISSE_MAP = null;
+let HISSE_MAP = null, HISSE_VERI = null;
 
 async function hisseMapYukle(){
   if(HISSE_MAP) return HISSE_MAP;
@@ -656,6 +784,26 @@ async function hisseMapYukle(){
     HISSE_MAP = data.hisseler || {};
   }catch(e){ HISSE_MAP = {}; }
   return HISSE_MAP;
+}
+async function hisseVeriYukle(){
+  if(HISSE_VERI) return HISSE_VERI;
+  try{
+    const res = await fetch('/sektor_hisse_veri.json?t=' + Date.now());
+    const data = await res.json();
+    HISSE_VERI = data.hisseler || {};
+  }catch(e){ HISSE_VERI = {}; }
+  return HISSE_VERI;
+}
+function buyukFmt(x){
+  if(x === null || x === undefined || isNaN(x)) return "—";
+  if(x >= 1e12) return (x/1e12).toFixed(2).replace(".",",") + " T";
+  if(x >= 1e9)  return (x/1e9).toFixed(2).replace(".",",") + " Mr";
+  if(x >= 1e6)  return (x/1e6).toFixed(1).replace(".",",") + " Mn";
+  return Math.round(x).toLocaleString("tr-TR");
+}
+function fiyatFmt(x){
+  if(x === null || x === undefined || isNaN(x)) return "—";
+  return x.toLocaleString("tr-TR", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 async function sektorHisseAc(kod, ad){
@@ -668,23 +816,34 @@ async function sektorHisseAc(kod, ad){
 
   const kap = document.getElementById("hisse-icerik");
   kap.innerHTML = '<div class="durum-kutu">Hisseler yükleniyor…</div>';
-  const map = await hisseMapYukle();
-  const hisseler = map[kod] || [];
+  const [map, veri] = await Promise.all([hisseMapYukle(), hisseVeriYukle()]);
+  let hisseler = (map[kod] || []).map(h => Object.assign({}, h, veri[h.kod] || {}));
   document.getElementById("hisse-adet").textContent = hisseler.length + " hisse";
 
   if(!hisseler.length){
     kap.innerHTML = '<div class="durum-kutu">Bu sektörün listesi henüz eklenmedi.<br>Şu an liste BIST 100 üyeleriyle sınırlı; tam liste sonra genişletilecek.</div>';
     return;
   }
-  kap.innerHTML = '<div class="hisse-izgara">' + hisseler.map(h =>
-    '<div class="hisse-kart" onclick="hisseDetay(\'' + h.kod + '\',\'' + (h.ad||"").replace(/'/g,"") + '\')">' +
-      '<div><div class="kod">' + h.kod + '</div><div class="ad">' + (h.ad||"") + '</div></div>' +
-      '<div class="ok"><i class="bi bi-chevron-right"></i></div>' +
-    '</div>').join("") + '</div>';
+  // piyasa degerine gore buyukten kucuge sirala (veri yoksa sona)
+  hisseler.sort((a,b) => (b.pd||-1) - (a.pd||-1));
+
+  kap.innerHTML =
+    '<div class="hisse-baslik"><span>Hisse</span><span>Fiyat</span><span>Günlük</span><span>Haftalık</span><span>Aylık</span><span>Piyasa Değeri</span><span>Hacim</span><span></span></div>' +
+    '<div class="hisse-liste">' + hisseler.map(h =>
+      '<div class="hisse-satir" onclick="hisseDetay(\'' + h.kod + '\',\'' + (h.ad||"").replace(/'/g,"") + '\')">' +
+        '<div class="h-ad"><div class="kod">' + h.kod + '</div><div class="ad">' + (h.ad||"") + '</div></div>' +
+        '<div class="fiyat">' + fiyatFmt(h.fiyat) + '</div>' +
+        '<div class="deg ' + yon(h.g1) + '">' + fmtYuzde(h.g1) + '</div>' +
+        '<div class="deg ' + yon(h.h1) + '">' + fmtYuzde(h.h1) + '</div>' +
+        '<div class="deg ' + yon(h.a1) + '">' + fmtYuzde(h.a1) + '</div>' +
+        '<div class="kucuk">' + buyukFmt(h.pd) + '</div>' +
+        '<div class="kucuk">' + buyukFmt(h.hacim) + '</div>' +
+        '<div class="h-ok"><i class="bi bi-chevron-right"></i></div>' +
+      '</div>').join("") + '</div>' +
+    '<div class="arac-not" style="margin-top:16px;border:none;padding:0;">Fiyat ve getiriler İş Yatırım kaynaklıdır, günde birkaç kez güncellenir. Piyasa değeri ve hacim son işlem gününe aittir. Hisseye tıklayınca finansallar (bilanço) yakında eklenecek.</div>';
 }
 
 function hisseDetay(kod, ad){
-  // Faz 2: hisse finansal sayfasi. Simdilik yer tutucu.
   alert(kod + " (" + ad + ")\n\nFinansallar (bilanço, temel oranlar) modülü yakında eklenecek. Veri kaynağı: İş Yatırım.");
 }
 
@@ -776,8 +935,12 @@ function takvimCiz(){
         '<div class="tk-caret"><i class="bi bi-chevron-down"></i></div>' +
       '</div>' +
       '<div class="tk-detay">' +
-        '<div class="tk-gecmis"><div class="baslik">Son ' + ev.seri_gecmis.length + ' dönem</div>' + sparkCiz(ev) + '</div>' +
-        '<div class="tk-yorum"><div class="baslik">Nasıl yorumlanır?</div>' +
+        '<div class="tk-gecmis"><div class="baslik">Son ' + ev.seri_gecmis.length + ' dönem</div>' + sparkCiz(ev) +
+          '<a class="tk-fred-btn" href="https://fred.stlouisfed.org/series/' + ev.seri + '" target="_blank" rel="noopener"><i class="bi bi-graph-up"></i> Daha fazla geçmiş veri (FRED)</a>' +
+        '</div>' +
+        '<div class="tk-yorum">' +
+          bekBlok(ev, sp) +
+          '<div class="baslik">Nasıl yorumlanır?</div>' +
           '<div class="tk-yorum-metin">' + ev.yorum + '</div>' +
           '<div class="tk-ai-not"><i class="bi bi-stars"></i> Döneme özel yorum ileride yapay zeka ile eklenecek.</div>' +
         '</div>' +
@@ -786,6 +949,20 @@ function takvimCiz(){
   }).join("");
 }
 
+function bekBlok(ev, sp){
+  const yuzdeMod = ev.mod === "pct";
+  const bic = (x) => x==null ? "—" : (yuzdeMod ? fmtYuzde(x) : fmtDeger(x, ev.birim));
+  // Aciklanan kutusu: beklentinin ustunde yesil, altinda kirmizi
+  let acikSinif = "";
+  if(sp === "ust") acikSinif = "acik-yes";
+  else if(sp === "alt") acikSinif = "acik-no";
+  return '<div class="baslik">Beklenti / Açıklanan</div>' +
+    '<div class="tk-bekblok">' +
+      '<div class="tk-bekkutu"><div class="k">Önceki</div><div class="v" style="color:var(--gnc-text-faded)">' + bic(ev.onceki) + '</div></div>' +
+      '<div class="tk-bekkutu"><div class="k">Beklenti</div><div class="v" style="color:var(--bs-emphasis-color)">' + bic(ev.beklenti) + '</div></div>' +
+      '<div class="tk-bekkutu ' + acikSinif + '"><div class="k">Açıklanan</div><div class="v" style="color:' + (sp==="ust"?"var(--gnc-success)":sp==="alt"?"var(--gnc-danger)":"var(--bs-emphasis-color)") + '">' + bic(ev.son) + '</div></div>' +
+    '</div>';
+}
 function sparkCiz(ev){
   const g = ev.seri_gecmis || [];
   if(g.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);">Yeterli geçmiş veri yok.</div>';
@@ -808,25 +985,194 @@ function tkAc(i){
   if(!acik) row.classList.add("acik");
 }
 
+/* ---- ANA SAYFA ---- */
+// 2026 BIST tam kapali gunler (düzenlenebilir)
+const BIST_TATIL_TAM = ["2026-01-01","2026-03-20","2026-04-23","2026-05-01","2026-05-19","2026-05-27","2026-05-28","2026-05-29","2026-07-15","2026-10-29"];
+// Yarim gun (13:00'a kadar acik)
+const BIST_YARIM = ["2026-03-19","2026-05-26","2026-10-28"];
+
+function istanbulZaman(){
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone:"Europe/Istanbul", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, weekday:"short" }).formatToParts(new Date());
+  const g = {}; p.forEach(x => g[x.type] = x.value);
+  return { tarih: g.year+"-"+g.month+"-"+g.day, saat:+g.hour, dk:+g.minute, saatStr: g.hour+":"+g.minute+":"+g.second, gunAdi:g.weekday };
+}
+function piyasaDurum(){
+  const z = istanbulZaman();
+  const dk = z.saat*60 + z.dk;
+  if(BIST_TATIL_TAM.includes(z.tarih)) return { durum:"KAPALI", sinif:"kapali", not:"Resmi tatil" };
+  if(z.gunAdi === "Sat" || z.gunAdi === "Sun") return { durum:"KAPALI", sinif:"kapali", not:"Hafta sonu" };
+  if(BIST_YARIM.includes(z.tarih)){
+    if(dk >= 600 && dk < 780) return { durum:"AÇIK", sinif:"yarim", not:"Yarım gün · 13:00'a kadar" };
+    return { durum:"KAPALI", sinif:"kapali", not:"Yarım gün (seans dışı)" };
+  }
+  if(dk >= 600 && dk < 1080) return { durum:"AÇIK", sinif:"acik", not:"Seans sürüyor · 10:00–18:00" };
+  return { durum:"KAPALI", sinif:"kapali", not:"Seans dışı · 10:00–18:00" };
+}
+function saatTik(){
+  const z = istanbulZaman();
+  const tb = document.getElementById("topbarSaat");
+  if(tb) tb.textContent = z.saatStr;
+  const as = document.getElementById("as-saat");
+  if(as){
+    as.textContent = z.saatStr;
+    const p = piyasaDurum();
+    const kart = document.getElementById("as-piyasa");
+    if(kart){
+      kart.className = "as-kart as-piyasa " + p.sinif;
+      document.getElementById("as-piyasa-durum").textContent = p.durum;
+      document.getElementById("as-piyasa-not").textContent = p.not;
+    }
+    const t = new Intl.DateTimeFormat("tr-TR", { timeZone:"Europe/Istanbul", weekday:"long", day:"numeric", month:"long", year:"numeric" }).format(new Date());
+    const st = document.getElementById("as-saat-tarih"); if(st) st.textContent = t;
+    const at = document.getElementById("as-tarih"); if(at) at.textContent = t;
+  }
+}
+
+async function kriptoYukle(){
+  const kap = document.getElementById("kripto-strip");
+  const semboller = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT"];
+  try{
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify(semboller)));
+    const data = await res.json();
+    const sirali = semboller.map(s => data.find(d => d.symbol === s)).filter(Boolean);
+    kap.innerHTML = sirali.map(d => {
+      const fiyat = parseFloat(d.lastPrice), deg = parseFloat(d.priceChangePercent);
+      const ad = d.symbol.replace("USDT","");
+      const f = fiyat >= 100 ? fiyat.toLocaleString("en-US",{maximumFractionDigits:0}) : fiyat.toLocaleString("en-US",{maximumFractionDigits:2});
+      return '<div class="kripto-kart"><div class="sembol">' + ad + '/USDT</div>' +
+        '<div class="fiyat">$' + f + '</div>' +
+        '<div class="deg ' + yon(deg) + '">' + fmtYuzde(deg) + ' <span style="color:var(--gnc-text-dim);font-weight:400;">24s</span></div></div>';
+    }).join("");
+  }catch(e){ kap.innerHTML = '<div class="durum-kutu" style="grid-column:1/-1;">Kripto verisi alınamadı.</div>'; }
+}
+
+async function anaSayfaYukle(){
+  saatTik();
+  kriptoYukle();
+  // BIST ozet
+  try{
+    const res = await fetch('/sektor_verisi.json?t=' + Date.now());
+    const veri = await res.json();
+    const sekt = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null);
+    const xu = veri.endeksler.find(e => e.kod === "XU100");
+    const sirali = [...sekt].sort((a,b) => b.g1 - a.g1);
+    const enIyi = sirali[0], enKotu = sirali[sirali.length-1];
+    const yuk = sekt.filter(s=>s.g1>0).length, dus = sekt.filter(s=>s.g1<0).length;
+    document.getElementById("as-bist").innerHTML =
+      asOzet("XU100 (Günlük)", xu?fmtYuzde(xu.g1):"—", xu?yon(xu.g1):"") +
+      asOzet("Öne çıkan", (enIyi?enIyi.kod+" · "+fmtYuzde(enIyi.g1):"—"), "up") +
+      asOzet("Baskılanan", (enKotu?enKotu.kod+" · "+fmtYuzde(enKotu.g1):"—"), "down") +
+      asOzet("Yükselen / Düşen", yuk+" / "+dus, "flat");
+  }catch(e){ document.getElementById("as-bist").innerHTML = '<div class="durum-kutu">Sektör verisi henüz yok.</div>'; }
+
+  // Siradaki veri (TAKVIM statik)
+  const simdi = Date.now();
+  const gelecek = TAKVIM.filter(t => t.sonraki && Date.parse(t.sonraki) > simdi).sort((a,b)=>Date.parse(a.sonraki)-Date.parse(b.sonraki));
+  if(gelecek.length){
+    document.getElementById("as-sonraki").innerHTML = gelecek.slice(0,4).map(t => {
+      const fark = Date.parse(t.sonraki) - simdi, gun = Math.floor(fark/86400000), saat = Math.floor((fark%86400000)/3600000);
+      return asOzet(t.isim, (gun>0?gun+" gün ":"")+saat+" saat", "flat");
+    }).join("");
+  } else { document.getElementById("as-sonraki").innerHTML = '<div class="durum-kutu">Yaklaşan veri tarihi girilmemiş.</div>'; }
+
+  // Veri durumu
+  veriDurumYukle();
+}
+function asOzet(et, dg, y){
+  const renk = y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)";
+  return '<div class="as-ozet-satir"><span class="et">' + et + '</span><span class="dg" style="color:' + renk + '">' + dg + '</span></div>';
+}
+async function veriDurumYukle(){
+  const kap = document.getElementById("as-veri-durum");
+  const bicimZaman = (iso) => { try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return "—"; } };
+  let satirlar = [];
+  try{ const r = await fetch('/sektor_verisi.json?t='+Date.now()); const d = await r.json(); satirlar.push(['Sektör verisi', bicimZaman(d.guncelleme)]); }
+  catch(e){ satirlar.push(['Sektör verisi','henüz yok']); }
+  try{ const r = await fetch('/sektor_hisse_veri.json?t='+Date.now()); const d = await r.json(); satirlar.push(['Hisse verisi', bicimZaman(d.guncelleme)]); }
+  catch(e){ satirlar.push(['Hisse verisi','henüz yok']); }
+  kap.innerHTML = satirlar.map(s =>
+    '<div class="as-veri-satir"><span class="kaynak">' + s[0] + '</span><span class="zaman">' + s[1] + '</span></div>').join("") +
+    '<div class="as-veri-satir"><span class="kaynak">Ekonomik takvim (FRED)</span><span class="canli">canlı</span></div>' +
+    '<div class="as-veri-satir"><span class="kaynak">Kripto (Binance)</span><span class="canli">canlı</span></div>';
+}
+
+/* ---- TÜRKİYE MAKRO ---- */
+let TR_VERI = [];
+async function turkiyeCek(){
+  const kap = document.getElementById("tr-icerik");
+  kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
+  try{
+    const res = await fetch('/turkiye_veri.json?t=' + Date.now());
+    if(!res.ok) throw new Error();
+    const veri = await res.json();
+    TR_VERI = veri.veriler || [];
+    try { document.getElementById("tr-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR") + " · TCMB EVDS"; } catch(e){}
+    turkiyeCiz();
+  }catch(e){
+    document.getElementById("tr-guncelleme").textContent = "veri henüz yok";
+    kap.innerHTML = '<div class="durum-kutu">Türkiye verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>turkiye_veri.json</b> oluşur.<br><button class="btn-gnc" onclick="turkiyeCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+  }
+}
+function trBicim(x, birim){
+  if(x === null || x === undefined) return "—";
+  if(birim === "yuzde") return fmtYuzde(x);
+  return x.toLocaleString("tr-TR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function turkiyeCiz(){
+  const kap = document.getElementById("tr-icerik");
+  if(!TR_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Gösterge verisi bulunamadı.</div>'; return; }
+  kap.innerHTML = '<div class="tk-liste">' + TR_VERI.map((v, i) => {
+    const degisim = (v.onceki!=null && v.son!=null) ? (v.son - v.onceki) : null;
+    const yonS = degisim==null ? "flat" : (degisim>0 ? "up" : degisim<0 ? "down" : "flat");
+    const sparkObj = { seri_gecmis: v.gecmis || [], mod: (v.birim==="yuzde"?"level":"level"), birim: v.birim };
+    return '<div class="tk-row" id="trrow-' + i + '">' +
+      '<div class="tk-ana" style="grid-template-columns:1.6fr 90px 90px 20px" onclick="trAc(' + i + ')">' +
+        '<div class="tk-isim">' + v.isim + '</div>' +
+        '<div class="tk-col"><div class="k">Önceki</div><div class="v small">' + trBicim(v.onceki, v.birim) + '</div></div>' +
+        '<div class="tk-col"><div class="k">Son</div><div class="v ' + yonS + '">' + trBicim(v.son, v.birim) + '</div></div>' +
+        '<div class="tk-caret"><i class="bi bi-chevron-down"></i></div>' +
+      '</div>' +
+      '<div class="tk-detay" style="grid-template-columns:1fr 1.4fr">' +
+        '<div class="tk-gecmis"><div class="baslik">Son ' + (v.gecmis?v.gecmis.length:0) + ' dönem</div>' + sparkCiz(sparkObj) + '</div>' +
+        '<div class="tk-yorum"><div class="baslik">Nasıl yorumlanır?</div><div class="tk-yorum-metin">' + v.yorum + '</div>' +
+          '<div class="tk-ai-not"><i class="bi bi-stars"></i> Döneme özel yorum ileride yapay zeka ile eklenecek.</div></div>' +
+      '</div>' +
+    '</div>';
+  }).join("") + '</div>';
+}
+function trAc(i){
+  const row = document.getElementById("trrow-" + i);
+  const acik = row.classList.contains("acik");
+  document.querySelectorAll("#tr-icerik .tk-row.acik").forEach(r => r.classList.remove("acik"));
+  if(!acik) row.classList.add("acik");
+}
+
 /* ---- gorunum gecisi ---- */
-const BASLIK = { sektorler:"BIST Sektörler", takvim:"Ekonomik Takvim" };
+const BASLIK = { anasayfa:"Ana Sayfa", sektorler:"BIST Sektörler", takvim:"Ekonomik Takvim (ABD)", turkiye:"Türkiye Takvimi" };
 document.querySelectorAll(".nav-link-gnc").forEach(link => {
   link.addEventListener("click", () => {
     document.querySelectorAll(".nav-link-gnc").forEach(l => l.classList.remove("active"));
     link.classList.add("active");
     const v = link.dataset.view;
     document.getElementById("view-hisseler").classList.add("hidden");
+    document.getElementById("view-anasayfa").classList.toggle("hidden", v !== "anasayfa");
     document.getElementById("view-sektorler").classList.toggle("hidden", v !== "sektorler");
     document.getElementById("view-takvim").classList.toggle("hidden", v !== "takvim");
+    document.getElementById("view-turkiye").classList.toggle("hidden", v !== "turkiye");
     document.getElementById("topbarTitle").textContent = BASLIK[v];
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebarOverlay").classList.remove("show");
+    if(v === "anasayfa") anaSayfaYukle();
+    if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); }
     if(v === "takvim" && !window._takvimYuklendi){ window._takvimYuklendi = true; takvimCek(); }
+    if(v === "turkiye" && !window._turkiyeYuklendi){ window._turkiyeYuklendi = true; turkiyeCek(); }
   });
 });
 document.getElementById("refreshBtn").addEventListener("click", () => {
   const aktif = document.querySelector(".nav-link-gnc.active").dataset.view;
-  if(aktif === "sektorler") sektorCek(); else takvimCek();
+  if(aktif === "anasayfa") anaSayfaYukle();
+  else if(aktif === "takvim") takvimCek();
+  else sektorCek();
 });
 
 /* ---- tema (localStorage hafizali, panelinle ayni) ---- */
@@ -850,7 +1196,9 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
   overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
 })();
 
-sektorCek();
+// Baslangic: Ana Sayfa + canli saat
+anaSayfaYukle();
+setInterval(saatTik, 1000);
 </script>
 </body>
 </html>
