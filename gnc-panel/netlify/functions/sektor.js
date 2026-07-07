@@ -88,21 +88,27 @@ function getiriHesapla(kapanislar, tarihler) {
   };
 }
 
+function bekle(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
 async function endeksCek(e) {
   const url = 'https://query1.finance.yahoo.com/v8/finance/chart/'
     + e.kod + '.IS?range=1y&interval=1d';
-  try {
-    const data = await getJson(url);
-    const r = data && data.chart && data.chart.result && data.chart.result[0];
-    if (!r) throw new Error('bos');
-    const kapanis = r.indicators.quote[0].close;
-    const tarih = r.timestamp;
-    const g = getiriHesapla(kapanis, tarih);
-    if (!g.son_deger) throw new Error('veri yok');
-    return Object.assign({}, e, g);
-  } catch (err) {
-    return Object.assign({}, e, { son_deger: null, g1: null, h1: null, a1: null, a3: null, ybb: null, hata: true });
+  // 3 defaya kadar dene; Yahoo gecici reddederse bekleyip tekrar sor
+  for (let deneme = 0; deneme < 3; deneme++) {
+    try {
+      const data = await getJson(url);
+      const r = data && data.chart && data.chart.result && data.chart.result[0];
+      if (!r) throw new Error('bos');
+      const kapanis = r.indicators.quote[0].close;
+      const tarih = r.timestamp;
+      const g = getiriHesapla(kapanis, tarih);
+      if (!g.son_deger) throw new Error('veri yok');
+      return Object.assign({}, e, g);
+    } catch (err) {
+      if (deneme < 2) { await bekle(400 * (deneme + 1)); continue; }
+    }
   }
+  return Object.assign({}, e, { son_deger: null, g1: null, h1: null, a1: null, a3: null, ybb: null, hata: true });
 }
 
 exports.handler = async function () {
@@ -113,8 +119,14 @@ exports.handler = async function () {
   };
 
   try {
-    // Tumunu paralel cek
-    const sonuclar = await Promise.all(ENDEKSLER.map(endeksCek));
+    // 4'erli gruplar halinde cek (hepsini ayni anda sorunca Yahoo reddedebiliyor)
+    const sonuclar = [];
+    for (let i = 0; i < ENDEKSLER.length; i += 4) {
+      const grup = ENDEKSLER.slice(i, i + 4);
+      const grupSonuc = await Promise.all(grup.map(endeksCek));
+      sonuclar.push(...grupSonuc);
+      if (i + 4 < ENDEKSLER.length) await bekle(250);
+    }
 
     // XU100'e gore rolatif
     const xu = sonuclar.find((s) => s.kod === 'XU100');
