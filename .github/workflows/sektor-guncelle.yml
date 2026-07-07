@@ -1,0 +1,34 @@
+name: BIST sektor verisi guncelle
+
+on:
+  schedule:
+    # Hafta ici 15:30 UTC = 18:30 Turkiye (BIST kapanisindan sonra)
+    - cron: "30 15 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kutuphaneleri yukle
+        run: pip install isyatirimhisse pandas
+
+      - name: Veriyi cek
+        run: python sektor_cek.py
+
+      - name: Degisiklikleri kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/sektor_verisi.json
+          git commit -m "Sektor verisi guncellendi" || echo "Degisiklik yok"
+          git push
