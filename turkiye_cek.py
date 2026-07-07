@@ -69,15 +69,27 @@ def main():
     except Exception as e:
         print("UFE hata:", e)
 
-    # Politika faizi
+    # Politika faizi (gecmis serisiyle)
     try:
         tc = bp.TCMB()
-        pr = tc.policy_rate
-        if hasattr(pr, "iloc"):
-            seri = pr.iloc[:, -1].tolist() if hasattr(pr, "columns") else pr.tolist()
+        seri = None
+        for metot in ("history", "rates"):
+            try:
+                fn = getattr(tc, metot, None)
+                r = fn() if callable(fn) else fn
+                if r is not None and hasattr(r, "columns"):
+                    say = [c for c in r.columns if str(r[c].dtype).startswith(("float", "int"))]
+                    if say:
+                        seri = r.sort_index()[say[-1]].dropna().tolist()
+                        break
+            except Exception:
+                continue
+        if seri and len(seri) >= 2:
             f = seri_kaydi("Politika Faizi", "yuzde", seri, YORUM["faiz"])
         else:
-            f = {"isim": "Politika Faizi", "birim": "yuzde", "son": round(float(pr), 2), "onceki": None, "gecmis": [], "yorum": YORUM["faiz"]}
+            pr = tc.policy_rate
+            son = float(pr.iloc[-1, -1]) if hasattr(pr, "iloc") else float(pr)
+            f = {"isim": "Politika Faizi", "birim": "yuzde", "son": round(son, 2), "onceki": None, "gecmis": [], "yorum": YORUM["faiz"]}
         if f: veriler.append(f)
         print("Faiz tamam")
     except Exception as e:
