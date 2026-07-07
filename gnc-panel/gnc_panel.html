@@ -235,26 +235,73 @@
   .sk-satir .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .up { color: var(--gnc-success); } .down { color: var(--gnc-danger); } .flat { color: var(--gnc-text-dim); }
 
+  /* Sektor filtre araci */
+  .sektor-arac { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+  .arac-satir { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .arac-satir:last-of-type { margin-bottom: 0; }
+  .arac-lbl { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gnc-text-dim); margin-right: 4px; }
+  .chip { font-size: 12px; font-weight: 700; padding: 7px 13px; border-radius: 100px; border: 1px solid var(--bs-border-color);
+    background: var(--gnc-card-bg-elevated); color: var(--gnc-text-faded); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .chip:hover { border-color: rgba(var(--gnc-accent-rgb), 0.4); color: var(--bs-emphasis-color); }
+  .chip.active { background: rgba(var(--gnc-accent-rgb), 0.12); color: var(--gnc-accent); border-color: rgba(var(--gnc-accent-rgb), 0.35); }
+  .filtre-temizle { border: none; background: none; color: var(--gnc-text-dim); margin-left: auto; }
+  .filtre-temizle:hover { color: var(--gnc-danger); }
+  .arac-not { font-size: 11px; color: var(--gnc-text-faded); line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bs-border-color); }
+  .arac-not b { color: var(--bs-emphasis-color); }
+  .sk-satir.vurgu { margin: 0 -6px; padding: 7px 6px; background: rgba(var(--gnc-accent-rgb), 0.06); border-radius: 6px; }
+  .sk-satir.vurgu .lbl { color: var(--gnc-accent); }
+
   /* Takvim */
-  .tk-liste { display: flex; flex-direction: column; gap: 12px; }
-  .tk-kart {
+  .tk-liste { display: flex; flex-direction: column; gap: 8px; }
+  .tk-row {
     background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
-    border-radius: 12px; padding: 16px 20px;
-    display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 20px; align-items: center;
+    border-radius: 10px; overflow: hidden; transition: border-color 0.12s;
   }
-  .tk-kart .isim { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
-  .tk-kart .seri { font-size: 10px; color: var(--gnc-text-dim); margin-top: 3px; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
-  .tk-col { text-align: right; min-width: 76px; }
-  .tk-col .k { font-size: 9.5px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; }
-  .tk-col .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
-  .tk-col .v.small { font-size: 12.5px; font-weight: 500; color: var(--gnc-text-faded); }
+  .tk-row.acik { border-color: rgba(var(--gnc-accent-rgb), 0.4); }
+  .tk-ana {
+    display: grid; grid-template-columns: 1.6fr auto auto auto 150px 22px;
+    gap: 14px; align-items: center; padding: 12px 16px; cursor: pointer;
+  }
+  .tk-ana:hover { background: var(--gnc-card-bg-elevated); }
+  .tk-isim { font-size: 13.5px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 8px; }
+  .tk-yuksek { font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--gnc-accent); background: rgba(var(--gnc-accent-rgb), 0.12); padding: 2px 7px; border-radius: 5px; }
+  .tk-seri { font-size: 9.5px; color: var(--gnc-text-dim); margin-top: 3px; letter-spacing: 0.3px; }
+  .tk-col { text-align: right; min-width: 62px; }
+  .tk-col .k { font-size: 9px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 3px; }
+  .tk-col .v { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
+  .tk-col .v.small { font-size: 12px; font-weight: 500; color: var(--gnc-text-faded); }
+  .tk-surpriz { text-align: center; }
   .tk-badge {
-    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
-    padding: 6px 12px; border-radius: 100px; white-space: nowrap;
-    background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); border: 1px solid rgba(var(--gnc-accent-rgb), 0.25);
+    display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700;
+    padding: 5px 10px; border-radius: 100px; white-space: nowrap;
   }
-  .tk-badge.gecti { background: var(--gnc-card-bg-elevated); color: var(--gnc-text-dim); border-color: var(--bs-border-color); }
-  .manuel { font-size: 9px; color: var(--gnc-text-dim); font-weight: 700; }
+  .tk-badge.ust { background: rgba(var(--gnc-success-rgb), 0.12); color: var(--gnc-success); border: 1px solid rgba(var(--gnc-success-rgb), 0.3); }
+  .tk-badge.alt { background: rgba(var(--gnc-danger-rgb), 0.12); color: var(--gnc-danger); border: 1px solid rgba(var(--gnc-danger-rgb), 0.3); }
+  .tk-badge.tam { background: var(--gnc-card-bg-elevated); color: var(--gnc-text-dim); border: 1px solid var(--bs-border-color); }
+  .tk-badge.bekle { background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); border: 1px solid rgba(var(--gnc-accent-rgb), 0.25); }
+  .tk-tarih { font-size: 10.5px; color: var(--gnc-text-dim); font-weight: 700; white-space: nowrap; }
+  .tk-tarih.yakin { color: var(--gnc-accent); }
+  .tk-caret { color: var(--gnc-text-dim); font-size: 14px; transition: transform 0.2s; text-align: center; }
+  .tk-row.acik .tk-caret { transform: rotate(180deg); }
+  .manuel { font-size: 8px; color: var(--gnc-text-dim); font-weight: 700; }
+
+  /* Detay panel */
+  .tk-detay { display: none; padding: 0 16px 16px; border-top: 1px solid var(--bs-border-color); }
+  .tk-row.acik .tk-detay { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; padding-top: 16px; }
+  .tk-gecmis .baslik, .tk-yorum .baslik {
+    font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gnc-text-dim); margin-bottom: 10px;
+  }
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 72px; }
+  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .spark-bar.up { background: rgba(var(--gnc-success-rgb), 0.75); }
+  .spark-bar.down { background: rgba(var(--gnc-danger-rgb), 0.75); }
+  .spark-alt { display: flex; gap: 3px; margin-top: 6px; }
+  .spark-alt span { flex: 1; font-size: 8px; color: var(--gnc-text-dim); text-align: center; }
+  .tk-yorum-metin { font-size: 12.5px; line-height: 1.6; color: var(--gnc-text-faded); }
+  .tk-yorum-metin b { color: var(--bs-emphasis-color); font-weight: 700; }
+  .tk-ai-not { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 10px; font-style: italic; }
 
   .durum-kutu {
     text-align: center; padding: 60px 20px; color: var(--gnc-text-dim); font-size: 13px;
@@ -282,8 +329,12 @@
     .content { padding: 22px; }
     .ozet-strip { grid-template-columns: 1fr 1fr; gap: 14px; }
     .ozet-block { border-right: none; padding-right: 0; }
-    .tk-kart { grid-template-columns: 1fr 1fr; gap: 12px; }
-    .tk-col { min-width: 0; text-align: left; }
+    .tk-ana { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tk-surpriz { text-align: left; }
+    .tk-tarih { grid-column: 1 / -1; }
+    .tk-caret { position: absolute; top: 12px; right: 14px; }
+    .tk-row { position: relative; }
+    .tk-row.acik .tk-detay { grid-template-columns: 1fr; }
   }
   @media (max-width: 480px) {
     .topbar { padding: 0 16px; height: 56px; }
@@ -343,6 +394,28 @@
         <b>Resmi BIST sektör endeksleri.</b> Her kutu ilgili sektörün tamamını kapsar; günlük, haftalık ve aylık değişimi gösterir. Veri Yahoo Finance üzerinden en az 15 dk gecikmelidir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
       </div>
       <div id="sektor-ozet"></div>
+
+      <div class="sektor-arac" id="sektor-arac" style="display:none;">
+        <div class="arac-satir">
+          <span class="arac-lbl">Sırala</span>
+          <button class="chip donem-chip active" data-donem="g1">Günlük</button>
+          <button class="chip donem-chip" data-donem="h1">Haftalık</button>
+          <button class="chip donem-chip" data-donem="a1">Aylık</button>
+          <button class="chip" id="yonChip"><i class="bi bi-sort-down"></i> Yüksek→Düşük</button>
+        </div>
+        <div class="arac-satir">
+          <span class="arac-lbl">Filtre</span>
+          <button class="chip filtre-chip" data-f="yukselen">Yükselenler</button>
+          <button class="chip filtre-chip" data-f="dusen">Düşenler</button>
+          <button class="chip filtre-chip" data-f="guclu">Güçlü momentum</button>
+          <button class="chip filtre-chip" data-f="zayif">Zayıf momentum</button>
+          <button class="chip filtre-chip" data-f="yukselise">Yükselişe geçen</button>
+          <button class="chip filtre-chip" data-f="kaybeden">Gücünü kaybeden</button>
+          <button class="chip filtre-temizle" id="filtreTemizle">Temizle</button>
+        </div>
+        <div class="arac-not" id="aracNot"></div>
+      </div>
+
       <div id="sektor-icerik">
         <div class="durum-kutu">Sektör verileri çekiliyor…</div>
       </div>
@@ -355,7 +428,7 @@
         <span class="status-update">FRED · canlı</span>
       </div>
       <div class="page-intro">
-        <b>Son açıklanan</b> ve <b>önceki</b> değerler FRED'den (St. Louis Fed) canlı çekilir. <b>Beklenti</b> ve <b>sonraki açıklama tarihi</b> ücretsiz kaynakta yayınlanmadığı için elle girilir; bu alanları dosya içindeki <b>TAKVIM</b> listesinden düzenleyebilirsin.
+        En çok izlenen ABD makro verileri. <b>Son açıklanan</b> ve <b>önceki</b> değerler FRED'den canlı gelir; <b>beklenti</b> elle girilir (ücretsiz kaynakta yok). Rozet, verinin beklentinin üstünde mi altında mı geldiğini gösterir. Bir satıra <b>tıkla</b>: altında geçmiş değerler ve o verinin nasıl yorumlanacağı açılır.
       </div>
       <div class="tk-liste" id="takvim-icerik">
         <div class="durum-kutu">Veriler çekiliyor…</div>
@@ -382,19 +455,27 @@
    - sonraki: bir sonraki açıklama tarihi (MANUEL, ISO; boş: "")
    ======================================================================= */
 const TAKVIM = [
-  { isim:"Enflasyon (CPI, aylık)",     seri:"CPIAUCSL", mod:"pct",   birim:"yuzde", beklenti:0.3,  sonraki:"2026-07-14T15:30:00+03:00" },
-  { isim:"Çekirdek CPI (aylık)",       seri:"CPILFESL", mod:"pct",   birim:"yuzde", beklenti:0.3,  sonraki:"2026-07-14T15:30:00+03:00" },
-  { isim:"Tarım Dışı İstihdam (NFP)",  seri:"PAYEMS",   mod:"diff",  birim:"bin",   beklenti:165,  sonraki:"2026-08-07T15:30:00+03:00" },
-  { isim:"İşsizlik Oranı",             seri:"UNRATE",   mod:"level", birim:"yuzde", beklenti:4.2,  sonraki:"2026-08-07T15:30:00+03:00" },
-  { isim:"Çekirdek PCE (aylık)",       seri:"PCEPILFE", mod:"pct",   birim:"yuzde", beklenti:0.2,  sonraki:"2026-07-31T15:30:00+03:00" },
-  { isim:"Fed Politika Faizi",         seri:"FEDFUNDS", mod:"level", birim:"yuzde", beklenti:null, sonraki:"" },
-  { isim:"Perakende Satışlar (aylık)", seri:"RSAFS",    mod:"pct",   birim:"yuzde", beklenti:0.4,  sonraki:"2026-07-16T15:30:00+03:00" },
-  { isim:"Sanayi Üretimi (aylık)",     seri:"INDPRO",   mod:"pct",   birim:"yuzde", beklenti:0.1,  sonraki:"2026-07-16T16:15:00+03:00" },
-  { isim:"İşsizlik Maaşı Başvuruları", seri:"ICSA",     mod:"level", birim:"bin",   beklenti:230,  sonraki:"2026-07-09T15:30:00+03:00" },
-  { isim:"Michigan Tüketici Güveni",   seri:"UMCSENT",  mod:"level", birim:"puan",  beklenti:52.0, sonraki:"2026-07-24T17:00:00+03:00" },
+  { isim:"Enflasyon (CPI, aylık)", seri:"CPIAUCSL", mod:"pct", birim:"yuzde", beklenti:0.3, sonraki:"2026-07-14T15:30:00+03:00", yuksek:true,
+    yorum:"Tüketici fiyatlarının bir önceki aya göre değişimi; enflasyonun en yakından izlenen göstergesi. <b>Beklentinin üstünde</b> gelmesi enflasyon baskısının sürdüğünü ve faiz indirimlerinin gecikebileceğini düşündürür. <b>Altında</b> gelmesi enflasyonun soğuduğuna işaret eder ve genelde risk iştahını destekler." },
+  { isim:"Çekirdek CPI (aylık)", seri:"CPILFESL", mod:"pct", birim:"yuzde", beklenti:0.3, sonraki:"2026-07-14T15:30:00+03:00", yuksek:false,
+    yorum:"Gıda ve enerji hariç tüketici enflasyonu; kalıcı (yapışkan) enflasyon eğilimini gösterir. Fed bu veriye manşet CPI'dan daha çok bakar. <b>Üstünde</b> gelmesi enflasyonun inatçı olduğunu, <b>altında</b> gelmesi soğuma sinyalini güçlendirir." },
+  { isim:"Çekirdek PCE (aylık)", seri:"PCEPILFE", mod:"pct", birim:"yuzde", beklenti:0.2, sonraki:"2026-07-31T15:30:00+03:00", yuksek:true,
+    yorum:"Fed'in enflasyon hedefinde baz aldığı asıl gösterge (gıda-enerji hariç). Faiz kararlarını en çok etkileyen enflasyon verisidir. <b>Üstünde</b> gelmesi sıkı para politikası ihtimalini artırır, <b>altında</b> gelmesi indirim beklentisini güçlendirir." },
+  { isim:"Tarım Dışı İstihdam (NFP)", seri:"PAYEMS", mod:"diff", birim:"bin", beklenti:165, sonraki:"2026-08-07T15:30:00+03:00", yuksek:true,
+    yorum:"Tarım dışı istihdamdaki aylık artış (bin kişi); ekonominin gücünü gösteren en önemli işgücü verisi. <b>Çok üstünde</b> gelmesi güçlü ekonomi ama sıkı Fed; <b>çok altında</b> gelmesi yavaşlama endişesi anlamına gelebilir. Piyasa 'ne çok sıcak ne çok soğuk' dengesini sever." },
+  { isim:"İşsizlik Oranı", seri:"UNRATE", mod:"level", birim:"yuzde", beklenti:4.2, sonraki:"2026-08-07T15:30:00+03:00", yuksek:false,
+    yorum:"İşgücündeki işsiz oranı. Yükselmesi işgücü piyasasının soğuduğunu, düşmesi güçlü kaldığını gösterir. <b>Beklentinin üstünde</b> (daha yüksek işsizlik) gelmesi büyüme endişesi, <b>altında</b> gelmesi güçlü istihdam sinyalidir." },
+  { isim:"Fed Politika Faizi", seri:"FEDFUNDS", mod:"level", birim:"yuzde", beklenti:null, sonraki:"", yuksek:true,
+    yorum:"Fed'in belirlediği politika faizi; tüm piyasaların çıpası. Yükselmesi parasal sıkılaşma, düşmesi gevşeme demektir. Faiz beklentileri hisse, tahvil ve kur için ana yön belirleyicidir." },
+  { isim:"Perakende Satışlar (aylık)", seri:"RSAFS", mod:"pct", birim:"yuzde", beklenti:0.4, sonraki:"2026-07-16T15:30:00+03:00", yuksek:false,
+    yorum:"Hane halkı harcamalarının aylık değişimi; iç talebin ve tüketici gücünün göstergesi. <b>Üstünde</b> gelmesi güçlü tüketim ve ekonomi, <b>altında</b> gelmesi talebin zayıfladığına işaret eder." },
+  { isim:"GSYİH Büyüme (çeyreklik)", seri:"A191RL1Q225SBEA", mod:"level", birim:"yuzde", beklenti:2.0, sonraki:"2026-07-30T15:30:00+03:00", yuksek:false,
+    yorum:"Ekonominin çeyreklik yıllıklandırılmış büyüme oranı; genel ekonomik sağlığın ana göstergesi. <b>Üstünde</b> büyüme güç, <b>altında</b> gelmesi yavaşlama veya resesyon endişesi anlamına gelir." },
+  { isim:"İşsizlik Başvuruları (haftalık)", seri:"ICSA", mod:"level", birim:"bin", beklenti:230, sonraki:"2026-07-09T15:30:00+03:00", yuksek:false,
+    yorum:"Haftalık ilk işsizlik maaşı başvuruları; işgücü piyasasının en taze verisi. Yükselmesi işten çıkarmaların arttığını (zayıflık), düşmesi piyasanın güçlü kaldığını gösterir. <b>Beklentinin üstünde</b> gelmesi olumsuz okunur." },
+  { isim:"Michigan Tüketici Güveni", seri:"UMCSENT", mod:"level", birim:"puan", beklenti:52.0, sonraki:"2026-07-24T17:00:00+03:00", yuksek:false,
+    yorum:"Tüketicilerin ekonomiye ve kendi mali durumlarına güveni. Yükselmesi harcama iştahının güçlü, düşmesi tüketicinin temkinli olduğunu gösterir. <b>Üstünde</b> gelmesi olumlu okunur." },
 ];
-
-const DONEM_ETIKET = { g1:"Günlük", h1:"Haftalık", a1:"Aylık" };
 
 function fmtYuzde(x){
   if(x === null || x === undefined || isNaN(x)) return "—";
@@ -414,10 +495,33 @@ function ustRenk(x){
 }
 
 /* ---- BIST SEKTÖRLER ---- */
+const DONEM_ETIKET = { g1:"Günlük", h1:"Haftalık", a1:"Aylık" };
+let SEKTOR_LISTE = [];
+let siralaDonem = "g1", siralaYon = "desc";
+const aktifFiltreler = new Set();
+
+const FILTRELER = {
+  yukselen:  (s) => s[siralaDonem] > 0,
+  dusen:     (s) => s[siralaDonem] < 0,
+  guclu:     (s) => s.g1 > 0 && s.h1 > 0 && s.a1 > 0,
+  zayif:     (s) => s.g1 < 0 && s.h1 < 0 && s.a1 < 0,
+  yukselise: (s) => s.g1 > 0 && s.h1 > 0 && s.a1 < 0,
+  kaybeden:  (s) => s.g1 < 0 && s.h1 < 0 && s.a1 > 0,
+};
+const FILTRE_ACIKLAMA = {
+  yukselen:  "seçili dönemde artıda olanlar",
+  dusen:     "seçili dönemde ekside olanlar",
+  guclu:     "günlük, haftalık ve aylık üçü de artıda (güçlü trend)",
+  zayif:     "üçü de ekside (zayıf trend)",
+  yukselise: "aylık hâlâ geride ama günlük+haftalık artıda; erken rotasyon adayı olabilir",
+  kaybeden:  "aylık artıda ama günlük+haftalık ekside; gücünü kaybediyor olabilir",
+};
+
 async function sektorCek(){
   const kap = document.getElementById("sektor-icerik");
   kap.innerHTML = '<div class="durum-kutu">Sektör verileri çekiliyor…</div>';
   document.getElementById("sektor-ozet").innerHTML = "";
+  document.getElementById("sektor-arac").style.display = "none";
   try{
     const res = await fetch('/sektor_verisi.json?t=' + Date.now());
     if(!res.ok) throw new Error();
@@ -427,15 +531,17 @@ async function sektorCek(){
     kap.innerHTML = '<div class="durum-kutu">Sektör verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>sektor_verisi.json</b> oluşur ve burada görünür.<br><button class="btn-gnc" onclick="sektorCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
   }
 }
+
 function sektorCiz(veri){
   const g = new Date(veri.guncelleme);
-  const sektorler = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null).sort((a,b) => b.g1 - a.g1);
+  SEKTOR_LISTE = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null);
   const xu = veri.endeksler.find(e => e.kod === "XU100");
   document.getElementById("sektor-guncelleme").textContent =
-    g.toLocaleString("tr-TR") + " · " + sektorler.length + " sektör";
+    g.toLocaleString("tr-TR") + " · " + SEKTOR_LISTE.length + " sektör";
 
-  const enIyi = sektorler[0], enKotu = sektorler[sektorler.length-1];
-  const yukselen = sektorler.filter(s=>s.g1>0).length, dusen = sektorler.filter(s=>s.g1<0).length;
+  const gunluk = [...SEKTOR_LISTE].sort((a,b) => b.g1 - a.g1);
+  const enIyi = gunluk[0], enKotu = gunluk[gunluk.length-1];
+  const yukselen = SEKTOR_LISTE.filter(s=>s.g1>0).length, dusen = SEKTOR_LISTE.filter(s=>s.g1<0).length;
   document.getElementById("sektor-ozet").innerHTML =
     '<div class="ozet-strip">' +
     ozetBlock("XU100 (Günlük)", xu ? fmtYuzde(xu.g1) : "—", xu && xu.son_deger!=null ? xu.son_deger.toLocaleString("tr-TR") : "—", xu?yon(xu.g1):"") +
@@ -444,17 +550,69 @@ function sektorCiz(veri){
     ozetBlock("Yükselen / Düşen", yukselen + " / " + dusen, "Günlük bazda", "flat") +
     '</div>';
 
-  document.getElementById("sektor-icerik").innerHTML =
-    '<div class="kutu-izgara">' + sektorler.map(s =>
+  document.getElementById("sektor-arac").style.display = "block";
+  sektorRender();
+}
+
+function sektorRender(){
+  // filtre (birden fazla secilirse birlesim/OR) + siralama
+  let liste = SEKTOR_LISTE.filter(s =>
+    aktifFiltreler.size === 0 || [...aktifFiltreler].some(f => FILTRELER[f](s))
+  );
+  liste.sort((a,b) => siralaYon === "desc" ? b[siralaDonem] - a[siralaDonem] : a[siralaDonem] - b[siralaDonem]);
+
+  // not metni
+  const donemAd = DONEM_ETIKET[siralaDonem];
+  const yonAd = siralaYon === "desc" ? "yüksekten düşüğe" : "düşükten yükseğe";
+  let not = "<b>" + donemAd + "</b> getiriye göre " + yonAd + " sıralı · " + liste.length + " sektör";
+  if(aktifFiltreler.size){
+    not += ". Filtre: " + [...aktifFiltreler].map(f => FILTRE_ACIKLAMA[f]).join("; ") + ".";
+  }
+  not += "<br><span style='color:var(--gnc-text-dim)'>Bu bir tarama aracıdır, alım-satım sinyali değildir. Sektörleri kendi kriterlerine göre süzmene yardımcı olur.</span>";
+  document.getElementById("aracNot").innerHTML = not;
+
+  const kap = document.getElementById("sektor-icerik");
+  if(!liste.length){
+    kap.innerHTML = '<div class="durum-kutu">Bu filtreye uyan sektör yok. Farklı bir filtre dene veya <b>Temizle</b>ye bas.</div>';
+    return;
+  }
+  kap.innerHTML =
+    '<div class="kutu-izgara">' + liste.map(s =>
       '<div class="sektor-kutu">' +
-        '<div class="ust-cizgi" style="background:' + ustRenk(s.g1) + '"></div>' +
+        '<div class="ust-cizgi" style="background:' + ustRenk(s[siralaDonem]) + '"></div>' +
         '<div class="kod">' + s.kod + '</div>' +
         '<div class="ad">' + s.ad + '</div>' +
         ["g1","h1","a1"].map(d =>
-          '<div class="sk-satir"><span class="lbl">' + DONEM_ETIKET[d] + '</span>' +
+          '<div class="sk-satir' + (d===siralaDonem?' vurgu':'') + '"><span class="lbl">' + DONEM_ETIKET[d] + '</span>' +
           '<span class="val ' + yon(s[d]) + '">' + fmtYuzde(s[d]) + '</span></div>').join("") +
       '</div>').join("") + '</div>';
 }
+
+/* filtre kontrolleri */
+document.querySelectorAll(".donem-chip").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll(".donem-chip").forEach(x => x.classList.remove("active"));
+  c.classList.add("active");
+  siralaDonem = c.dataset.donem;
+  sektorRender();
+}));
+document.getElementById("yonChip").addEventListener("click", () => {
+  siralaYon = siralaYon === "desc" ? "asc" : "desc";
+  document.getElementById("yonChip").innerHTML = siralaYon === "desc"
+    ? '<i class="bi bi-sort-down"></i> Yüksek→Düşük'
+    : '<i class="bi bi-sort-up"></i> Düşük→Yüksek';
+  sektorRender();
+});
+document.querySelectorAll(".filtre-chip").forEach(c => c.addEventListener("click", () => {
+  const f = c.dataset.f;
+  if(aktifFiltreler.has(f)){ aktifFiltreler.delete(f); c.classList.remove("active"); }
+  else { aktifFiltreler.add(f); c.classList.add("active"); }
+  sektorRender();
+}));
+document.getElementById("filtreTemizle").addEventListener("click", () => {
+  aktifFiltreler.clear();
+  document.querySelectorAll(".filtre-chip").forEach(x => x.classList.remove("active"));
+  sektorRender();
+});
 function ozetBlock(et, dg, alt, y){
   return '<div class="ozet-block"><div class="et">' + et + '</div>' +
          '<div class="dg ' + y + '" style="color:' + (y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)") + '">' + dg + '</div>' +
@@ -462,56 +620,115 @@ function ozetBlock(et, dg, alt, y){
 }
 
 /* ---- EKONOMİK TAKVİM ---- */
+let TAKVIM_SONUC = [];
+
 async function takvimCek(){
   const kap = document.getElementById("takvim-icerik");
   kap.innerHTML = '<div class="durum-kutu">Veriler çekiliyor…</div>';
   try{
-    const sonuclar = await Promise.all(TAKVIM.map(async (ev) => {
+    TAKVIM_SONUC = await Promise.all(TAKVIM.map(async (ev) => {
       try{
         const res = await fetch('/.netlify/functions/fred?series_id=' + encodeURIComponent(ev.seri));
         const data = await res.json();
         const obs = (data.observations || []).map(o => parseFloat(o.value)).filter(v => !isNaN(v));
-        const tarihler = (data.observations || []).map(o => o.date);
-        return Object.assign({}, ev, hesapla(ev.mod, obs), { veriTarih: tarihler[0] || null });
-      }catch(e){ return Object.assign({}, ev, { son:null, onceki:null, veriTarih:null }); }
+        return Object.assign({}, ev, hesapla(ev.mod, obs));
+      }catch(e){ return Object.assign({}, ev, { son:null, onceki:null, seri_gecmis:[] }); }
     }));
-    takvimCiz(sonuclar);
+    // sonraki tarihe gore sirala (en yakin ustte)
+    TAKVIM_SONUC.sort((a,b) => (a.sonraki?Date.parse(a.sonraki):Infinity) - (b.sonraki?Date.parse(b.sonraki):Infinity));
+    takvimCiz();
   }catch(e){
     kap.innerHTML = '<div class="durum-kutu">Takvim verisi alınamadı.<br>Bu panel Netlify\'daki <b>fred</b> fonksiyonuna bağlıdır.<br><button class="btn-gnc" onclick="takvimCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
   }
 }
+
+// obs: en yeni -> en eski. Moda gore son/onceki + gecmis seri (kronolojik, en fazla 12) uretir.
 function hesapla(mod, obs){
-  if(obs.length < 2) return { son:null, onceki:null };
-  if(mod === "level") return { son:obs[0], onceki:obs[1] };
-  if(mod === "diff")  return { son:obs[0]-obs[1], onceki:(obs.length>2?obs[1]-obs[2]:null) };
-  if(mod === "pct")   return { son:(obs[0]/obs[1]-1)*100, onceki:(obs.length>2?(obs[1]/obs[2]-1)*100:null) };
-  return { son:null, onceki:null };
+  if(obs.length < 2) return { son:null, onceki:null, seri_gecmis:[] };
+  let seri;
+  if(mod === "level"){
+    seri = obs.slice();                          // degerin kendisi
+  } else if(mod === "diff"){
+    seri = obs.slice(0,-1).map((v,i) => v - obs[i+1]);   // ardisik fark
+  } else {                                        // pct
+    seri = obs.slice(0,-1).map((v,i) => (v/obs[i+1]-1)*100);
+  }
+  const son = seri[0];
+  const onceki = seri.length > 1 ? seri[1] : null;
+  const gecmis = seri.slice(0, 12).reverse();     // kronolojik (eski->yeni)
+  return { son:son, onceki:onceki, seri_gecmis:gecmis };
 }
-function takvimCiz(liste){
+
+function surpriz(ev){
+  if(ev.beklenti == null || ev.son == null) return null;
+  const esik = ev.mod === "bin" || ev.birim === "bin" ? 1 : 0.01;
+  if(ev.son > ev.beklenti + esik) return "ust";
+  if(ev.son < ev.beklenti - esik) return "alt";
+  return "tam";
+}
+
+function takvimCiz(){
   const simdi = Date.now();
-  liste.sort((a,b) => (a.sonraki?Date.parse(a.sonraki):Infinity) - (b.sonraki?Date.parse(b.sonraki):Infinity));
-  document.getElementById("takvim-icerik").innerHTML = liste.map(ev => {
+  document.getElementById("takvim-icerik").innerHTML = TAKVIM_SONUC.map((ev, i) => {
     const yuzdeMod = ev.mod === "pct";
-    const sonStr    = yuzdeMod ? fmtYuzde(ev.son)    : fmtDeger(ev.son, ev.birim);
-    const oncekiStr = yuzdeMod ? fmtYuzde(ev.onceki) : fmtDeger(ev.onceki, ev.birim);
-    const beklStr   = ev.beklenti!=null ? (yuzdeMod?fmtYuzde(ev.beklenti):fmtDeger(ev.beklenti,ev.birim)) : "—";
-    let badge = '<span class="tk-badge gecti">tarih girilmedi</span>';
+    const bicim = (x) => yuzdeMod ? fmtYuzde(x) : fmtDeger(x, ev.birim);
+    const sp = surpriz(ev);
+    let spBadge = '<span class="tk-badge tam">beklenti yok</span>';
+    if(sp === "ust") spBadge = '<span class="tk-badge ust"><i class="bi bi-arrow-up"></i> Üstünde</span>';
+    else if(sp === "alt") spBadge = '<span class="tk-badge alt"><i class="bi bi-arrow-down"></i> Altında</span>';
+    else if(sp === "tam") spBadge = '<span class="tk-badge tam">Beklenti gibi</span>';
+
+    let tarih = '<span class="tk-tarih">tarih yok</span>';
     if(ev.sonraki){
       const fark = Date.parse(ev.sonraki) - simdi;
       if(fark > 0){
         const gun = Math.floor(fark/86400000), saat = Math.floor((fark%86400000)/3600000);
-        badge = '<span class="tk-badge"><i class="bi bi-clock"></i> ' + (gun>0?gun+" gün ":"") + saat + " saat</span>";
-      } else { badge = '<span class="tk-badge gecti">açıklandı</span>'; }
+        tarih = '<span class="tk-tarih' + (gun<3?' yakin':'') + '"><i class="bi bi-clock"></i> ' + (gun>0?gun+" gün ":"") + saat + " saat</span>";
+      } else { tarih = '<span class="tk-tarih">açıklandı</span>'; }
     }
-    return '<div class="tk-kart">' +
-      '<div><div class="isim">' + ev.isim + '</div>' +
-      '<div class="seri">FRED: ' + ev.seri + (ev.veriTarih?" · veri: "+ev.veriTarih:"") + '</div></div>' +
-      '<div class="tk-col"><div class="k">Önceki</div><div class="v small">' + oncekiStr + '</div></div>' +
-      '<div class="tk-col"><div class="k">Beklenti <span class="manuel">·manuel</span></div><div class="v small">' + beklStr + '</div></div>' +
-      '<div class="tk-col"><div class="k">Son açıklanan</div><div class="v ' + (yuzdeMod?yon(ev.son):"") + '">' + sonStr + '</div></div>' +
-      '<div class="tk-col">' + badge + '</div>' +
+
+    return '<div class="tk-row" id="tkrow-' + i + '">' +
+      '<div class="tk-ana" onclick="tkAc(' + i + ')">' +
+        '<div><div class="tk-isim">' + ev.isim + (ev.yuksek?'<span class="tk-yuksek">Yüksek etki</span>':'') + '</div>' +
+        '<div class="tk-seri">FRED: ' + ev.seri + '</div></div>' +
+        '<div class="tk-col"><div class="k">Önceki</div><div class="v small">' + bicim(ev.onceki) + '</div></div>' +
+        '<div class="tk-col"><div class="k">Beklenti <span class="manuel">·el</span></div><div class="v small">' + (ev.beklenti!=null?bicim(ev.beklenti):"—") + '</div></div>' +
+        '<div class="tk-col"><div class="k">Açıklanan</div><div class="v">' + bicim(ev.son) + '</div></div>' +
+        '<div class="tk-surpriz">' + spBadge + '</div>' +
+        '<div>' + tarih + '</div>' +
+        '<div class="tk-caret"><i class="bi bi-chevron-down"></i></div>' +
+      '</div>' +
+      '<div class="tk-detay">' +
+        '<div class="tk-gecmis"><div class="baslik">Son ' + ev.seri_gecmis.length + ' dönem</div>' + sparkCiz(ev) + '</div>' +
+        '<div class="tk-yorum"><div class="baslik">Nasıl yorumlanır?</div>' +
+          '<div class="tk-yorum-metin">' + ev.yorum + '</div>' +
+          '<div class="tk-ai-not"><i class="bi bi-stars"></i> Döneme özel yorum ileride yapay zeka ile eklenecek.</div>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   }).join("");
+}
+
+function sparkCiz(ev){
+  const g = ev.seri_gecmis || [];
+  if(g.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);">Yeterli geçmiş veri yok.</div>';
+  const min = Math.min(...g), max = Math.max(...g), aralik = (max - min) || 1;
+  const bar = g.map((v, i) => {
+    const yuk = 8 + ((v - min) / aralik) * 60;
+    const yon = i === 0 ? (g[1] >= v ? "down" : "up") : (v >= g[i-1] ? "up" : "down");
+    const etiket = ev.mod === "pct" ? fmtYuzde(v) : fmtDeger(v, ev.birim);
+    return '<div class="spark-bar ' + yon + '" style="height:' + yuk + 'px" title="' + etiket + '"></div>';
+  }).join("");
+  const sonEtiket = ev.mod === "pct" ? fmtYuzde(g[g.length-1]) : fmtDeger(g[g.length-1], ev.birim);
+  const ilkEtiket = ev.mod === "pct" ? fmtYuzde(g[0]) : fmtDeger(g[0], ev.birim);
+  return '<div class="spark">' + bar + '</div><div class="spark-alt"><span style="text-align:left">' + ilkEtiket + '</span><span style="text-align:right">' + sonEtiket + '</span></div>';
+}
+
+function tkAc(i){
+  const row = document.getElementById("tkrow-" + i);
+  const acik = row.classList.contains("acik");
+  document.querySelectorAll(".tk-row.acik").forEach(r => r.classList.remove("acik"));
+  if(!acik) row.classList.add("acik");
 }
 
 /* ---- gorunum gecisi ---- */
