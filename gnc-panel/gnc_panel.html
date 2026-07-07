@@ -235,6 +235,19 @@
   .sk-satir .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .up { color: var(--gnc-success); } .down { color: var(--gnc-danger); } .flat { color: var(--gnc-text-dim); }
 
+  .sektor-kutu { cursor: pointer; }
+  .sektor-kutu .tikla { position: absolute; top: 12px; right: 12px; font-size: 12px; color: var(--gnc-text-dim); opacity: 0; transition: opacity .12s; }
+  .sektor-kutu:hover .tikla { opacity: 1; color: var(--gnc-accent); }
+  .geri-btn { background: none; border: 1px solid var(--bs-border-color); color: var(--bs-body-color); width: 30px; height: 30px; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; vertical-align: middle; }
+  .geri-btn:hover { border-color: var(--gnc-accent); color: var(--gnc-accent); }
+  .hisse-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .hisse-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 14px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: border-color .12s, transform .12s; }
+  .hisse-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.45); transform: translateY(-1px); }
+  .hisse-kart .kod { font-size: 15px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.4px; }
+  .hisse-kart .ad { font-size: 11px; color: var(--gnc-text-dim); margin-top: 2px; }
+  .hisse-kart .ok { color: var(--gnc-text-dim); font-size: 13px; }
+  .hisse-kart:hover .ok { color: var(--gnc-accent); }
+
   /* Sektor filtre araci */
   .sektor-arac { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
   .arac-satir { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -421,6 +434,18 @@
       </div>
     </section>
 
+    <!-- ============ SEKTÖR HİSSELERİ ============ -->
+    <section id="view-hisseler" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><button class="geri-btn" onclick="hisseGeri()"><i class="bi bi-arrow-left"></i></button> <span id="hisse-baslik">Sektör</span></h2>
+        <span class="status-update" id="hisse-adet"></span>
+      </div>
+      <div class="page-intro" id="hisse-intro">
+        Bu sektördeki hisseler. Hisseye tıklayınca finansalları (bilanço, temel oranlar) ayrı sayfada gösterilecek; o modül yakında eklenecek. Liste şimdilik BIST 100 üyeleridir.
+      </div>
+      <div id="hisse-icerik"></div>
+    </section>
+
     <!-- ============ EKONOMİK TAKVİM ============ -->
     <section id="view-takvim" class="hidden">
       <div class="section-head">
@@ -578,8 +603,9 @@ function sektorRender(){
   }
   kap.innerHTML =
     '<div class="kutu-izgara">' + liste.map(s =>
-      '<div class="sektor-kutu">' +
+      '<div class="sektor-kutu" onclick="sektorHisseAc(\'' + s.kod + '\',\'' + s.ad + '\')">' +
         '<div class="ust-cizgi" style="background:' + ustRenk(s[siralaDonem]) + '"></div>' +
+        '<span class="tikla"><i class="bi bi-box-arrow-in-right"></i></span>' +
         '<div class="kod">' + s.kod + '</div>' +
         '<div class="ad">' + s.ad + '</div>' +
         ["g1","h1","a1"].map(d =>
@@ -617,6 +643,57 @@ function ozetBlock(et, dg, alt, y){
   return '<div class="ozet-block"><div class="et">' + et + '</div>' +
          '<div class="dg ' + y + '" style="color:' + (y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)") + '">' + dg + '</div>' +
          '<div class="alt">' + alt + '</div></div>';
+}
+
+/* ---- SEKTÖR HİSSELERİ ---- */
+let HISSE_MAP = null;
+
+async function hisseMapYukle(){
+  if(HISSE_MAP) return HISSE_MAP;
+  try{
+    const res = await fetch('/sektor_hisseler.json?t=' + Date.now());
+    const data = await res.json();
+    HISSE_MAP = data.hisseler || {};
+  }catch(e){ HISSE_MAP = {}; }
+  return HISSE_MAP;
+}
+
+async function sektorHisseAc(kod, ad){
+  document.getElementById("view-sektorler").classList.add("hidden");
+  document.getElementById("view-takvim").classList.add("hidden");
+  document.getElementById("view-hisseler").classList.remove("hidden");
+  document.getElementById("topbarTitle").textContent = kod + " · Hisseler";
+  document.getElementById("hisse-baslik").textContent = kod + " · " + ad;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const kap = document.getElementById("hisse-icerik");
+  kap.innerHTML = '<div class="durum-kutu">Hisseler yükleniyor…</div>';
+  const map = await hisseMapYukle();
+  const hisseler = map[kod] || [];
+  document.getElementById("hisse-adet").textContent = hisseler.length + " hisse";
+
+  if(!hisseler.length){
+    kap.innerHTML = '<div class="durum-kutu">Bu sektörün listesi henüz eklenmedi.<br>Şu an liste BIST 100 üyeleriyle sınırlı; tam liste sonra genişletilecek.</div>';
+    return;
+  }
+  kap.innerHTML = '<div class="hisse-izgara">' + hisseler.map(h =>
+    '<div class="hisse-kart" onclick="hisseDetay(\'' + h.kod + '\',\'' + (h.ad||"").replace(/'/g,"") + '\')">' +
+      '<div><div class="kod">' + h.kod + '</div><div class="ad">' + (h.ad||"") + '</div></div>' +
+      '<div class="ok"><i class="bi bi-chevron-right"></i></div>' +
+    '</div>').join("") + '</div>';
+}
+
+function hisseDetay(kod, ad){
+  // Faz 2: hisse finansal sayfasi. Simdilik yer tutucu.
+  alert(kod + " (" + ad + ")\n\nFinansallar (bilanço, temel oranlar) modülü yakında eklenecek. Veri kaynağı: İş Yatırım.");
+}
+
+function hisseGeri(){
+  document.getElementById("view-hisseler").classList.add("hidden");
+  document.getElementById("view-sektorler").classList.remove("hidden");
+  document.getElementById("topbarTitle").textContent = "BIST Sektörler";
+  document.querySelector('.nav-link-gnc[data-view="sektorler"]').classList.add("active");
+  document.querySelector('.nav-link-gnc[data-view="takvim"]').classList.remove("active");
 }
 
 /* ---- EKONOMİK TAKVİM ---- */
@@ -738,6 +815,7 @@ document.querySelectorAll(".nav-link-gnc").forEach(link => {
     document.querySelectorAll(".nav-link-gnc").forEach(l => l.classList.remove("active"));
     link.classList.add("active");
     const v = link.dataset.view;
+    document.getElementById("view-hisseler").classList.add("hidden");
     document.getElementById("view-sektorler").classList.toggle("hidden", v !== "sektorler");
     document.getElementById("view-takvim").classList.toggle("hidden", v !== "takvim");
     document.getElementById("topbarTitle").textContent = BASLIK[v];
