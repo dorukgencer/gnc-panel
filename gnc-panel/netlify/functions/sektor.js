@@ -2,11 +2,13 @@
 // Yahoo Finance'e giden istekler CORS'a takilmaz. Tum BIST sektor endekslerini
 // (XBANK, XKMYA, XELKT ...) ve XU100'u ceker, her biri icin 1G/1H/1A/3A/Yilbasi
 // getirilerini ve XU100'e gore rolatif performansi hesaplayip tek JSON doner.
-// Not: Her endeks ilgili sektorun TAMAMINI kapsar (resmi BIST endeksi).
+//
+// ONEMLI: Yahoo son donemde sunucu isteklerinde cerez + crumb (kimlik anahtari)
+// istiyor. Fonksiyon once bunlari alir, sonra tum istekleri bunlarla yapar.
 
 const https = require('https');
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
-// Takip edilen endeksler. tip: referans / ana_grup / sektor
 const ENDEKSLER = [
   { kod: 'XU100', ad: 'BIST 100', tip: 'referans' },
   { kod: 'XUSIN', ad: 'Sinai', tip: 'ana_grup' },
@@ -37,22 +39,39 @@ const ENDEKSLER = [
   { kod: 'XSPOR', ad: 'Spor', tip: 'sektor' },
 ];
 
-function getJson(url) {
+function bekle(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+// Ham GET: statusCode + headers + body doner, 2xx olmasa da reject etmez
+function rawGet(url, ekHeaders) {
   return new Promise((resolve, reject) => {
-    const opts = { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GncInsightBot/1.0)' } };
+    const opts = { headers: Object.assign({ 'User-Agent': UA, 'Accept': '*/*' }, ekHeaders || {}) };
     https.get(url, opts, (res) => {
       let body = '';
-      res.on('data', (chunk) => (body += chunk));
-      res.on('end', () => {
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          reject(new Error('Yahoo HTTP ' + res.statusCode));
-          return;
-        }
-        try { resolve(JSON.parse(body)); }
-        catch (e) { reject(new Error('Yahoo yaniti JSON degil')); }
-      });
-    }).on('error', (err) => reject(err));
+      res.on('data', (c) => (body += c));
+      res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, body }));
+    }).on('error', reject);
   });
+}
+
+// Cerez + crumb al (bir kez)
+async function kimlikAl() {
+  let cookie = '';
+  try {
+    const r = await rawGet('https://fc.yahoo.com/');
+    const sc = r.headers['set-cookie'];
+    if (sc && sc.length) cookie = sc.map((c) => c.split(';')[0]).join('; ');
+  } catch (e) { /* cerez alinamadi, crumbsuz denenecek */ }
+
+  let crumb = '';
+  try {
+    const r2 = await rawGet('https://query1.finance.yahoo.com/v1/test/getcrumb',
+      cookie ? { Cookie: cookie } : {});
+    if (r2.statusCode === 200 && r2.body && r2.body.indexOf('<') === -1) {
+      crumb = r2.body.trim();
+    }
+  } catch (e) { /* crumb alinamadi */ }
+
+  return { cookie, crumb };
 }
 
 function yuzde(son, onceki) {
@@ -60,7 +79,6 @@ function yuzde(son, onceki) {
   return Math.round((son / onceki - 1) * 1000) / 10;
 }
 
-// Kapanis serisinden getirileri hesaplar
 function getiriHesapla(kapanislar, tarihler) {
   const c = [];
   const t = [];
@@ -71,7 +89,6 @@ function getiriHesapla(kapanislar, tarihler) {
   const son = c[c.length - 1];
   const geri = (n) => c.length > n ? c[c.length - 1 - n] : null;
 
-  // Yilbasindan bu yana: bu yilin ilk kapanisi
   const sonYil = new Date(t[t.length - 1] * 1000).getUTCFullYear();
   let ilkBuYil = null;
   for (let i = 0; i < t.length; i++) {
@@ -88,19 +105,21 @@ function getiriHesapla(kapanislar, tarihler) {
   };
 }
 
-function bekle(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-async function endeksCek(e) {
-  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+async function endeksCek(e, kimlik) {
+  let url = 'https://query1.finance.yahoo.com/v8/finance/chart/'
     + e.kod + '.IS?range=1y&interval=1d';
-  // 3 defaya kadar dene; Yahoo gecici reddederse bekleyip tekrar sor
+  if (kimlik.crumb) url += '&crumb=' + encodeURIComponent(kimlik.crumb);
+  const headers = kimlik.cookie ? { Cookie: kimlik.cookie } : {};
+
   for (let deneme = 0; deneme < 3; deneme++) {
     try {
-      const data = await getJson(url);
-      const r = data && data.chart && data.chart.result && data.chart.result[0];
-      if (!r) throw new Error('bos');
-      const kapanis = r.indicators.quote[0].close;
-      const tarih = r.timestamp;
+      const r = await rawGet(url, headers);
+      if (r.statusCode < 200 || r.statusCode >= 300) throw new Error('HTTP ' + r.statusCode);
+      const data = JSON.parse(r.body);
+      const res = data && data.chart && data.chart.result && data.chart.result[0];
+      if (!res) throw new Error('bos');
+      const kapanis = res.indicators.quote[0].close;
+      const tarih = res.timestamp;
       const g = getiriHesapla(kapanis, tarih);
       if (!g.son_deger) throw new Error('veri yok');
       return Object.assign({}, e, g);
@@ -115,20 +134,21 @@ exports.handler = async function () {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=900', // 15 dk tarayici/CDN onbellegi
+    'Cache-Control': 'public, max-age=900',
   };
 
   try {
-    // 4'erli gruplar halinde cek (hepsini ayni anda sorunca Yahoo reddedebiliyor)
+    const kimlik = await kimlikAl();
+
+    // 4'erli gruplar halinde cek
     const sonuclar = [];
     for (let i = 0; i < ENDEKSLER.length; i += 4) {
       const grup = ENDEKSLER.slice(i, i + 4);
-      const grupSonuc = await Promise.all(grup.map(endeksCek));
+      const grupSonuc = await Promise.all(grup.map((e) => endeksCek(e, kimlik)));
       sonuclar.push(...grupSonuc);
       if (i + 4 < ENDEKSLER.length) await bekle(250);
     }
 
-    // XU100'e gore rolatif
     const xu = sonuclar.find((s) => s.kod === 'XU100');
     const donemler = ['g1', 'h1', 'a1', 'a3', 'ybb'];
     for (const s of sonuclar) {
@@ -146,6 +166,7 @@ exports.handler = async function () {
       headers,
       body: JSON.stringify({
         guncelleme: new Date().toISOString(),
+        crumb_var: !!kimlik.crumb,
         endeksler: sonuclar,
       }),
     };
