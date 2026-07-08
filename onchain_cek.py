@@ -28,8 +28,10 @@ def cek():
     })
     satirlar = []
     url = BASE + "?" + q
+    basliklar = {"User-Agent": "Mozilla/5.0 (compatible; GNCInsightBot/1.0)", "Accept": "application/json"}
     for _ in range(3):  # sayfalama (gerekirse)
-        with urllib.request.urlopen(url, timeout=30) as r:
+        req = urllib.request.Request(url, headers=basliklar)
+        with urllib.request.urlopen(req, timeout=30) as r:
             data = json.loads(r.read().decode("utf-8"))
         satirlar.extend(data.get("data", []))
         tok = data.get("next_page_token")
