@@ -235,6 +235,25 @@
   .sk-satir .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .up { color: var(--gnc-success); } .down { color: var(--gnc-danger); } .flat { color: var(--gnc-text-dim); }
 
+  /* Hisse liste + finansal */
+  .hl-arama { display: flex; align-items: center; gap: 10px; background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+  .hl-arama i { color: var(--gnc-text-dim); }
+  .hl-arama input { flex: 1; background: none; border: none; outline: none; color: var(--bs-body-color); font-size: 14px; font-family: inherit; }
+  .hl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .hl-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 9px; padding: 12px 14px; cursor: pointer; transition: border-color .12s, transform .12s; }
+  .hl-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.45); transform: translateY(-1px); }
+  .hl-kart .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
+  .hl-kart .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fin-tablo-sar { overflow-x: auto; background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; }
+  .fin-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .fin-tablo th, .fin-tablo td { padding: 10px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--bs-border-color); font-variant-numeric: tabular-nums; }
+  .fin-tablo th { font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--gnc-text-dim); position: sticky; top: 0; background: var(--gnc-card-bg-elevated); }
+  .fin-tablo td.kalem, .fin-tablo th.kalem { text-align: left; font-weight: 600; color: var(--bs-emphasis-color); position: sticky; left: 0; background: var(--gnc-card-bg); min-width: 200px; }
+  .fin-tablo tr:hover td { background: var(--gnc-card-bg-elevated); }
+  .fin-tablo td { color: var(--gnc-text-faded); }
+  .fin-grup { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-accent); padding: 14px 14px 6px; }
+  .hd-not { font-size: 11.5px; color: var(--gnc-text-dim); margin-top: 12px; line-height: 1.6; }
+
   /* Ana Sayfa */
   .topbar-saat { font-size: 13px; font-weight: 700; color: var(--gnc-text-faded); font-variant-numeric: tabular-nums; letter-spacing: 0.5px; margin-right: 4px; }
   @media (max-width: 640px){ .topbar-saat { display: none; } }
@@ -434,6 +453,143 @@
     .ozet-block:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
     .kutu-izgara { grid-template-columns: 1fr 1fr; gap: 10px; }
   }
+  /* On-Chain */
+  .oc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .oc-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 14px; padding: 18px 20px; }
+  .oc-ust { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .oc-isim { font-size: 13.5px; font-weight: 700; color: var(--bs-emphasis-color); }
+  .oc-deger { font-size: 24px; font-weight: 800; color: var(--gnc-accent); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+  .oc-grafik { margin: 6px 0 12px; }
+  .oc-grafik svg { width: 100%; height: 90px; display: block; }
+  .oc-cizgi { fill: none; stroke: var(--gnc-accent); stroke-width: 2; }
+  .oc-alan { fill: rgba(var(--gnc-accent-rgb), 0.10); stroke: none; }
+  .oc-nokta { fill: var(--gnc-accent); }
+  .oc-eksen { font-size: 9px; fill: var(--gnc-text-dim); }
+  .oc-yorum { font-size: 12px; line-height: 1.55; color: var(--gnc-text-faded); margin-bottom: 12px; }
+  .oc-link { font-size: 11.5px; font-weight: 700; color: var(--gnc-accent); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+  .oc-link:hover { text-decoration: underline; }
+  .oc-derin { margin-top: 20px; }
+  .oc-derin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .oc-derin-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 14px 16px; display: block; text-decoration: none; transition: border-color .12s, transform .12s; }
+  .oc-derin-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.4); transform: translateY(-1px); }
+  .oc-derin-kart .baslik { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; justify-content: space-between; align-items: center; }
+  .oc-derin-kart .aciklama { font-size: 11px; color: var(--gnc-text-dim); margin-top: 3px; }
+  @media (max-width: 860px){ .oc-grid { grid-template-columns: 1fr; } }
+
+  /* Bolum etiketi (eyebrow) */
+  .as-eyebrow { display: flex; align-items: baseline; gap: 10px; margin: 4px 2px 12px; }
+  .as-eyebrow span { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--bs-emphasis-color); }
+  .as-eyebrow small { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); }
+  .as-eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--bs-border-color); }
+
+  /* ==================== MOBİL UYUM ==================== */
+  @media (max-width: 860px){
+    .content { padding: 18px 16px 40px; }
+    .section-head { flex-wrap: wrap; gap: 6px; }
+    .section-title { font-size: 18px; }
+    .as-ust, .as-orta { grid-template-columns: 1fr; gap: 12px; }
+    .as-kart { padding: 16px; border-radius: 12px; }
+    .as-saat-buyuk { font-size: 26px; }
+    .as-piyasa-durum { font-size: 22px; }
+  }
+  @media (max-width: 640px){
+    .content { padding: 14px 12px 40px; }
+    .page-intro { font-size: 12px; padding: 12px 14px; }
+    .section-title { font-size: 16px; }
+
+    /* Ekonomik takvim: satirlari dikey yigina cevir */
+    .tk-ana { grid-template-columns: 1fr 1fr; gap: 8px 10px; padding: 14px; position: relative; }
+    .tk-isim { grid-column: 1 / -1; font-size: 14px; margin-bottom: 2px; }
+    .tk-col { text-align: left; min-width: 0; }
+    .tk-col .v { font-size: 15px; }
+    .tk-surpriz { grid-column: 1 / -1; text-align: left; margin-top: 2px; }
+    .tk-tarih { grid-column: 1 / -1; text-align: left; }
+    .tk-caret { position: absolute; top: 14px; right: 14px; }
+    .tk-row.acik .tk-detay { grid-template-columns: 1fr !important; gap: 16px; }
+
+    /* TR gostergeleri */
+    #tr-icerik .tk-ana { grid-template-columns: 1fr 1fr !important; }
+
+    /* Hisse satirlari: kart gibi yigin */
+    .hisse-baslik { display: none; }
+    .hisse-satir { grid-template-columns: 1fr 1fr; gap: 4px 10px; padding: 14px 16px; position: relative; }
+    .hisse-satir .h-ad { grid-column: 1 / -1; margin-bottom: 4px; }
+    .hisse-satir .fiyat, .hisse-satir .deg, .hisse-satir .kucuk { text-align: left; font-size: 13px; }
+    .hisse-satir .deg::before { font-size: 9px; color: var(--gnc-text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; display: block; }
+    .hisse-satir .deg:nth-of-type(2)::before { content: "Günlük"; }
+    .hisse-satir .deg:nth-of-type(3)::before { content: "Haftalık"; }
+    .hisse-satir .deg:nth-of-type(4)::before { content: "Aylık"; }
+    .hisse-satir .fiyat::before { content: "Fiyat"; font-size: 9px; color: var(--gnc-text-dim); font-weight: 700; text-transform: uppercase; display: block; }
+    .h-ok { display: none; }
+
+    /* Sektor kutulari tek/iki kolon */
+    .kutu-izgara { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+    .sektor-kutu { padding: 12px; }
+    .ozet-strip { grid-template-columns: 1fr 1fr !important; }
+
+    /* Filtre araci */
+    .sektor-arac { padding: 12px; }
+    .chip { font-size: 11px; padding: 6px 11px; }
+
+    /* Hisse tam liste */
+    .hl-grid { grid-template-columns: 1fr 1fr; }
+
+    /* Finansal tablo: yatay kaydirma zaten var, ilk kolon daralt */
+    .fin-tablo td.kalem, .fin-tablo th.kalem { min-width: 150px; font-size: 11.5px; }
+    .fin-tablo th, .fin-tablo td { padding: 9px 11px; font-size: 11.5px; }
+
+    /* Grafik biraz kisalt */
+    .spark { height: 80px; }
+  }
+  /* ==================== CANLANDIRMA ==================== */
+  @keyframes gncFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes gncNabiz { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.82); } }
+  @keyframes gncSweep { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @media (prefers-reduced-motion: no-preference){
+    .content > section:not(.hidden) > * { animation: gncFadeUp .42s cubic-bezier(.2,.7,.3,1) both; }
+    .content > section:not(.hidden) > *:nth-child(2) { animation-delay: .04s; }
+    .content > section:not(.hidden) > *:nth-child(3) { animation-delay: .08s; }
+    .content > section:not(.hidden) > *:nth-child(4) { animation-delay: .12s; }
+    .content > section:not(.hidden) > *:nth-child(5) { animation-delay: .16s; }
+    .sektor-kutu, .hisse-satir, .tk-row, .tr-satir, .kripto-kart, .hl-kart, .as-ozet-satir { animation: gncFadeUp .38s ease both; }
+  }
+
+  /* Canli nabiz noktasi (acik piyasa / canli veri) */
+  .as-piyasa.acik .as-kart-baslik::after,
+  .as-piyasa.yarim .as-kart-baslik::after {
+    content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--gnc-success); margin-left: 7px; animation: gncNabiz 1.6s ease-in-out infinite;
+    box-shadow: 0 0 0 3px rgba(var(--gnc-success-rgb), 0.18);
+  }
+  .as-piyasa.yarim .as-kart-baslik::after { background: var(--gnc-accent); box-shadow: 0 0 0 3px rgba(var(--gnc-accent-rgb), 0.18); }
+  .status-update .canli, .as-veri-satir .canli { position: relative; }
+
+  /* Piyasa durum kartina renk vurgusu (sol seritten) */
+  .as-piyasa { border-left: 3px solid var(--bs-border-color); }
+  .as-piyasa.acik { border-left-color: var(--gnc-success); }
+  .as-piyasa.kapali { border-left-color: var(--gnc-danger); }
+  .as-piyasa.yarim { border-left-color: var(--gnc-accent); }
+
+  /* Kripto kartlari yon rengine gore canlansin */
+  .kripto-kart { border-left: 3px solid var(--bs-border-color); transition: transform .12s, border-color .12s; }
+  .kripto-kart:hover { transform: translateY(-2px); }
+  .kripto-kart.up { border-left-color: var(--gnc-success); }
+  .kripto-kart.down { border-left-color: var(--gnc-danger); }
+
+  /* Eyebrow'a renkli kare vurgu */
+  .as-eyebrow span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--gnc-accent); margin-right: 8px; vertical-align: middle; }
+
+  /* Kart hover canlanmasi */
+  .as-kart { transition: border-color .14s, transform .14s; }
+  .as-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.28); }
+
+  /* Ozet strip vurgu blogu renk seridi */
+  .ozet-blok { position: relative; }
+
+  /* Yenile butonu donsun */
+  #refreshBtn.donuyor i { animation: gncDon .7s linear; }
+  @keyframes gncDon { to { transform: rotate(360deg); } }
+
 </style>
 </head>
 <body>
@@ -450,8 +606,10 @@
     <p class="nav-section-title">Piyasa</p>
     <button class="nav-link-gnc active" data-view="anasayfa"><i class="bi bi-house-door-fill"></i><span>Ana Sayfa</span></button>
     <button class="nav-link-gnc" data-view="sektorler"><i class="bi bi-grid-3x3-gap-fill"></i><span>BIST Sektörler</span></button>
+    <button class="nav-link-gnc" data-view="hisseliste"><i class="bi bi-bar-chart-line-fill"></i><span>Hisseler</span></button>
     <button class="nav-link-gnc" data-view="takvim"><i class="bi bi-calendar-event"></i><span>Ekonomik Takvim (ABD)</span></button>
     <button class="nav-link-gnc" data-view="turkiye"><i class="bi bi-flag-fill"></i><span>Türkiye Takvimi</span></button>
+    <button class="nav-link-gnc" data-view="onchain"><i class="bi bi-diagram-3-fill"></i><span>On-Chain</span></button>
   </nav>
   <div class="sidebar-footer">
     <div class="membership-info">
@@ -497,14 +655,10 @@
         </div>
       </div>
 
-      <div class="as-kart" style="margin-bottom:16px;">
-        <div class="as-kart-baslik"><i class="bi bi-currency-bitcoin"></i> Kripto Para</div>
-        <div class="kripto-strip" id="kripto-strip"><div class="durum-kutu" style="grid-column:1/-1;">Yükleniyor…</div></div>
-      </div>
-
+      <div class="as-eyebrow"><span>Borsa İstanbul</span></div>
       <div class="as-orta">
         <div class="as-kart">
-          <div class="as-kart-baslik"><i class="bi bi-grid-3x3-gap"></i> BIST Sektör Özeti</div>
+          <div class="as-kart-baslik"><i class="bi bi-grid-3x3-gap"></i> Sektör Özeti</div>
           <div id="as-bist"><div class="durum-kutu">Yükleniyor…</div></div>
         </div>
         <div class="as-kart">
@@ -513,6 +667,12 @@
         </div>
       </div>
 
+      <div class="as-eyebrow"><span>Kripto Para</span><small>7/24 · canlı</small></div>
+      <div class="as-kart" style="margin-bottom:20px;">
+        <div class="kripto-strip" id="kripto-strip"><div class="durum-kutu" style="grid-column:1/-1;">Yükleniyor…</div></div>
+      </div>
+
+      <div class="as-eyebrow"><span>Sistem</span></div>
       <div class="as-orta">
         <div class="as-kart">
           <div class="as-kart-baslik"><i class="bi bi-clock-history"></i> Veri Durumu</div>
@@ -520,9 +680,21 @@
         </div>
         <div class="as-kart">
           <div class="as-kart-baslik"><i class="bi bi-newspaper"></i> Haberler</div>
-          <div class="durum-kutu">Haber akışı yakında eklenecek.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Uygun bir kaynak (Finvest vb.) belirlenip filtreli haber akışı buraya bağlanacak.</span></div>
+          <div class="durum-kutu">Haber akışı yakında eklenecek.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Uygun bir kaynak belirlenip filtreli haber akışı buraya bağlanacak.</span></div>
         </div>
       </div>
+    </section>
+
+    <!-- ============ ON-CHAIN ============ -->
+    <section id="view-onchain" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-diagram-3-fill"></i> On-Chain (Bitcoin)</h2>
+        <span class="status-update" id="oc-guncelleme"></span>
+      </div>
+      <div class="page-intro">
+        Bitcoin ağ verileri (kaynak: Coin Metrics, ücretsiz). Eğitim serindeki çekirdek metrikler burada canlı gösterilir; her kartta "nasıl okunur" notu ve grafiğin resmi kaynağına (Checkonchain) bağlantı var. <b>Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</b>
+      </div>
+      <div id="oc-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
     </section>
 
     <!-- ============ TÜRKİYE TAKVİMİ ============ -->
@@ -532,7 +704,7 @@
         <span class="status-update" id="tr-guncelleme"></span>
       </div>
       <div class="page-intro">
-        Türkiye makro verileri (kaynak: TCMB EVDS). Her göstergede <b>son açıklanan</b> ve <b>önceki</b> değer görünür; satıra tıklayınca geçmiş grafiği ve verinin nasıl yorumlanacağı açılır. Türkiye tarafında beklenti (konsensüs) kullanılmaz.
+        Türkiye'de açıklanan makro veriler, tarihleriyle birlikte (kaynak: doviz.com). Geçmiş açıklamalarda <b>açıklanan</b> ve <b>önceki</b> değer görünür; yaklaşan veriler tarih ve saatiyle listelenir.
       </div>
       <div id="tr-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
     </section>
@@ -572,6 +744,28 @@
       <div id="sektor-icerik">
         <div class="durum-kutu">Sektör verileri çekiliyor…</div>
       </div>
+    </section>
+
+    <!-- ============ HİSSELER (TAM LİSTE) ============ -->
+    <section id="view-hisseliste" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-bar-chart-line-fill"></i> Hisseler</h2>
+        <span class="status-update" id="hl-adet"></span>
+      </div>
+      <div class="hl-arama">
+        <i class="bi bi-search"></i>
+        <input type="text" id="hl-input" placeholder="Hisse kodu veya adı ara (örn: AKBNK, Tüpraş)…" oninput="hisseListeFiltre()">
+      </div>
+      <div id="hl-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
+    </section>
+
+    <!-- ============ HİSSE FİNANSAL DETAY ============ -->
+    <section id="view-hissedetay" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><button class="geri-btn" onclick="hisseDetayGeri()"><i class="bi bi-arrow-left"></i></button> <span id="hd-baslik">Hisse</span></h2>
+        <span class="status-update" id="hd-guncelleme"></span>
+      </div>
+      <div id="hd-icerik"><div class="durum-kutu">Finansallar yükleniyor…</div></div>
     </section>
 
     <!-- ============ SEKTÖR HİSSELERİ ============ -->
@@ -620,12 +814,12 @@
    - sonraki: bir sonraki açıklama tarihi (MANUEL, ISO; boş: "")
    ======================================================================= */
 const TAKVIM = [
-  { isim:"Enflasyon (CPI, aylık)", seri:"CPIAUCSL", mod:"pct", birim:"yuzde", beklenti:0.3, sonraki:"2026-07-14T15:30:00+03:00", yuksek:true,
-    yorum:"Tüketici fiyatlarının bir önceki aya göre değişimi; enflasyonun en yakından izlenen göstergesi. <b>Beklentinin üstünde</b> gelmesi enflasyon baskısının sürdüğünü ve faiz indirimlerinin gecikebileceğini düşündürür. <b>Altında</b> gelmesi enflasyonun soğuduğuna işaret eder ve genelde risk iştahını destekler." },
-  { isim:"Çekirdek CPI (aylık)", seri:"CPILFESL", mod:"pct", birim:"yuzde", beklenti:0.3, sonraki:"2026-07-14T15:30:00+03:00", yuksek:false,
-    yorum:"Gıda ve enerji hariç tüketici enflasyonu; kalıcı (yapışkan) enflasyon eğilimini gösterir. Fed bu veriye manşet CPI'dan daha çok bakar. <b>Üstünde</b> gelmesi enflasyonun inatçı olduğunu, <b>altında</b> gelmesi soğuma sinyalini güçlendirir." },
-  { isim:"Çekirdek PCE (aylık)", seri:"PCEPILFE", mod:"pct", birim:"yuzde", beklenti:0.2, sonraki:"2026-07-31T15:30:00+03:00", yuksek:true,
-    yorum:"Fed'in enflasyon hedefinde baz aldığı asıl gösterge (gıda-enerji hariç). Faiz kararlarını en çok etkileyen enflasyon verisidir. <b>Üstünde</b> gelmesi sıkı para politikası ihtimalini artırır, <b>altında</b> gelmesi indirim beklentisini güçlendirir." },
+  { isim:"Enflasyon (CPI, yıllık)", seri:"CPIAUCSL", mod:"yoy", birim:"yuzde", beklenti:2.9, sonraki:"2026-07-14T15:30:00+03:00", yuksek:true,
+    yorum:"Yıllık tüketici enflasyonu (son 12 ay); enflasyonun en yakından izlenen manşet göstergesi. <b>Beklentinin üstünde</b> gelmesi enflasyon baskısının sürdüğünü ve faiz indirimlerinin gecikebileceğini düşündürür. <b>Altında</b> gelmesi enflasyonun soğuduğuna işaret eder ve genelde risk iştahını destekler." },
+  { isim:"Çekirdek CPI (yıllık)", seri:"CPILFESL", mod:"yoy", birim:"yuzde", beklenti:2.9, sonraki:"2026-07-14T15:30:00+03:00", yuksek:false,
+    yorum:"Gıda ve enerji hariç yıllık tüketici enflasyonu; kalıcı (yapışkan) enflasyon eğilimini gösterir. Fed bu veriye manşet CPI'dan daha çok bakar. <b>Üstünde</b> gelmesi enflasyonun inatçı olduğunu, <b>altında</b> gelmesi soğuma sinyalini güçlendirir." },
+  { isim:"Çekirdek PCE (yıllık)", seri:"PCEPILFE", mod:"yoy", birim:"yuzde", beklenti:2.8, sonraki:"2026-07-31T15:30:00+03:00", yuksek:true,
+    yorum:"Fed'in enflasyon hedefinde (%2) baz aldığı asıl gösterge (gıda-enerji hariç, yıllık). Faiz kararlarını en çok etkileyen enflasyon verisidir. <b>Üstünde</b> gelmesi sıkı para politikası ihtimalini artırır, <b>altında</b> gelmesi indirim beklentisini güçlendirir." },
   { isim:"Tarım Dışı İstihdam (NFP)", seri:"PAYEMS", mod:"diff", birim:"bin", beklenti:165, sonraki:"2026-08-07T15:30:00+03:00", yuksek:true,
     yorum:"Tarım dışı istihdamdaki aylık artış (bin kişi); ekonominin gücünü gösteren en önemli işgücü verisi. <b>Çok üstünde</b> gelmesi güçlü ekonomi ama sıkı Fed; <b>çok altında</b> gelmesi yavaşlama endişesi anlamına gelebilir. Piyasa 'ne çok sıcak ne çok soğuk' dengesini sever." },
   { isim:"İşsizlik Oranı", seri:"UNRATE", mod:"level", birim:"yuzde", beklenti:4.2, sonraki:"2026-08-07T15:30:00+03:00", yuksek:false,
@@ -855,8 +1049,84 @@ async function sektorHisseAc(kod, ad){
     '<div class="arac-not" style="margin-top:16px;border:none;padding:0;">Fiyat ve getiriler İş Yatırım kaynaklıdır, günde birkaç kez güncellenir. Piyasa değeri ve hacim son işlem gününe aittir. Hisseye tıklayınca finansallar (bilanço) yakında eklenecek.</div>';
 }
 
+let ONCEKI_VIEW = "hisseliste";
 function hisseDetay(kod, ad){
-  alert(kod + " (" + ad + ")\n\nFinansallar (bilanço, temel oranlar) modülü yakında eklenecek. Veri kaynağı: İş Yatırım.");
+  ONCEKI_VIEW = document.getElementById("view-hisseler").classList.contains("hidden") ? "hisseliste" : "sektorhisse";
+  ["view-hisseler","view-hisseliste","view-sektorler","view-takvim","view-turkiye","view-anasayfa"].forEach(v => document.getElementById(v).classList.add("hidden"));
+  document.getElementById("view-hissedetay").classList.remove("hidden");
+  document.getElementById("topbarTitle").textContent = kod + " · Finansallar";
+  document.getElementById("hd-baslik").textContent = kod + (ad ? " · " + ad : "");
+  document.getElementById("hd-guncelleme").textContent = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  finansalYukle(kod);
+}
+async function finansalYukle(kod){
+  const kap = document.getElementById("hd-icerik");
+  kap.innerHTML = '<div class="durum-kutu">Finansallar yükleniyor…</div>';
+  try{
+    const res = await fetch('/finansal/' + kod + '.json?t=' + Date.now());
+    if(!res.ok) throw new Error();
+    const fin = await res.json();
+    try { document.getElementById("hd-guncelleme").textContent = new Date(fin.guncelleme).toLocaleDateString("tr-TR") + " · İş Yatırım"; } catch(e){}
+    finansalCiz(fin);
+  }catch(e){
+    kap.innerHTML = '<div class="durum-kutu">Bu hissenin finansalları henüz yok.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Finansal verisi ayda bir toplanıyor; görev ilk kez çalışınca burada görünür.</span></div>';
+  }
+}
+function finBuyuk(x){
+  if(x === null || x === undefined) return "—";
+  const a = Math.abs(x); const isaret = x < 0 ? "-" : "";
+  if(a >= 1e9) return isaret + (a/1e9).toLocaleString("tr-TR",{maximumFractionDigits:2}) + " Mr";
+  if(a >= 1e6) return isaret + (a/1e6).toLocaleString("tr-TR",{maximumFractionDigits:1}) + " Mn";
+  return x.toLocaleString("tr-TR",{maximumFractionDigits:0});
+}
+function finansalCiz(fin){
+  const d = fin.donemler || [];
+  const k = fin.kalemler || [];
+  if(!k.length){ document.getElementById("hd-icerik").innerHTML = '<div class="durum-kutu">Finansal kalem bulunamadı.</div>'; return; }
+  let html = '<div class="fin-tablo-sar"><table class="fin-tablo"><thead><tr><th class="kalem">Kalem (TL)</th>' +
+    d.map(x => '<th>' + x + '</th>').join("") + '</tr></thead><tbody>';
+  html += k.map(kl =>
+    '<tr><td class="kalem">' + kl.ad + '</td>' +
+    d.map(x => '<td>' + finBuyuk(kl.degerler[x]) + '</td>').join("") + '</tr>').join("");
+  html += '</tbody></table></div>' +
+    '<div class="hd-not">Değerler İş Yatırım kaynaklı finansal tablolardır (bilanço + gelir tablosu), TL bazında. Dönemler çeyrekliktir (örn. 2025/3 = ilk çeyrek). Temel oran hesaplayıcı (F/K, ROE, borçluluk vb.) sonraki adımda eklenecek.</div>';
+  document.getElementById("hd-icerik").innerHTML = html;
+}
+function hisseDetayGeri(){
+  document.getElementById("view-hissedetay").classList.add("hidden");
+  if(ONCEKI_VIEW === "sektorhisse"){
+    document.getElementById("view-hisseler").classList.remove("hidden");
+    document.getElementById("topbarTitle").textContent = "Hisseler";
+  } else {
+    document.getElementById("view-hisseliste").classList.remove("hidden");
+    document.getElementById("topbarTitle").textContent = "Hisseler";
+    document.querySelector('.nav-link-gnc[data-view="hisseliste"]').classList.add("active");
+  }
+}
+
+/* Hisseler tam listesi */
+let TUM_HISSELER = null;
+async function hisseListeYukle(){
+  const map = await hisseMapYukle();
+  const gorulen = {};
+  TUM_HISSELER = [];
+  Object.values(map).forEach(grup => grup.forEach(h => {
+    if(!gorulen[h.kod]){ gorulen[h.kod] = 1; TUM_HISSELER.push(h); }
+  }));
+  TUM_HISSELER.sort((a,b) => a.kod.localeCompare(b.kod));
+  hisseListeFiltre();
+}
+function hisseListeFiltre(){
+  if(!TUM_HISSELER) return;
+  const q = (document.getElementById("hl-input").value || "").toLocaleUpperCase("tr");
+  const liste = TUM_HISSELER.filter(h => !q || h.kod.toLocaleUpperCase("tr").includes(q) || (h.ad||"").toLocaleUpperCase("tr").includes(q));
+  document.getElementById("hl-adet").textContent = liste.length + " hisse";
+  const kap = document.getElementById("hl-icerik");
+  if(!liste.length){ kap.innerHTML = '<div class="durum-kutu">Eşleşen hisse yok.</div>'; return; }
+  kap.innerHTML = '<div class="hl-grid">' + liste.map(h =>
+    '<div class="hl-kart" onclick="hisseDetay(\'' + h.kod + '\',\'' + (h.ad||"").replace(/'/g,"") + '\')">' +
+      '<div class="kod">' + h.kod + '</div><div class="ad">' + (h.ad||"") + '</div></div>').join("") + '</div>';
 }
 
 function hisseGeri(){
@@ -898,9 +1168,12 @@ function hesapla(mod, obs){
     seri = obs.slice();                          // degerin kendisi
   } else if(mod === "diff"){
     seri = obs.slice(0,-1).map((v,i) => v - obs[i+1]);   // ardisik fark
+  } else if(mod === "yoy"){
+    seri = obs.slice(0,-12).map((v,i) => (v/obs[i+12]-1)*100);  // yillik % degisim (12 ay onceye gore)
   } else {                                        // pct
     seri = obs.slice(0,-1).map((v,i) => (v/obs[i+1]-1)*100);
   }
+  if(!seri.length) return { son:null, onceki:null, seri_gecmis:[] };
   const son = seri[0];
   const onceki = seri.length > 1 ? seri[1] : null;
   const gecmis = seri.slice(0, 18).reverse();     // kronolojik (eski->yeni)
@@ -918,7 +1191,7 @@ function surpriz(ev){
 function takvimCiz(){
   const simdi = Date.now();
   document.getElementById("takvim-icerik").innerHTML = TAKVIM_SONUC.map((ev, i) => {
-    const yuzdeMod = ev.mod === "pct";
+    const yuzdeMod = ev.mod === "pct" || ev.mod === "yoy";
     const bicim = (x) => yuzdeMod ? fmtYuzde(x) : fmtDeger(x, ev.birim);
     const sp = surpriz(ev);
     let spBadge = '<span class="tk-badge tam">beklenti yok</span>';
@@ -961,7 +1234,7 @@ function takvimCiz(){
 }
 
 function bekBlok(ev, sp){
-  const yuzdeMod = ev.mod === "pct";
+  const yuzdeMod = ev.mod === "pct" || ev.mod === "yoy";
   const bic = (x) => x==null ? "—" : (yuzdeMod ? fmtYuzde(x) : fmtDeger(x, ev.birim));
   // Aciklanan kutusu: beklentinin ustunde yesil, altinda kirmizi
   let acikSinif = "";
@@ -977,25 +1250,18 @@ function bekBlok(ev, sp){
 function sparkCiz(ev){
   const g = ev.seri_gecmis || [];
   if(g.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);">Yeterli geçmiş veri yok.</div>';
-  const bek = (ev.beklenti !== undefined && ev.beklenti !== null) ? ev.beklenti : null;
-  const min = Math.min(...g, ...(bek!=null?[bek]:[]));
-  const max = Math.max(...g, ...(bek!=null?[bek]:[]));
+  const min = Math.min(...g);
+  const max = Math.max(...g);
   const aralik = (max - min) || 1;
   const H = 96;
-  const et = (v) => ev.mod === "pct" ? fmtYuzde(v) : fmtDeger(v, ev.birim);
+  const et = (v) => (ev.mod === "pct" || ev.mod === "yoy") ? fmtYuzde(v) : fmtDeger(v, ev.birim);
   const bar = g.map((v, i) => {
     const yuk = 10 + ((v - min) / aralik) * (H - 22);
     const yon = i === 0 ? (g[1] >= v ? "down" : "up") : (v >= g[i-1] ? "up" : "down");
     return '<div class="spark-bar ' + yon + '" style="height:' + yuk + 'px" data-tip="' + et(v) + '"></div>';
   }).join("");
-  let bekCizgi = "";
-  if(bek != null){
-    const by = 10 + ((bek - min) / aralik) * (H - 22);
-    bekCizgi = '<div class="spark-bek" style="bottom:' + by + 'px" data-tip="Beklenti: ' + et(bek) + '"></div>';
-  }
-  const efsane = bek != null ? '<div class="spark-legend"><span class="lg-cizgi"></span> Gri kesikli çizgi: beklenti seviyesi · renkli çubuklar geçmiş değerler</div>' : '';
-  return '<div class="spark" style="height:' + H + 'px">' + bekCizgi + bar + '</div>' +
-    '<div class="spark-alt"><span style="text-align:left">' + et(g[0]) + '</span><span style="text-align:right">' + et(g[g.length-1]) + '</span></div>' + efsane;
+  return '<div class="spark" style="height:' + H + 'px">' + bar + '</div>' +
+    '<div class="spark-alt"><span style="text-align:left">' + et(g[0]) + '</span><span style="text-align:right">' + et(g[g.length-1]) + '</span></div>';
 }
 
 function tkAc(i){
@@ -1059,7 +1325,7 @@ async function kriptoYukle(){
       const fiyat = parseFloat(d.lastPrice), deg = parseFloat(d.priceChangePercent);
       const ad = d.symbol.replace("USDT","");
       const f = fiyat >= 100 ? fiyat.toLocaleString("en-US",{maximumFractionDigits:0}) : fiyat.toLocaleString("en-US",{maximumFractionDigits:2});
-      return '<div class="kripto-kart"><div class="sembol">' + ad + '/USDT</div>' +
+      return '<div class="kripto-kart ' + yon(deg) + '"><div class="sembol">' + ad + '/USDT</div>' +
         '<div class="fiyat">$' + f + '</div>' +
         '<div class="deg ' + yon(deg) + '">' + fmtYuzde(deg) + ' <span style="color:var(--gnc-text-dim);font-weight:400;">24s</span></div></div>';
     }).join("");
@@ -1116,82 +1382,145 @@ async function veriDurumYukle(){
     '<div class="as-veri-satir"><span class="kaynak">Kripto (Binance)</span><span class="canli">canlı</span></div>';
 }
 
-/* ---- TÜRKİYE MAKRO ---- */
-let TR_VERI = [];
+/* ---- TÜRKİYE TAKVİMİ (tarihli) ---- */
 async function turkiyeCek(){
   const kap = document.getElementById("tr-icerik");
   kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
   try{
-    const res = await fetch('/turkiye_veri.json?t=' + Date.now());
+    const res = await fetch('/turkiye_takvim.json?t=' + Date.now());
     if(!res.ok) throw new Error();
     const veri = await res.json();
-    TR_VERI = veri.veriler || [];
-    try { document.getElementById("tr-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR") + " · TCMB EVDS"; } catch(e){}
-    turkiyeCiz();
+    try { document.getElementById("tr-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR") + " · doviz.com"; } catch(e){}
+    turkiyeCiz(veri.olaylar || []);
   }catch(e){
     document.getElementById("tr-guncelleme").textContent = "veri henüz yok";
-    kap.innerHTML = '<div class="durum-kutu">Türkiye verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>turkiye_veri.json</b> oluşur.<br><button class="btn-gnc" onclick="turkiyeCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+    kap.innerHTML = '<div class="durum-kutu">Türkiye takvimi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>turkiye_takvim.json</b> oluşur.<br><button class="btn-gnc" onclick="turkiyeCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
   }
 }
-function trBicim(x, birim){
-  if(x === null || x === undefined) return "—";
-  if(birim === "yuzde") return fmtYuzde(x);
-  return x.toLocaleString("tr-TR", {minimumFractionDigits:2, maximumFractionDigits:2});
-}
-function turkiyeCiz(){
+function turkiyeCiz(olaylar){
   const kap = document.getElementById("tr-icerik");
-  if(!TR_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Gösterge verisi bulunamadı.</div>'; return; }
-  kap.innerHTML = '<div class="tk-liste">' + TR_VERI.map((v, i) => {
-    const degisim = (v.onceki!=null && v.son!=null) ? (v.son - v.onceki) : null;
-    const yonS = degisim==null ? "flat" : (degisim>0 ? "up" : degisim<0 ? "down" : "flat");
-    const sparkObj = { seri_gecmis: v.gecmis || [], mod: (v.birim==="yuzde"?"level":"level"), birim: v.birim };
-    return '<div class="tk-row" id="trrow-' + i + '">' +
-      '<div class="tk-ana" style="grid-template-columns:1.6fr 90px 90px 20px" onclick="trAc(' + i + ')">' +
-        '<div class="tk-isim">' + v.isim + '</div>' +
-        '<div class="tk-col"><div class="k">Önceki</div><div class="v small">' + trBicim(v.onceki, v.birim) + '</div></div>' +
-        '<div class="tk-col"><div class="k">Son</div><div class="v ' + yonS + '">' + trBicim(v.son, v.birim) + '</div></div>' +
-        '<div class="tk-caret"><i class="bi bi-chevron-down"></i></div>' +
-      '</div>' +
-      '<div class="tk-detay" style="grid-template-columns:1fr 1.4fr">' +
-        '<div class="tk-gecmis"><div class="baslik">Son ' + (v.gecmis?v.gecmis.length:0) + ' dönem</div>' + sparkCiz(sparkObj) + '</div>' +
-        '<div class="tk-yorum"><div class="baslik">Nasıl yorumlanır?</div><div class="tk-yorum-metin">' + v.yorum + '</div>' +
-          '<div class="tk-ai-not"><i class="bi bi-stars"></i> Döneme özel yorum ileride yapay zeka ile eklenecek.</div></div>' +
-      '</div>' +
+  if(!olaylar.length){ kap.innerHTML = '<div class="durum-kutu">Bu dönemde açıklama bulunamadı.</div>'; return; }
+  olaylar.sort((a,b) => (a.tarih||"").localeCompare(b.tarih||"") || (a.saat||"").localeCompare(b.saat||""));
+  const onemSinif = (o) => { const s=(o||"").toLowerCase(); return s.includes("high")||s.includes("yüksek")||s==="3"?"high":s.includes("medium")||s.includes("orta")||s==="2"?"medium":"low"; };
+  const bugunStr = new Date().toISOString().slice(0,10);
+
+  let html = '<div class="tr-liste">', sonGun = "";
+  for(const o of olaylar){
+    if(o.tarih !== sonGun){
+      sonGun = o.tarih;
+      let etiket = o.tarih || "";
+      try { etiket = new Date(o.tarih + "T00:00:00").toLocaleDateString("tr-TR", {weekday:"long", day:"numeric", month:"long"}); } catch(e){}
+      const bugunMu = o.tarih === bugunStr;
+      html += '<div class="tr-gun">' + etiket + (bugunMu?' <span class="tr-bugun">bugün</span>':'') + '</div>';
+    }
+    const gelecek = o.aciklanan == null;
+    html += '<div class="tr-satir' + (gelecek?' gelecek':'') + '">' +
+      '<div class="tr-saat">' + (o.saat || "—") + '</div>' +
+      '<div class="tr-olay"><span class="tr-onem ' + onemSinif(o.onem) + '"></span>' + (o.olay || "") + (o.donem?' <span style="color:var(--gnc-text-dim);font-size:11px;">('+o.donem+')</span>':'') + '</div>' +
+      '<div class="tr-deg"><div class="k">Önceki</div><div class="v" style="color:var(--gnc-text-faded)">' + (o.onceki || "—") + '</div></div>' +
+      '<div class="tr-deg"><div class="k">' + (gelecek?"Durum":"Açıklanan") + '</div><div class="v' + (gelecek?' bekliyor':'') + '">' + (gelecek?"bekleniyor":(o.aciklanan||"—")) + '</div></div>' +
+    '</div>';
+  }
+  kap.innerHTML = html + '</div>';
+}
+
+/* ---- ON-CHAIN ---- */
+async function onchainCek(){
+  const kap = document.getElementById("oc-icerik");
+  kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
+  try{
+    const res = await fetch('/onchain_veri.json?t=' + Date.now());
+    if(!res.ok) throw new Error();
+    const veri = await res.json();
+    try { document.getElementById("oc-guncelleme").textContent = new Date(veri.guncelleme).toLocaleDateString("tr-TR") + " · Coin Metrics"; } catch(e){}
+    onchainCiz(veri);
+  }catch(e){
+    document.getElementById("oc-guncelleme").textContent = "veri henüz yok";
+    kap.innerHTML = '<div class="durum-kutu">On-chain verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>onchain_veri.json</b> oluşur.<br><button class="btn-gnc" onclick="onchainCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+  }
+}
+function ocDeger(v, birim){
+  if(v === null || v === undefined) return "—";
+  if(birim === "$") return "$" + Math.round(v).toLocaleString("tr-TR");
+  if(birim === "x") return v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + "x";
+  if(Math.abs(v) >= 1000) return Math.round(v).toLocaleString("tr-TR");
+  return v.toLocaleString("tr-TR",{maximumFractionDigits:2});
+}
+function cizgiGrafik(seri){
+  if(!seri || seri.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);padding:20px 0;">Yeterli veri yok.</div>';
+  const W = 320, H = 90, P = 4;
+  const vals = seri.map(s => s.v);
+  const min = Math.min(...vals), max = Math.max(...vals), aralik = (max - min) || 1;
+  const x = (i) => P + (i / (seri.length - 1)) * (W - 2*P);
+  const y = (v) => P + (1 - (v - min) / aralik) * (H - 2*P);
+  const nokta = seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
+  const cizgi = "M" + nokta.join(" L");
+  const alan = cizgi + " L" + x(seri.length-1).toFixed(1) + "," + (H-P) + " L" + x(0).toFixed(1) + "," + (H-P) + " Z";
+  const sonX = x(seri.length-1), sonY = y(seri[seri.length-1].v);
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+    '<path class="oc-alan" d="' + alan + '"/>' +
+    '<path class="oc-cizgi" d="' + cizgi + '" vector-effect="non-scaling-stroke"/>' +
+    '<circle class="oc-nokta" cx="' + sonX.toFixed(1) + '" cy="' + sonY.toFixed(1) + '" r="3"/>' +
+    '</svg>';
+}
+function onchainCiz(veri){
+  const m = veri.metrikler || [];
+  const linkler = veri.linkler || [];
+  let html = '<div class="oc-grid">' + m.map(x => {
+    const ilk = x.seri && x.seri.length ? x.seri[0].t : "";
+    const son = x.seri && x.seri.length ? x.seri[x.seri.length-1].t : "";
+    return '<div class="oc-kart">' +
+      '<div class="oc-ust"><div class="oc-isim">' + x.isim + '</div><div class="oc-deger">' + ocDeger(x.son, x.birim) + '</div></div>' +
+      '<div class="oc-grafik">' + cizgiGrafik(x.seri) + '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gnc-text-dim);margin-top:2px;"><span>' + ilk + '</span><span>' + son + '</span></div></div>' +
+      '<div class="oc-yorum">' + x.yorum + '</div>' +
+      '<a class="oc-link" href="' + x.kaynak + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Checkonchain\'de tam grafiği aç</a>' +
     '</div>';
   }).join("") + '</div>';
-}
-function trAc(i){
-  const row = document.getElementById("trrow-" + i);
-  const acik = row.classList.contains("acik");
-  document.querySelectorAll("#tr-icerik .tk-row.acik").forEach(r => r.classList.remove("acik"));
-  if(!acik) row.classList.add("acik");
+
+  if(linkler.length){
+    html += '<div class="oc-derin"><div class="as-eyebrow"><span>Derin Metrikler</span><small>ücretsiz API yok · kaynağa git</small></div>' +
+      '<div class="oc-derin-grid">' + linkler.map(l =>
+        '<a class="oc-derin-kart" href="' + l.link + '" target="_blank" rel="noopener">' +
+          '<div class="baslik">' + l.isim + ' <i class="bi bi-box-arrow-up-right" style="font-size:11px;color:var(--gnc-text-dim)"></i></div>' +
+          '<div class="aciklama">' + l.aciklama + '</div></a>').join("") + '</div></div>';
+  }
+  document.getElementById("oc-icerik").innerHTML = html;
 }
 
 /* ---- gorunum gecisi ---- */
-const BASLIK = { anasayfa:"Ana Sayfa", sektorler:"BIST Sektörler", takvim:"Ekonomik Takvim (ABD)", turkiye:"Türkiye Takvimi" };
+const BASLIK = { anasayfa:"Ana Sayfa", sektorler:"BIST Sektörler", hisseliste:"Hisseler", takvim:"Ekonomik Takvim (ABD)", turkiye:"Türkiye Takvimi", onchain:"On-Chain" };
 document.querySelectorAll(".nav-link-gnc").forEach(link => {
   link.addEventListener("click", () => {
     document.querySelectorAll(".nav-link-gnc").forEach(l => l.classList.remove("active"));
     link.classList.add("active");
     const v = link.dataset.view;
     document.getElementById("view-hisseler").classList.add("hidden");
+    document.getElementById("view-hissedetay").classList.add("hidden");
     document.getElementById("view-anasayfa").classList.toggle("hidden", v !== "anasayfa");
     document.getElementById("view-sektorler").classList.toggle("hidden", v !== "sektorler");
+    document.getElementById("view-hisseliste").classList.toggle("hidden", v !== "hisseliste");
     document.getElementById("view-takvim").classList.toggle("hidden", v !== "takvim");
     document.getElementById("view-turkiye").classList.toggle("hidden", v !== "turkiye");
+    document.getElementById("view-onchain").classList.toggle("hidden", v !== "onchain");
     document.getElementById("topbarTitle").textContent = BASLIK[v];
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebarOverlay").classList.remove("show");
     if(v === "anasayfa") anaSayfaYukle();
     if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); }
+    if(v === "hisseliste") hisseListeYukle();
     if(v === "takvim" && !window._takvimYuklendi){ window._takvimYuklendi = true; takvimCek(); }
     if(v === "turkiye" && !window._turkiyeYuklendi){ window._turkiyeYuklendi = true; turkiyeCek(); }
+    if(v === "onchain" && !window._onchainYuklendi){ window._onchainYuklendi = true; onchainCek(); }
   });
 });
 document.getElementById("refreshBtn").addEventListener("click", () => {
+  const btn = document.getElementById("refreshBtn");
+  btn.classList.remove("donuyor"); void btn.offsetWidth; btn.classList.add("donuyor");
   const aktif = document.querySelector(".nav-link-gnc.active").dataset.view;
   if(aktif === "anasayfa") anaSayfaYukle();
   else if(aktif === "takvim") takvimCek();
+  else if(aktif === "turkiye") turkiyeCek();
+  else if(aktif === "hisseliste") hisseListeYukle();
   else sektorCek();
 });
 
