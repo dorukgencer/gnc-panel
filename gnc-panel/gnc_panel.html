@@ -1543,27 +1543,26 @@ function turkiyeCiz(olaylar){
 
 /* ---- ON-CHAIN ---- */
 const OC_TANIM = [
-  {anahtar:"mvrv", isim:"MVRV Oranı", birim:"x",
+  {isim:"MVRV Oranı", birim:"x",
    yorum:"Piyasa değerinin gerçekleşen değere (aggregate maliyet bazına) oranı. 1'in altı tarihsel dip bölgesi, aşırı yüksek seviyeler tepe uyarısıdır. Tek başına değil, teyitle okunmalı.",
-   kaynak:"https://charts.checkonchain.com/btconchain/pricing/mvrv/mvrv_light.html"},
-  {anahtar:"mvrvz", isim:"MVRV Z-Score", birim:"",
-   yorum:"MVRV'nin uzun vadeli oynaklığa göre normalize edilmiş hali. Döngüler arası kıyas için daha nettir; aşırı yüksek/düşük Z bölgeleri tepe ve dipleri işaret eder.",
-   kaynak:"https://charts.checkonchain.com/btconchain/pricing/mvrv_zscore/mvrv_zscore_light.html"},
-  {anahtar:"nupl", isim:"NUPL (Net Gerçekleşmemiş K/Z)", birim:"",
+   kaynak:"https://charts.checkonchain.com/btconchain/pricing/pricing_mvrv_bands/pricing_mvrv_bands_light.html"},
+  {isim:"NUPL (Net Gerçekleşmemiş K/Z)", birim:"",
    yorum:"Dolaşımdaki coinlerin toplam gerçekleşmemiş kâr/zarar oranı. Pozitif = piyasa toplu kârda, negatif = zararda. Aşırı pozitif bölge açgözlülük, negatif bölge teslimiyet duygusudur.",
    kaynak:"https://charts.checkonchain.com/btconchain/unrealised/nupl/nupl_light.html"},
-  {anahtar:"rprice", isim:"Realized Price (Gerçekleşen Fiyat)", birim:"$",
+  {isim:"Realized Price / Cap", birim:"$",
    yorum:"Coinlerin son hareket ettiği fiyatların ortalaması; ağın toplam maliyet bazı. Fiyat bu seviyenin altına inince piyasa ortalama zararda demektir, tarihsel dip bölgeleri buralardır.",
-   kaynak:"https://charts.checkonchain.com/btconchain/pricing/realised_price/realised_price_light.html"},
-  {anahtar:"adr", isim:"Aktif Adres Sayısı", birim:"",
+   kaynak:"https://charts.checkonchain.com/btconchain/pricing/pricing_realisedcap/pricing_realisedcap_light.html"},
+  {isim:"SOPR", birim:"",
+   yorum:"Harcanan coinlerin kâr/zarar oranı. 1'in üstü ortalama kârda satış, altı zararda satış. 1 seviyesi boğa piyasasında destek, ayı piyasasında direnç gibi çalışır.",
+   kaynak:"https://charts.checkonchain.com/btconchain/realised/sopr/sopr_light.html"},
+  {isim:"Aktif Adres Sayısı", birim:"",
    yorum:"Günlük ağda işlem yapan benzersiz adres sayısı; ağ kullanımının ve talebin göstergesi. Artan aktivite sağlıklı talep, düşen aktivite ilgi kaybı sinyali olabilir.",
-   kaynak:"https://charts.checkonchain.com/btconchain/network/addresses_active/addresses_active_light.html"},
+   kaynak:"https://charts.checkonchain.com/btconchain/adoption/addresscounts/addresscounts_light.html"},
 ];
 const OC_LINKLER = [
-  {isim:"SOPR", aciklama:"Harcanan coinlerin kâr/zarar oranı", link:"https://charts.checkonchain.com/btconchain/sopr/sopr_7dma/sopr_7dma_light.html"},
-  {isim:"LTH vs STH", aciklama:"Uzun/kısa vadeli sahip davranışı", link:"https://charts.checkonchain.com/btconchain/lifespan/lth_sth_supply/lth_sth_supply_light.html"},
-  {isim:"HODL Dalgaları", aciklama:"Coin yaşına göre arz dağılımı", link:"https://charts.checkonchain.com/btconchain/lifespan/hodlwaves/hodlwaves_light.html"},
-  {isim:"CDD (90g MA)", aciklama:"Yok edilen coin-gün", link:"https://charts.checkonchain.com/btconchain/lifespan/cdd90_supplyadj/cdd90_supplyadj_light.html"},
+  {isim:"MVRV Z-Score", aciklama:"Döngü tepe/dip için normalize MVRV", link:"https://charts.checkonchain.com/btconchain/unrealised/histogram_bullbear_mvrv_zscore/histogram_bullbear_mvrv_zscore_light.html"},
+  {isim:"HODL Dalgaları", aciklama:"Coin yaşına göre arz dağılımı", link:"https://charts.checkonchain.com/btconchain/supply/rcap_hodlwave_bycohort/rcap_hodlwave_bycohort_light.html"},
+  {isim:"CDD", aciklama:"Yok edilen coin-gün", link:"https://charts.checkonchain.com/btconchain/lifespan/cdd/cdd_light.html"},
   {isim:"Funding & Open Interest", aciklama:"Türev piyasa konumlanması", link:"https://www.coinglass.com/FundingRate"},
 ];
 async function onchainCek(){
