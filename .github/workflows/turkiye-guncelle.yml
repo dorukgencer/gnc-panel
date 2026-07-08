@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: veri-yazma
+  cancel-in-progress: false
+
 jobs:
   guncelle:
     runs-on: ubuntu-latest
@@ -26,5 +30,6 @@ jobs:
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
           git add gnc-panel/turkiye_takvim.json
-          git commit -m "Turkiye takvimi guncellendi" || echo "Degisiklik yok"
+          git commit -m "Turkiye takvimi guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          git pull --rebase --autostash origin main
           git push
