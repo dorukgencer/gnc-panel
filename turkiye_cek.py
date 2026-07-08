@@ -1,116 +1,56 @@
 # -*- coding: utf-8 -*-
 """
-GNC Insight - Turkiye Makro Verisi (TCMB EVDS / borsapy)
-TUFE (yillik+aylik), UFE, politika faizi ve USD/TRY verilerini ceker;
-her biri icin son + onceki + gecmis + yorum uretip gnc-panel/turkiye_veri.json'a
-yazar. EVDS anahtari GitHub secret'tan (EVDS_API_KEY) gelir.
-GitHub Actions ile gunde birkac kez calisir.
+GNC Insight - Turkiye Ekonomik Takvim Cekici (tarihli)
+borsapy EconomicCalendar (kaynak: doviz.com) uzerinden Turkiye makro takvimini
+ceker: tarih + saat + olay + onem + aciklanan + onceki + beklenti.
+gnc-panel/turkiye_takvim.json'a yazar. API anahtari gerektirmez.
 """
 
 import json
-import os
-from datetime import datetime
+import math
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import borsapy as bp
 
-# EVDS anahtari (secret'tan). Bazi yardimcilar icin gerekli.
-key = os.environ.get("EVDS_API_KEY")
-if key:
-    try:
-        bp.set_evds_key(key)
-    except Exception as e:
-        print("set_evds_key uyari:", e)
 
-YORUM = {
-    "tufe_y": "Yıllık tüketici enflasyonu (TÜFE). Yükselmesi fiyat baskısının arttığını, düşmesi enflasyonda gevşemeyi gösterir. TCMB faiz kararlarının ana çıpasıdır.",
-    "tufe_a": "Aylık tüketici enflasyonu; enflasyonun kısa vadeli hızını gösterir. Yüksek aylık okumalar yıllık enflasyonun yapışkan kaldığına işaret eder.",
-    "ufe_y": "Yıllık üretici (yurt içi) enflasyonu (Yİ-ÜFE); maliyet baskısının öncü göstergesi. ÜFE'deki artış zamanla tüketici fiyatlarına (TÜFE) yansıyabilir.",
-    "faiz": "TCMB'nin belirlediği politika faizi. Yükselmesi parasal sıkılaşma, düşmesi gevşeme demektir; kur, tahvil ve hisse için ana yön belirleyicidir.",
-    "usdtry": "Doların TL karşısındaki değeri. Yükselmesi TL'nin değer kaybettiğini gösterir; enflasyon, ithalat maliyeti ve dış borç açısından kritiktir.",
-}
-
-
-def seri_kaydi(isim, birim, deger_listesi, yorum):
-    """deger_listesi: kronolojik (eski->yeni) sayilar."""
-    d = [float(x) for x in deger_listesi if x is not None]
-    if len(d) < 1:
+def temiz(x):
+    if x is None:
         return None
-    return {
-        "isim": isim, "birim": birim,
-        "son": round(d[-1], 2),
-        "onceki": round(d[-2], 2) if len(d) > 1 else None,
-        "gecmis": [round(x, 2) for x in d[-12:]],
-        "yorum": yorum,
-    }
+    if isinstance(x, float) and math.isnan(x):
+        return None
+    s = str(x).strip()
+    return s if s and s.lower() != "nan" else None
 
 
 def main():
-    veriler = []
-    inf = bp.Inflation()
+    bugun = datetime.now()
+    bas = (bugun - timedelta(days=30)).strftime("%Y-%m-%d")
+    bit = (bugun + timedelta(days=40)).strftime("%Y-%m-%d")
 
-    # TUFE (yillik + aylik)
-    try:
-        t = inf.tufe(limit=18).sort_index()
-        y = seri_kaydi("TÜFE (Yıllık)", "yuzde", t["YearlyInflation"].tolist(), YORUM["tufe_y"])
-        a = seri_kaydi("TÜFE (Aylık)", "yuzde", t["MonthlyInflation"].tolist(), YORUM["tufe_a"])
-        if y: veriler.append(y)
-        if a: veriler.append(a)
-        print("TUFE tamam")
-    except Exception as e:
-        print("TUFE hata:", e)
+    print("Turkiye takvimi cekiliyor (doviz.com)...")
+    cal = bp.EconomicCalendar()
+    df = cal.events(start=bas, end=bit, country="TR")
 
-    # UFE (yillik)
-    try:
-        u = inf.ufe(limit=18).sort_index()
-        uy = seri_kaydi("ÜFE (Yıllık)", "yuzde", u["YearlyInflation"].tolist(), YORUM["ufe_y"])
-        if uy: veriler.append(uy)
-        print("UFE tamam")
-    except Exception as e:
-        print("UFE hata:", e)
+    olaylar = []
+    if df is not None and len(df):
+        for _, r in df.iterrows():
+            olaylar.append({
+                "tarih": temiz(r.get("Date")),
+                "saat": temiz(r.get("Time")),
+                "olay": temiz(r.get("Event")),
+                "onem": temiz(r.get("Importance")),
+                "aciklanan": temiz(r.get("Actual")),
+                "beklenti": temiz(r.get("Forecast")),
+                "onceki": temiz(r.get("Previous")),
+                "donem": temiz(r.get("Period")),
+            })
 
-    # Politika faizi (gecmis serisiyle)
-    try:
-        tc = bp.TCMB()
-        seri = None
-        for metot in ("history", "rates"):
-            try:
-                fn = getattr(tc, metot, None)
-                r = fn() if callable(fn) else fn
-                if r is not None and hasattr(r, "columns"):
-                    say = [c for c in r.columns if str(r[c].dtype).startswith(("float", "int"))]
-                    if say:
-                        seri = r.sort_index()[say[-1]].dropna().tolist()
-                        break
-            except Exception:
-                continue
-        if seri and len(seri) >= 2:
-            f = seri_kaydi("Politika Faizi", "yuzde", seri, YORUM["faiz"])
-        else:
-            pr = tc.policy_rate
-            son = float(pr.iloc[-1, -1]) if hasattr(pr, "iloc") else float(pr)
-            f = {"isim": "Politika Faizi", "birim": "yuzde", "son": round(son, 2), "onceki": None, "gecmis": [], "yorum": YORUM["faiz"]}
-        if f: veriler.append(f)
-        print("Faiz tamam")
-    except Exception as e:
-        print("Faiz hata:", e)
-
-    # USD/TRY
-    try:
-        fx = bp.FX("USD")
-        h = fx.history(period="6mo")
-        kol = "Close" if "Close" in h.columns else h.columns[-1]
-        d = seri_kaydi("USD/TRY", "kur", h[kol].tolist(), YORUM["usdtry"])
-        if d: veriler.append(d)
-        print("USDTRY tamam")
-    except Exception as e:
-        print("USDTRY hata:", e)
-
-    cikti = {"guncelleme": datetime.now().isoformat(), "kaynak": "TCMB EVDS / borsapy", "veriler": veriler}
-    hedef = Path(__file__).parent / "gnc-panel" / "turkiye_veri.json"
+    cikti = {"guncelleme": bugun.isoformat(), "kaynak": "doviz.com", "olaylar": olaylar}
+    hedef = Path(__file__).parent / "gnc-panel" / "turkiye_takvim.json"
     hedef.parent.mkdir(parents=True, exist_ok=True)
     hedef.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
-    print(f"\nTamamlandi: {len(veriler)} veri -> {hedef}")
+    print(f"Tamamlandi: {len(olaylar)} olay -> {hedef}")
 
 
 if __name__ == "__main__":
