@@ -478,11 +478,16 @@
   }
   /* Ana sayfa grafikler */
   .as-sekt-arac { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-  /* Kompakt sektor kutu izgarasi */
-  .sekt-kutu-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
-  .sekt-kutu { border-radius: 8px; padding: 9px 10px; border: 1px solid var(--bs-border-color); }
-  .sekt-kutu .kod { font-size: 11.5px; font-weight: 800; color: var(--bs-emphasis-color); letter-spacing: .3px; }
-  .sekt-kutu .dg { font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  /* Kompakt sektor bar */
+  .sekt-bar-satir { display: grid; grid-template-columns: 78px 1fr 52px; gap: 10px; align-items: center; padding: 2px 0; }
+  .sekt-bar-ad { font-size: 11px; font-weight: 700; color: var(--bs-emphasis-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sekt-bar-yol { position: relative; height: 14px; display: flex; align-items: center; }
+  .sekt-bar-mid { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--bs-border-color); }
+  .sekt-bar { position: absolute; height: 10px; border-radius: 3px; top: 2px; transition: width .4s cubic-bezier(.2,.7,.3,1); }
+  .sekt-bar.pos { background: rgba(var(--gnc-success-rgb), 0.8); left: 50%; }
+  .sekt-bar.neg { background: rgba(var(--gnc-danger-rgb), 0.8); right: 50%; }
+  .sekt-bar-deg { font-size: 11px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 640px){ .sekt-bar-satir { grid-template-columns: 64px 1fr 48px; gap: 8px; } }
 
   /* Info tooltip (nasil okunur) */
   .grafik-info { position: relative; display: inline-flex; color: var(--gnc-text-dim); cursor: help; font-size: 13px; margin-left: 6px; }
@@ -535,6 +540,8 @@
   .oc-yorum { font-size: 12px; line-height: 1.55; color: var(--gnc-text-faded); margin-bottom: 12px; }
   .oc-link { font-size: 11.5px; font-weight: 700; color: var(--gnc-accent); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
   .oc-link:hover { text-decoration: underline; }
+  .oc-embed { position: relative; width: 100%; height: 340px; border-radius: 10px; overflow: hidden; background: #fff; margin-bottom: 10px; border: 1px solid var(--bs-border-color); }
+  .oc-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .oc-derin { margin-top: 20px; }
   .oc-derin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
   .oc-derin-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 14px 16px; display: block; text-decoration: none; transition: border-color .12s, transform .12s; }
@@ -749,7 +756,7 @@
         <span class="status-update" id="oc-guncelleme"></span>
       </div>
       <div class="page-intro">
-        Bitcoin ağ verileri (kaynak: Coin Metrics, ücretsiz). Eğitim serindeki çekirdek metrikler burada canlı gösterilir; her kartta "nasıl okunur" notu ve grafiğin resmi kaynağına (Checkonchain) bağlantı var. <b>Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</b>
+        Bitcoin ağ verileri, senin eğitim serindeki metrikler; grafikler doğrudan <b>Checkonchain'den canlı gömülüdür</b> (eğitimde gösterdiğin kaynağın aynısı). Başlıktaki ⓘ ikonuna gelince nasıl okunacağı açılır. <b>Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</b>
       </div>
       <div id="oc-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
     </section>
@@ -1430,13 +1437,18 @@ function sektorGrafikCiz(){
   if(!SEKTOR_GRAFIK_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Veri yok.</div>'; return; }
   const liste = [...SEKTOR_GRAFIK_VERI].sort((a,b) => (b[sektGrafikDonem]||0) - (a[sektGrafikDonem]||0));
   const maxAbs = Math.max(...liste.map(s => Math.abs(s[sektGrafikDonem]||0)), 0.1);
-  kap.innerHTML = '<div class="sekt-kutu-izgara">' + liste.map(s => {
+  kap.innerHTML = liste.map(s => {
     const v = s[sektGrafikDonem] || 0;
-    const yog = Math.min(0.9, 0.12 + (Math.abs(v)/maxAbs) * 0.6);
-    const renk = v >= 0 ? 'rgba(var(--gnc-success-rgb),' + yog.toFixed(2) + ')' : 'rgba(var(--gnc-danger-rgb),' + yog.toFixed(2) + ')';
-    return '<div class="sekt-kutu" style="background:' + renk + '" title="' + (SEKTOR_AD[s.kod]||s.kod) + '">' +
-      '<div class="kod">' + s.kod + '</div><div class="dg">' + fmtYuzde(v) + '</div></div>';
-  }).join("") + '</div>';
+    const gen = (Math.abs(v) / maxAbs) * 50;
+    const bar = v >= 0
+      ? '<div class="sekt-bar pos" style="width:' + gen.toFixed(1) + '%"></div>'
+      : '<div class="sekt-bar neg" style="width:' + gen.toFixed(1) + '%"></div>';
+    return '<div class="sekt-bar-satir" title="' + (SEKTOR_AD[s.kod]||s.kod) + '">' +
+      '<div class="sekt-bar-ad">' + s.kod + '</div>' +
+      '<div class="sekt-bar-yol"><div class="sekt-bar-mid"></div>' + bar + '</div>' +
+      '<div class="sekt-bar-deg ' + yon(v) + '">' + fmtYuzde(v) + '</div>' +
+    '</div>';
+  }).join("");
 }
 let ETHBTC_SERI = null, ETHBTC_OLCEK = 30;
 async function ethbtcYukle(){
@@ -1556,22 +1568,21 @@ const OC_LINKLER = [
 ];
 async function onchainCek(){
   const kap = document.getElementById("oc-icerik");
-  kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
-  try{
-    const bas = new Date(Date.now() - 1300*86400000).toISOString().slice(0,10);
-    const url = 'https://community-api.coinmetrics.io/v4/timeseries/asset-metrics' +
-      '?assets=btc&metrics=CapMVRVCur,CapRealUSD,CapMrktCurUSD,SplyCur,AdrActCnt&frequency=1d' +
-      '&start_time=' + bas + '&page_size=10000';
-    const res = await fetch(url);
-    if(!res.ok) throw new Error();
-    const j = await res.json();
-    const veri = onchainHesapla(j.data || []);
-    try { document.getElementById("oc-guncelleme").textContent = new Date().toLocaleDateString("tr-TR") + " · Coin Metrics"; } catch(e){}
-    onchainCiz(veri);
-  }catch(e){
-    document.getElementById("oc-guncelleme").textContent = "veri alınamadı";
-    kap.innerHTML = '<div class="durum-kutu">On-chain verisi şu an alınamadı.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Coin Metrics geçici olarak yanıt vermiyor olabilir.</span><br><button class="btn-gnc" onclick="onchainCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
-  }
+  try { document.getElementById("oc-guncelleme").textContent = "canlı · Checkonchain"; } catch(e){}
+  let html = '<div class="oc-grid">' + OC_TANIM.map(x =>
+    '<div class="oc-kart">' +
+      '<div class="oc-ust"><div class="oc-isim">' + x.isim +
+        ' <span class="grafik-info" data-tip="' + (x.yorum||"").replace(/"/g,"&quot;") + '"><i class="bi bi-info-circle"></i></span>' +
+      '</div></div>' +
+      '<div class="oc-embed"><iframe src="' + x.kaynak + '" loading="lazy" title="' + x.isim + '"></iframe></div>' +
+      '<a class="oc-link" href="' + x.kaynak + '" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Tam ekran aç (Checkonchain)</a>' +
+    '</div>').join("") + '</div>';
+  html += '<div class="oc-derin"><div class="as-eyebrow"><span>Derin Metrikler</span><small>eğitim kaynakların</small></div>' +
+    '<div class="oc-derin-grid">' + OC_LINKLER.map(l =>
+      '<a class="oc-derin-kart" href="' + l.link + '" target="_blank" rel="noopener">' +
+        '<div class="baslik">' + l.isim + ' <i class="bi bi-box-arrow-up-right" style="font-size:11px;color:var(--gnc-text-dim)"></i></div>' +
+        '<div class="aciklama">' + l.aciklama + '</div></a>').join("") + '</div></div>';
+  kap.innerHTML = html;
 }
 function onchainHesapla(ham){
   const f = (x) => { const n = parseFloat(x); return isNaN(n) ? null : n; };
