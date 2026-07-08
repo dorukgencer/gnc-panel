@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-GNC Insight - Hisse Finansal (Bilanco/Gelir Tablosu) Cekici
-sektor_hisseler.json'daki her hisse icin Is Yatirim'dan finansal tablolari ceker
-ve gnc-panel/finansal/{KOD}.json dosyasina yazar. Hisseye tiklayinca panel bu
-dosyayi okur. Finansallar ceyrekte bir degistigi icin ayda bir calisir.
+GNC Insight - Hisse Finansal (Bilanco/Gelir Tablosu) Cekici - TOPLU
+sektor_hisseler.json'daki hisseleri GRUPLAR halinde (tek istekte coklu sembol)
+Is Yatirim'dan ceker; her hisse icin gnc-panel/finansal/{KOD}.json yazar.
+Tek tek cekmek yerine toplu cektigi icin cok daha hizli.
 """
 
 import json
@@ -15,7 +15,8 @@ from isyatirimhisse import fetch_financials
 
 KLASOR = Path(__file__).parent
 BASE_COLS = {"SYMBOL", "FINANCIAL_ITEM_CODE", "FINANCIAL_ITEM_NAME_TR", "FINANCIAL_ITEM_NAME_EN"}
-DONEM_SAYISI = 8  # son 8 donem
+DONEM_SAYISI = 8
+GRUP_BOYUT = 25   # tek istekte kac sembol
 
 
 def hisse_kodlari():
@@ -36,22 +37,13 @@ def temizle_deger(x):
         return None
 
 
-def hisse_finansal(kod, yil_bas, yil_bit):
-    """Bir hisse icin finansal tablo -> {donemler:[...], kalemler:[{ad, degerler:{}}]}."""
-    df = None
-    for grup in ("1", "2"):  # 1: sinai/hizmet, 2: banka/finans
-        try:
-            d = fetch_financials(symbols=[kod], start_year=yil_bas, end_year=yil_bit, financial_group=grup)
-            if d is not None and len(d) > 5:
-                df = d
-                break
-        except Exception:
-            continue
-    if df is None or not len(df):
-        return None
-
+def parcala(df):
+    """Coklu-sembol DataFrame -> {KOD: {donemler, kalemler}}."""
+    sonuc = {}
+    if df is None or not len(df) or "SYMBOL" not in df.columns:
+        return sonuc
     donem_kol = [c for c in df.columns if c not in BASE_COLS]
-    # donemleri tarihe gore sirala (en yeni once), son N tanesi
+
     def anahtar(c):
         try:
             y, q = str(c).split("/"); return (int(y), int(q))
@@ -59,22 +51,37 @@ def hisse_finansal(kod, yil_bas, yil_bit):
             return (0, 0)
     donem_kol = sorted(donem_kol, key=anahtar, reverse=True)[:DONEM_SAYISI]
 
-    kalemler = []
-    for _, r in df.iterrows():
-        ad = r.get("FINANCIAL_ITEM_NAME_TR")
-        if not ad:
-            continue
-        degerler = {}
-        for d in donem_kol:
-            v = temizle_deger(r.get(d))
-            if v is not None:
-                degerler[d] = v
-        if degerler:
-            kalemler.append({"ad": str(ad).strip(), "degerler": degerler})
+    for kod, grp in df.groupby("SYMBOL"):
+        kalemler = []
+        for _, r in grp.iterrows():
+            ad = r.get("FINANCIAL_ITEM_NAME_TR")
+            if not ad:
+                continue
+            degerler = {}
+            for d in donem_kol:
+                v = temizle_deger(r.get(d))
+                if v is not None:
+                    degerler[d] = v
+            if degerler:
+                kalemler.append({"ad": str(ad).strip(), "degerler": degerler})
+        if kalemler:
+            sonuc[str(kod).strip()] = {"donemler": donem_kol, "kalemler": kalemler}
+    return sonuc
 
-    if not kalemler:
-        return None
-    return {"donemler": donem_kol, "kalemler": kalemler}
+
+def toplu_cek(kodlar, yil_bas, yil_bit, grup):
+    """kodlar listesini GRUP_BOYUT'luk parcalarla toplu ceker."""
+    bulunan = {}
+    for i in range(0, len(kodlar), GRUP_BOYUT):
+        parca = kodlar[i:i + GRUP_BOYUT]
+        try:
+            df = fetch_financials(symbols=parca, start_year=yil_bas, end_year=yil_bit, financial_group=grup)
+            cikan = parcala(df)
+            bulunan.update(cikan)
+            print(f"  grup {grup} [{i}-{i+len(parca)}]: {len(cikan)} hisse")
+        except Exception as e:
+            print(f"  grup {grup} [{i}-{i+len(parca)}] hata: {e}")
+    return bulunan
 
 
 def main():
@@ -83,20 +90,24 @@ def main():
     hedef_klasor = KLASOR / "gnc-panel" / "finansal"
     hedef_klasor.mkdir(parents=True, exist_ok=True)
 
+    # 1) Once sinai/hizmet grubu (1) ile toplu cek
+    print("Grup 1 (sinai/hizmet) toplu cekiliyor...")
+    veriler = toplu_cek(kodlar, yil - 3, yil, "1")
+
+    # 2) Grup 1'de gelmeyenleri banka/finans grubu (2) ile dene
+    eksik = [k for k in kodlar if k not in veriler]
+    if eksik:
+        print(f"Grup 2 (banka/finans) icin {len(eksik)} eksik hisse deneniyor...")
+        veriler.update(toplu_cek(eksik, yil - 3, yil, "2"))
+
+    # 3) Yaz
     ok = 0
-    for kod in kodlar:
-        try:
-            fin = hisse_finansal(kod, yil - 3, yil)
-            if fin:
-                fin["kod"] = kod
-                fin["guncelleme"] = datetime.now().isoformat()
-                (hedef_klasor / f"{kod}.json").write_text(json.dumps(fin, ensure_ascii=False), encoding="utf-8")
-                ok += 1
-                print(f"  {kod:6s} {len(fin['kalemler'])} kalem")
-            else:
-                print(f"  {kod:6s} finansal yok")
-        except Exception as e:
-            print(f"  {kod:6s} hata: {e}")
+    now = datetime.now().isoformat()
+    for kod, fin in veriler.items():
+        fin["kod"] = kod
+        fin["guncelleme"] = now
+        (hedef_klasor / f"{kod}.json").write_text(json.dumps(fin, ensure_ascii=False), encoding="utf-8")
+        ok += 1
 
     print(f"\nTamamlandi: {ok}/{len(kodlar)} hisse -> {hedef_klasor}")
 
