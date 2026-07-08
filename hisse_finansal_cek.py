@@ -7,6 +7,7 @@ Tek tek cekmek yerine toplu cektigi icin cok daha hizli.
 """
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from isyatirimhisse import fetch_financials
 
 KLASOR = Path(__file__).parent
 BASE_COLS = {"SYMBOL", "FINANCIAL_ITEM_CODE", "FINANCIAL_ITEM_NAME_TR", "FINANCIAL_ITEM_NAME_EN"}
-DONEM_SAYISI = 8
+DONEM_SAYISI = 24  # ~6 yil (ceyreklik)
 GRUP_BOYUT = 25   # tek istekte kac sembol
 
 
@@ -42,7 +43,8 @@ def parcala(df):
     sonuc = {}
     if df is None or not len(df) or "SYMBOL" not in df.columns:
         return sonuc
-    donem_kol = [c for c in df.columns if c not in BASE_COLS]
+    # Donem kolonlari: sadece "YYYY/M" desenine uyanlar (fazladan kolonlari elemek icin)
+    donem_kol = [c for c in df.columns if c not in BASE_COLS and re.match(r"^\d{4}/\d{1,2}$", str(c))]
 
     def anahtar(c):
         try:
@@ -90,17 +92,32 @@ def main():
     hedef_klasor = KLASOR / "gnc-panel" / "finansal"
     hedef_klasor.mkdir(parents=True, exist_ok=True)
 
-    # 1) Once sinai/hizmet grubu (1) ile toplu cek
-    print("Grup 1 (sinai/hizmet) toplu cekiliyor...")
-    veriler = toplu_cek(kodlar, yil - 3, yil, "1")
+    # Grup onceligi: 3 = UFRS Konsolide, 2 = UFRS (solo), 1 = eski XI_29.
+    # Yeterli dolulukta (>=10 kalem) gelen ilk grup kullanilir; bankalar da
+    # dogru guncel formatta (Kar Payi Geliri vb.) UFRS'ten gelir.
+    MIN_KALEM = 10
+    veriler = {}
+    for grup in ("3", "2", "1"):
+        kalan = [k for k in kodlar if k not in veriler]
+        if not kalan:
+            break
+        print(f"Grup {grup} icin {len(kalan)} hisse deneniyor...")
+        yeni = toplu_cek(kalan, yil - 6, yil, grup)
+        for kod, fin in yeni.items():
+            if len(fin.get("kalemler", [])) >= MIN_KALEM:
+                veriler[kod] = fin
 
-    # 2) Grup 1'de gelmeyenleri banka/finans grubu (2) ile dene
-    eksik = [k for k in kodlar if k not in veriler]
-    if eksik:
-        print(f"Grup 2 (banka/finans) icin {len(eksik)} eksik hisse deneniyor...")
-        veriler.update(toplu_cek(eksik, yil - 3, yil, "2"))
+    # Hala bos kalan varsa esigi dusurup ne bulduysak al (eski/kismi tablolar)
+    kalan = [k for k in kodlar if k not in veriler]
+    if kalan:
+        for grup in ("3", "2", "1"):
+            kalan = [k for k in kodlar if k not in veriler]
+            if not kalan:
+                break
+            yeni = toplu_cek(kalan, yil - 6, yil, grup)
+            veriler.update(yeni)
 
-    # 3) Yaz
+    # Yaz
     ok = 0
     now = datetime.now().isoformat()
     for kod, fin in veriler.items():
