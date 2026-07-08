@@ -612,6 +612,35 @@
   .oc-derin-kart .aciklama { font-size: 11px; color: var(--gnc-text-dim); margin-top: 3px; }
   @media (max-width: 860px){ .oc-grid { grid-template-columns: 1fr; } }
 
+  /* Dashboard grid */
+  .dash-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 900px){ .dash-grid { grid-template-columns: 1fr; } }
+  .as-kart { position: relative; }
+
+  /* PNG indirme butonu */
+  .blok-indir { position: absolute; top: 12px; right: 12px; z-index: 5; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); color: var(--gnc-text-dim);
+    cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, color .15s; font-size: 13px; }
+  .as-kart:hover .blok-indir, .oc-kart:hover .blok-indir { opacity: 1; }
+  .blok-indir:hover { color: var(--gnc-accent); border-color: rgba(var(--gnc-accent-rgb),.5); }
+
+  /* Dikey sektor bar */
+  .sekt-vbar-kap { display: flex; align-items: stretch; gap: 4px; overflow-x: auto; padding: 6px 2px 2px; }
+  .sekt-vbar-col { flex: 1 0 26px; min-width: 26px; display: flex; flex-direction: column; align-items: center; cursor: default; position: relative; }
+  .sekt-vbar-alan { position: relative; width: 100%; height: 150px; display: flex; flex-direction: column; }
+  .sekt-vbar-ust, .sekt-vbar-alt { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
+  .sekt-vbar-alt { align-items: flex-start; }
+  .sekt-vbar-mid { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--bs-border-color); }
+  .sekt-vbar { width: 68%; border-radius: 3px 3px 0 0; transition: height .4s cubic-bezier(.2,.7,.3,1); }
+  .sekt-vbar.pos { background: rgba(var(--gnc-success-rgb), 0.8); }
+  .sekt-vbar.neg { background: rgba(var(--gnc-danger-rgb), 0.8); border-radius: 0 0 3px 3px; }
+  .sekt-vbar-kod { font-size: 8.5px; font-weight: 700; color: var(--gnc-text-dim); margin-top: 6px; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; letter-spacing: .3px; }
+  .sekt-vbar-col::after { content: attr(data-ad) " · " attr(data-deg); position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px; font-size: 11px; font-weight: 700;
+    white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s; z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+  .sekt-vbar-col:hover::after { opacity: 1; }
+  .sekt-vbar-col:hover .sekt-vbar { filter: brightness(1.25); }
+
   /* Bolum etiketi (eyebrow) */
   .as-eyebrow { display: flex; align-items: baseline; gap: 10px; margin: 4px 2px 12px; }
   .as-eyebrow span { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--bs-emphasis-color); }
@@ -779,34 +808,38 @@
         </div>
       </div>
 
-      <div class="as-eyebrow"><span>BIST · Sektör Rotasyonu</span><small id="as-sekt-guncelleme"></small></div>
-      <div class="as-kart" style="margin-bottom:20px;">
-        <div class="as-sekt-arac">
-          <button class="chip donem2 active" data-d="g1">Günlük</button>
-          <button class="chip donem2" data-d="h1">Haftalık</button>
-          <button class="chip donem2" data-d="a1">Aylık</button>
-          <span class="grafik-info" data-tip="Paranın hangi sektöre aktığını gösterir. Yeşil kutular güçlü, kırmızılar zayıf sektörler. Tarama aracıdır, sinyal değildir."><i class="bi bi-info-circle"></i></span>
+      <div class="dash-grid">
+        <div class="as-kart dash-sektor">
+          <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Sektör Rotasyonu')" title="PNG indir"><i class="bi bi-download"></i></button>
+          <div class="as-kart-baslik"><i class="bi bi-grid-3x3-gap"></i> Sektör Rotasyonu
+            <span class="grafik-info" data-tip="Paranın hangi sektöre aktığını gösterir. Yukarı yeşil çubuklar güçlü, aşağı kırmızılar zayıf sektörler. Tarama aracıdır, sinyal değildir."><i class="bi bi-info-circle"></i></span>
+          </div>
+          <div class="as-sekt-arac">
+            <button class="chip donem2 active" data-d="g1">Günlük</button>
+            <button class="chip donem2" data-d="h1">Haftalık</button>
+            <button class="chip donem2" data-d="a1">Aylık</button>
+            <small id="as-sekt-guncelleme"></small>
+          </div>
+          <div id="as-sektor-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
         </div>
-        <div id="as-sektor-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
+
+        <div class="as-kart dash-ethbtc">
+          <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · ETH/BTC')" title="PNG indir"><i class="bi bi-download"></i></button>
+          <div class="as-kart-baslik"><i class="bi bi-arrow-left-right"></i> ETH/BTC · Para Rotasyonu
+            <span class="grafik-info" data-tip="ETH/BTC yükseliyorsa para altcoinlere kayıyor (risk iştahı). Düşüyorsa BTC'ye kaçış (temkin). Kripto rotasyonunu okumanın pratik yolu."><i class="bi bi-info-circle"></i></span>
+          </div>
+          <div class="grafik-olcek" id="ethbtc-olcek">
+            <button class="chip olcek active" data-n="30">Ay</button>
+            <button class="chip olcek" data-n="90">3 Ay</button>
+            <button class="chip olcek" data-n="365">Yıl</button>
+            <button class="chip olcek" data-n="9999">Tüm</button>
+          </div>
+          <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
+        </div>
       </div>
 
-      <div class="as-eyebrow"><span>Kripto · Para Rotasyonu</span><small>ETH/BTC · canlı</small></div>
-      <div class="as-kart" style="margin-bottom:20px;">
-        <div class="as-kart-baslik">
-          <i class="bi bi-arrow-left-right"></i> ETH/BTC Oranı
-          <span class="grafik-info" data-tip="ETH/BTC yükseliyorsa para Bitcoin'den altcoinlere kayıyor (kripto içinde risk iştahı artıyor). Düşüyorsa para BTC'ye çekiliyor (temkin, güvenli liman). Kripto piyasasında paranın rotasyonunu okumanın en pratik yollarından biridir."><i class="bi bi-info-circle"></i></span>
-        </div>
-        <div class="grafik-olcek" id="ethbtc-olcek">
-          <button class="chip olcek active" data-n="30">Ay</button>
-          <button class="chip olcek" data-n="90">3 Ay</button>
-          <button class="chip olcek" data-n="365">Yıl</button>
-          <button class="chip olcek" data-n="9999">Tüm</button>
-        </div>
-        <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
-      </div>
-
-      <div class="as-eyebrow"><span>Sistem · Veri Durumu</span><small>güncellemeler</small></div>
       <div class="as-kart">
+        <div class="as-kart-baslik"><i class="bi bi-clock-history"></i> Sistem · Veri Durumu</div>
         <div id="as-veri-durum"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
     </section>
@@ -932,6 +965,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 /* =======================================================================
    DÜZENLENEBİLİR: Ekonomik takvimde takip edilen veriler.
@@ -1586,18 +1620,52 @@ function sektorGrafikCiz(){
   if(!SEKTOR_GRAFIK_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Veri yok.</div>'; return; }
   const liste = [...SEKTOR_GRAFIK_VERI].sort((a,b) => (b[sektGrafikDonem]||0) - (a[sektGrafikDonem]||0));
   const maxAbs = Math.max(...liste.map(s => Math.abs(s[sektGrafikDonem]||0)), 0.1);
-  kap.innerHTML = liste.map(s => {
+  kap.innerHTML = '<div class="sekt-vbar-kap">' + liste.map(s => {
     const v = s[sektGrafikDonem] || 0;
-    const gen = (Math.abs(v) / maxAbs) * 50;
+    const yuk = (Math.abs(v) / maxAbs) * 100;
     const bar = v >= 0
-      ? '<div class="sekt-bar pos" style="width:' + gen.toFixed(1) + '%"></div>'
-      : '<div class="sekt-bar neg" style="width:' + gen.toFixed(1) + '%"></div>';
-    return '<div class="sekt-bar-satir" data-ad="' + (SEKTOR_AD[s.kod]||s.kod) + '">' +
-      '<div class="sekt-bar-ad">' + s.kod + '</div>' +
-      '<div class="sekt-bar-yol"><div class="sekt-bar-mid"></div>' + bar + '</div>' +
-      '<div class="sekt-bar-deg ' + yon(v) + '">' + fmtYuzde(v) + '</div>' +
-    '</div>';
-  }).join("");
+      ? '<div class="sekt-vbar-ust"><div class="sekt-vbar pos" style="height:' + yuk.toFixed(0) + '%"></div></div><div class="sekt-vbar-alt"></div>'
+      : '<div class="sekt-vbar-ust"></div><div class="sekt-vbar-alt"><div class="sekt-vbar neg" style="height:' + yuk.toFixed(0) + '%"></div></div>';
+    return '<div class="sekt-vbar-col" data-ad="' + (SEKTOR_AD[s.kod]||s.kod) + '" data-deg="' + fmtYuzde(v) + '">' +
+      '<div class="sekt-vbar-alan"><div class="sekt-vbar-mid"></div>' + bar + '</div>' +
+      '<div class="sekt-vbar-kod">' + s.kod + '</div></div>';
+  }).join("") + '</div>';
+}
+async function blokIndir(btn, baslik){
+  if(typeof html2canvas === "undefined"){ alert("Görsel aracı yükleniyor, birkaç saniye sonra tekrar deneyin."); return; }
+  const kart = btn.closest(".as-kart, .oc-kart");
+  if(!kart) return;
+  btn.style.visibility = "hidden";
+  try{
+    const bg = getComputedStyle(document.body).backgroundColor || "#0a0a0a";
+    const cv = await html2canvas(kart, { backgroundColor: "#0a0a0a", scale: 2, logging: false, useCORS: true });
+    const W = 1080, H = 1350;
+    const out = document.createElement("canvas"); out.width = W; out.height = H;
+    const ctx = out.getContext("2d");
+    ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, W, H);
+    // Marka basligi
+    ctx.fillStyle = "#d4af37"; ctx.font = "bold 44px Arial"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("GNC INSIGHT", 64, 96);
+    ctx.fillStyle = "#8a8a92"; ctx.font = "600 24px Arial";
+    ctx.fillText((baslik || "Veri Paneli") + " · gncinsight.com", 64, 134);
+    // Karti ortala/sigdir
+    const padX = 64, ustY = 190, altY = 120;
+    const availW = W - 2*padX, availH = H - ustY - altY;
+    const r = Math.min(availW / cv.width, availH / cv.height);
+    const dw = cv.width * r, dh = cv.height * r;
+    const dx = (W - dw) / 2, dy = ustY + (availH - dh) / 2;
+    ctx.drawImage(cv, dx, dy, dw, dh);
+    // Alt uyari
+    ctx.fillStyle = "#66666e"; ctx.font = "500 20px Arial";
+    ctx.fillText("Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.", 64, H - 54);
+    const a = document.createElement("a");
+    a.download = "gnc-insight-" + Date.now() + ".png";
+    a.href = out.toDataURL("image/png"); a.click();
+  }catch(e){
+    alert("Görsel oluşturulamadı. (Grafik gömülü/dış kaynaklıysa indirilemez.)");
+  }finally{
+    btn.style.visibility = "";
+  }
 }
 let ETHBTC_SERI = null, ETHBTC_OLCEK = 30;
 async function ethbtcYukle(){
