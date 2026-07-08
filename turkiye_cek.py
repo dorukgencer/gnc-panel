@@ -7,6 +7,7 @@ gnc-panel/turkiye_takvim.json'a yazar. API anahtari gerektirmez.
 """
 
 import json
+import pandas as pd
 import math
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -32,13 +33,32 @@ def main():
     cal = bp.EconomicCalendar()
     df = cal.events(start=bas, end=bit, country="TR")
 
+    ONEMLI = ("enflasyon", "tüfe", "tufe", "üfe", "ufe", "faiz", "işsizlik", "issizlik",
+              "istihdam", "gsyih", "büyüme", "buyume", "cari denge", "cari işlem", "cari açık",
+              "sanayi üretim", "kapasite kullanım", "tüketici güven", "reel kesim", "ekonomik güven",
+              "imalat pmi", "pmi", "merkez bankas", "tcmb", "politika faiz", "bütçe",
+              "dış ticaret dengesi", "konut sat", "perakende sat", "dış borç")
+
+    def onemli_mi(ad):
+        s = (ad or "").lower()
+        return any(k in s for k in ONEMLI)
+
+    def tarih_iso(x):
+        try:
+            return pd.to_datetime(x).strftime("%Y-%m-%d")
+        except Exception:
+            return temiz(x)[:10]
+
     olaylar = []
     if df is not None and len(df):
         for _, r in df.iterrows():
+            ad = temiz(r.get("Event"))
+            if not onemli_mi(ad):
+                continue
             olaylar.append({
-                "tarih": temiz(r.get("Date")),
+                "tarih": tarih_iso(r.get("Date")),
                 "saat": temiz(r.get("Time")),
-                "olay": temiz(r.get("Event")),
+                "olay": ad,
                 "onem": temiz(r.get("Importance")),
                 "aciklanan": temiz(r.get("Actual")),
                 "beklenti": temiz(r.get("Forecast")),
