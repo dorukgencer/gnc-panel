@@ -1,8 +1,7 @@
-name: Turkiye makro verisi guncelle
+name: Turkiye ekonomik takvim guncelle
 
 on:
   schedule:
-    # Hafta ici gunde 2 kez (UTC): 06:00, 15:00 = 09:00, 18:00 Turkiye
     - cron: "0 6 * * 1-5"
     - cron: "0 15 * * 1-5"
   workflow_dispatch: {}
@@ -20,14 +19,12 @@ jobs:
           python-version: "3.12"
       - name: Kutuphaneleri yukle
         run: pip install borsapy pandas
-      - name: Turkiye verisini cek
-        env:
-          EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
+      - name: Turkiye takvimini cek
         run: python turkiye_cek.py
       - name: Kaydet
         run: |
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add gnc-panel/turkiye_veri.json
-          git commit -m "Turkiye verisi guncellendi" || echo "Degisiklik yok"
+          git add gnc-panel/turkiye_takvim.json
+          git commit -m "Turkiye takvimi guncellendi" || echo "Degisiklik yok"
           git push
