@@ -25,8 +25,8 @@ def temiz(x):
 
 def main():
     bugun = datetime.now()
-    bas = (bugun - timedelta(days=30)).strftime("%Y-%m-%d")
-    bit = (bugun + timedelta(days=40)).strftime("%Y-%m-%d")
+    bas = (bugun - timedelta(days=400)).strftime("%Y-%m-%d")
+    bit = (bugun + timedelta(days=45)).strftime("%Y-%m-%d")
 
     print("Turkiye takvimi cekiliyor (doviz.com)...")
     cal = bp.EconomicCalendar()
