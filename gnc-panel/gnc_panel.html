@@ -477,22 +477,48 @@
     .kutu-izgara { grid-template-columns: 1fr 1fr; gap: 10px; }
   }
   /* Ana sayfa grafikler */
-  .as-sekt-arac { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .as-sekt-not { font-size: 11px; color: var(--gnc-text-dim); margin-left: auto; }
-  .sekt-bar-satir { display: grid; grid-template-columns: 92px 1fr 62px; gap: 10px; align-items: center; padding: 3px 0; }
-  .sekt-bar-ad { font-size: 11.5px; font-weight: 700; color: var(--bs-emphasis-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sekt-bar-yol { position: relative; height: 20px; background: transparent; display: flex; align-items: center; }
-  .sekt-bar-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--bs-border-color); }
-  .sekt-bar { position: absolute; height: 14px; border-radius: 3px; top: 3px; transition: width .4s cubic-bezier(.2,.7,.3,1); }
-  .sekt-bar.pos { background: rgba(var(--gnc-success-rgb), 0.8); left: 50%; }
-  .sekt-bar.neg { background: rgba(var(--gnc-danger-rgb), 0.8); right: 50%; }
-  .sekt-bar-deg { font-size: 12px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .as-sekt-arac { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  /* Kompakt sektor kutu izgarasi */
+  .sekt-kutu-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+  .sekt-kutu { border-radius: 8px; padding: 9px 10px; border: 1px solid var(--bs-border-color); }
+  .sekt-kutu .kod { font-size: 11.5px; font-weight: 800; color: var(--bs-emphasis-color); letter-spacing: .3px; }
+  .sekt-kutu .dg { font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+  /* Info tooltip (nasil okunur) */
+  .grafik-info { position: relative; display: inline-flex; color: var(--gnc-text-dim); cursor: help; font-size: 13px; margin-left: 6px; }
+  .grafik-info:hover { color: var(--gnc-accent); }
+  .grafik-info::after {
+    content: attr(data-tip); position: absolute; top: 130%; right: 0; z-index: 60;
+    width: 260px; background: var(--bs-emphasis-color); color: var(--gnc-card-bg);
+    padding: 10px 12px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.5;
+    white-space: normal; opacity: 0; pointer-events: none; transition: opacity .12s; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+  .grafik-info:hover::after { opacity: 1; }
+
+  /* Grafik zaman olcegi */
+  .grafik-olcek { display: flex; gap: 6px; margin: 10px 0 4px; flex-wrap: wrap; }
+
+  /* Etkilesimli cizgi grafik */
+  .cg-wrap { position: relative; }
+  .cg-wrap svg { display: block; width: 100%; }
+  .cg-guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--gnc-text-dim); opacity: 0; pointer-events: none; }
+  .cg-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--gnc-accent); border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
+  .cg-tip { position: absolute; z-index: 40; background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px; font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transform: translate(-50%, -130%); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+  .cg-wrap.aktif .cg-guide, .cg-wrap.aktif .cg-dot, .cg-wrap.aktif .cg-tip { opacity: 1; }
+
   .as-ethbtc-yorum { font-size: 12.5px; line-height: 1.5; color: var(--gnc-text-faded); }
   .as-ethbtc-yorum b { color: var(--bs-emphasis-color); }
   .ethbtc-ust { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
   .ethbtc-deger { font-size: 24px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
   .ethbtc-deg { font-size: 13px; font-weight: 700; }
-  @media (max-width: 640px){ .sekt-bar-satir { grid-template-columns: 76px 1fr 54px; gap: 8px; } .as-sekt-not { width: 100%; margin-left: 0; } }
+  /* Veri durumu satirlari */
+  .vd-satir { display: flex; align-items: center; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid var(--bs-border-color); }
+  .vd-satir:last-child { border-bottom: none; }
+  .vd-sol { display: flex; align-items: center; gap: 9px; font-size: 12.5px; font-weight: 600; color: var(--bs-emphasis-color); }
+  .vd-nokta { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .vd-nokta.ok { background: var(--gnc-success); box-shadow: 0 0 0 3px rgba(var(--gnc-success-rgb),0.15); }
+  .vd-nokta.yok { background: var(--gnc-text-dim); }
+  .vd-zaman { font-size: 11.5px; color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
 
   /* On-Chain */
   .oc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -690,42 +716,29 @@
           <button class="chip donem2 active" data-d="g1">Günlük</button>
           <button class="chip donem2" data-d="h1">Haftalık</button>
           <button class="chip donem2" data-d="a1">Aylık</button>
-          <span class="as-sekt-not">Paranın hangi sektöre aktığını gösterir · tarama aracıdır, sinyal değildir</span>
+          <span class="grafik-info" data-tip="Paranın hangi sektöre aktığını gösterir. Yeşil kutular güçlü, kırmızılar zayıf sektörler. Tarama aracıdır, sinyal değildir."><i class="bi bi-info-circle"></i></span>
         </div>
         <div id="as-sektor-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
 
       <div class="as-eyebrow"><span>Kripto · Para Rotasyonu</span><small>ETH/BTC · canlı</small></div>
-      <div class="as-orta" style="margin-bottom:20px;">
-        <div class="as-kart">
-          <div class="as-kart-baslik"><i class="bi bi-arrow-left-right"></i> ETH/BTC Oranı</div>
-          <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
-        </div>
-        <div class="as-kart">
-          <div class="as-kart-baslik"><i class="bi bi-compass"></i> Nasıl okunur?</div>
-          <div class="as-ethbtc-yorum">
-            <b>ETH/BTC yükseliyorsa:</b> Para Bitcoin'den altcoinlere kayıyor; kripto içinde risk iştahı artıyor (risk-açık).<br><br>
-            <b>ETH/BTC düşüyorsa:</b> Para BTC'ye çekiliyor; temkin ve güvenli liman arayışı (risk-kapalı).<br><br>
-            <span style="color:var(--gnc-text-dim);font-size:11px;">Bu, kripto piyasasında paranın rotasyonunu okumanın en pratik yollarından biridir.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="as-eyebrow"><span>Kripto Para</span><small>7/24 · canlı</small></div>
       <div class="as-kart" style="margin-bottom:20px;">
-        <div class="kripto-strip" id="kripto-strip"><div class="durum-kutu" style="grid-column:1/-1;">Yükleniyor…</div></div>
+        <div class="as-kart-baslik">
+          <i class="bi bi-arrow-left-right"></i> ETH/BTC Oranı
+          <span class="grafik-info" data-tip="ETH/BTC yükseliyorsa para Bitcoin'den altcoinlere kayıyor (kripto içinde risk iştahı artıyor). Düşüyorsa para BTC'ye çekiliyor (temkin, güvenli liman). Kripto piyasasında paranın rotasyonunu okumanın en pratik yollarından biridir."><i class="bi bi-info-circle"></i></span>
+        </div>
+        <div class="grafik-olcek" id="ethbtc-olcek">
+          <button class="chip olcek active" data-n="30">Ay</button>
+          <button class="chip olcek" data-n="90">3 Ay</button>
+          <button class="chip olcek" data-n="365">Yıl</button>
+          <button class="chip olcek" data-n="9999">Tüm</button>
+        </div>
+        <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
 
-      <div class="as-eyebrow"><span>Sistem</span></div>
-      <div class="as-orta">
-        <div class="as-kart">
-          <div class="as-kart-baslik"><i class="bi bi-clock-history"></i> Veri Durumu</div>
-          <div id="as-veri-durum"><div class="durum-kutu">Yükleniyor…</div></div>
-        </div>
-        <div class="as-kart">
-          <div class="as-kart-baslik"><i class="bi bi-newspaper"></i> Haberler</div>
-          <div class="durum-kutu">Haber akışı yakında eklenecek.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Uygun bir kaynak belirlenip filtreli haber akışı buraya bağlanacak.</span></div>
-        </div>
+      <div class="as-eyebrow"><span>Sistem · Veri Durumu</span><small>güncellemeler</small></div>
+      <div class="as-kart">
+        <div id="as-veri-durum"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
     </section>
 
@@ -1401,7 +1414,6 @@ async function kriptoYukle(){
 let SEKTOR_GRAFIK_VERI = [], sektGrafikDonem = "g1";
 async function anaSayfaYukle(){
   saatTik();
-  kriptoYukle();
   ethbtcYukle();
   // Sektor rotasyon grafigi
   try{
@@ -1418,33 +1430,37 @@ function sektorGrafikCiz(){
   if(!SEKTOR_GRAFIK_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Veri yok.</div>'; return; }
   const liste = [...SEKTOR_GRAFIK_VERI].sort((a,b) => (b[sektGrafikDonem]||0) - (a[sektGrafikDonem]||0));
   const maxAbs = Math.max(...liste.map(s => Math.abs(s[sektGrafikDonem]||0)), 0.1);
-  kap.innerHTML = liste.map(s => {
+  kap.innerHTML = '<div class="sekt-kutu-izgara">' + liste.map(s => {
     const v = s[sektGrafikDonem] || 0;
-    const gen = (Math.abs(v) / maxAbs) * 50; // yaridan itibaren max %50
-    const bar = v >= 0
-      ? '<div class="sekt-bar pos" style="width:' + gen.toFixed(1) + '%"></div>'
-      : '<div class="sekt-bar neg" style="width:' + gen.toFixed(1) + '%"></div>';
-    return '<div class="sekt-bar-satir">' +
-      '<div class="sekt-bar-ad">' + s.kod + '</div>' +
-      '<div class="sekt-bar-yol"><div class="sekt-bar-mid"></div>' + bar + '</div>' +
-      '<div class="sekt-bar-deg ' + yon(v) + '">' + fmtYuzde(v) + '</div>' +
-    '</div>';
-  }).join("");
+    const yog = Math.min(0.9, 0.12 + (Math.abs(v)/maxAbs) * 0.6);
+    const renk = v >= 0 ? 'rgba(var(--gnc-success-rgb),' + yog.toFixed(2) + ')' : 'rgba(var(--gnc-danger-rgb),' + yog.toFixed(2) + ')';
+    return '<div class="sekt-kutu" style="background:' + renk + '" title="' + (SEKTOR_AD[s.kod]||s.kod) + '">' +
+      '<div class="kod">' + s.kod + '</div><div class="dg">' + fmtYuzde(v) + '</div></div>';
+  }).join("") + '</div>';
 }
+let ETHBTC_SERI = null, ETHBTC_OLCEK = 30;
 async function ethbtcYukle(){
   const kap = document.getElementById("as-ethbtc");
   try{
-    const res = await fetch('https://api.binance.com/api/v3/klines?symbol=ETHBTC&interval=1d&limit=180');
-    const data = await res.json();
-    const seri = data.map(k => ({ t: "", v: parseFloat(k[4]) }));
-    const son = seri[seri.length-1].v, ilk30 = seri.length > 30 ? seri[seri.length-31].v : seri[0].v;
-    const deg = (son/ilk30 - 1) * 100;
-    kap.innerHTML =
-      '<div class="ethbtc-ust"><div class="ethbtc-deger">' + son.toFixed(5) + '</div>' +
-      '<div class="ethbtc-deg ' + yon(deg) + '">' + fmtYuzde(deg) + ' <span style="color:var(--gnc-text-dim);font-weight:400;font-size:11px;">30g</span></div></div>' +
-      cizgiGrafik(seri) +
-      '<div style="font-size:10px;color:var(--gnc-text-dim);margin-top:6px;">Son 180 gün · kaynak: Binance</div>';
+    if(!ETHBTC_SERI){
+      const res = await fetch('https://api.binance.com/api/v3/klines?symbol=ETHBTC&interval=1d&limit=1000');
+      const data = await res.json();
+      ETHBTC_SERI = data.map(k => ({ t: new Date(k[0]).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"2-digit"}), v: parseFloat(k[4]) }));
+    }
+    ethbtcCiz();
   }catch(e){ kap.innerHTML = '<div class="durum-kutu">ETH/BTC verisi alınamadı.</div>'; }
+}
+function ethbtcCiz(){
+  const kap = document.getElementById("as-ethbtc");
+  if(!ETHBTC_SERI){ return; }
+  const dilim = ETHBTC_SERI.slice(-ETHBTC_OLCEK);
+  const son = dilim[dilim.length-1].v, ilk = dilim[0].v;
+  const deg = (son/ilk - 1) * 100;
+  kap.innerHTML =
+    '<div class="ethbtc-ust"><div class="ethbtc-deger">' + son.toFixed(5) + '</div>' +
+    '<div class="ethbtc-deg ' + yon(deg) + '">' + fmtYuzde(deg) + ' <span style="color:var(--gnc-text-dim);font-weight:400;font-size:11px;">dönem</span></div></div>' +
+    cizgiGrafik(dilim, {birim:"ratio"}) +
+    '<div style="font-size:10px;color:var(--gnc-text-dim);margin-top:6px;">kaynak: Binance</div>';
 }
 function asOzet(et, dg, y){
   const renk = y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)";
@@ -1452,16 +1468,23 @@ function asOzet(et, dg, y){
 }
 async function veriDurumYukle(){
   const kap = document.getElementById("as-veri-durum");
-  const bicimZaman = (iso) => { try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return "—"; } };
-  let satirlar = [];
-  try{ const r = await fetch('/sektor_verisi.json?t='+Date.now()); const d = await r.json(); satirlar.push(['Sektör verisi', bicimZaman(d.guncelleme)]); }
-  catch(e){ satirlar.push(['Sektör verisi','henüz yok']); }
-  try{ const r = await fetch('/sektor_hisse_veri.json?t='+Date.now()); const d = await r.json(); satirlar.push(['Hisse verisi', bicimZaman(d.guncelleme)]); }
-  catch(e){ satirlar.push(['Hisse verisi','henüz yok']); }
-  kap.innerHTML = satirlar.map(s =>
-    '<div class="as-veri-satir"><span class="kaynak">' + s[0] + '</span><span class="zaman">' + s[1] + '</span></div>').join("") +
-    '<div class="as-veri-satir"><span class="kaynak">Ekonomik takvim (FRED)</span><span class="canli">canlı</span></div>' +
-    '<div class="as-veri-satir"><span class="kaynak">Kripto (Binance)</span><span class="canli">canlı</span></div>';
+  const bicim = (iso) => { try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return "—"; } };
+  const kaynaklar = [
+    ['Sektör verisi', '/sektor_verisi.json'],
+    ['Hisse fiyatları', '/sektor_hisse_veri.json'],
+    ['Türkiye takvimi', '/turkiye_takvim.json'],
+  ];
+  let html = "";
+  for(const [ad, url] of kaynaklar){
+    try{ const r = await fetch(url+'?t='+Date.now()); if(!r.ok) throw 0; const d = await r.json(); html += vdSatir(ad, bicim(d.guncelleme), true); }
+    catch(e){ html += vdSatir(ad, 'henüz yok', false); }
+  }
+  html += vdSatir('Ekonomik takvim (FRED)', 'canlı', true);
+  html += vdSatir('Kripto & On-chain (tarayıcı)', 'canlı', true);
+  kap.innerHTML = html;
+}
+function vdSatir(ad, zaman, ok){
+  return '<div class="vd-satir"><span class="vd-sol"><span class="vd-nokta ' + (ok?'ok':'yok') + '"></span>' + ad + '</span><span class="vd-zaman">' + zaman + '</span></div>';
 }
 
 /* ---- TÜRKİYE TAKVİMİ (tarihli) ---- */
@@ -1507,19 +1530,73 @@ function turkiyeCiz(olaylar){
 }
 
 /* ---- ON-CHAIN ---- */
+const OC_TANIM = [
+  {anahtar:"mvrv", isim:"MVRV Oranı", birim:"x",
+   yorum:"Piyasa değerinin gerçekleşen değere (aggregate maliyet bazına) oranı. 1'in altı tarihsel dip bölgesi, aşırı yüksek seviyeler tepe uyarısıdır. Tek başına değil, teyitle okunmalı.",
+   kaynak:"https://charts.checkonchain.com/btconchain/pricing/mvrv/mvrv_light.html"},
+  {anahtar:"mvrvz", isim:"MVRV Z-Score", birim:"",
+   yorum:"MVRV'nin uzun vadeli oynaklığa göre normalize edilmiş hali. Döngüler arası kıyas için daha nettir; aşırı yüksek/düşük Z bölgeleri tepe ve dipleri işaret eder.",
+   kaynak:"https://charts.checkonchain.com/btconchain/pricing/mvrv_zscore/mvrv_zscore_light.html"},
+  {anahtar:"nupl", isim:"NUPL (Net Gerçekleşmemiş K/Z)", birim:"",
+   yorum:"Dolaşımdaki coinlerin toplam gerçekleşmemiş kâr/zarar oranı. Pozitif = piyasa toplu kârda, negatif = zararda. Aşırı pozitif bölge açgözlülük, negatif bölge teslimiyet duygusudur.",
+   kaynak:"https://charts.checkonchain.com/btconchain/unrealised/nupl/nupl_light.html"},
+  {anahtar:"rprice", isim:"Realized Price (Gerçekleşen Fiyat)", birim:"$",
+   yorum:"Coinlerin son hareket ettiği fiyatların ortalaması; ağın toplam maliyet bazı. Fiyat bu seviyenin altına inince piyasa ortalama zararda demektir, tarihsel dip bölgeleri buralardır.",
+   kaynak:"https://charts.checkonchain.com/btconchain/pricing/realised_price/realised_price_light.html"},
+  {anahtar:"adr", isim:"Aktif Adres Sayısı", birim:"",
+   yorum:"Günlük ağda işlem yapan benzersiz adres sayısı; ağ kullanımının ve talebin göstergesi. Artan aktivite sağlıklı talep, düşen aktivite ilgi kaybı sinyali olabilir.",
+   kaynak:"https://charts.checkonchain.com/btconchain/network/addresses_active/addresses_active_light.html"},
+];
+const OC_LINKLER = [
+  {isim:"SOPR", aciklama:"Harcanan coinlerin kâr/zarar oranı", link:"https://charts.checkonchain.com/btconchain/sopr/sopr_7dma/sopr_7dma_light.html"},
+  {isim:"LTH vs STH", aciklama:"Uzun/kısa vadeli sahip davranışı", link:"https://charts.checkonchain.com/btconchain/lifespan/lth_sth_supply/lth_sth_supply_light.html"},
+  {isim:"HODL Dalgaları", aciklama:"Coin yaşına göre arz dağılımı", link:"https://charts.checkonchain.com/btconchain/lifespan/hodlwaves/hodlwaves_light.html"},
+  {isim:"CDD (90g MA)", aciklama:"Yok edilen coin-gün", link:"https://charts.checkonchain.com/btconchain/lifespan/cdd90_supplyadj/cdd90_supplyadj_light.html"},
+  {isim:"Funding & Open Interest", aciklama:"Türev piyasa konumlanması", link:"https://www.coinglass.com/FundingRate"},
+];
 async function onchainCek(){
   const kap = document.getElementById("oc-icerik");
   kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
   try{
-    const res = await fetch('/onchain_veri.json?t=' + Date.now());
+    const bas = new Date(Date.now() - 1300*86400000).toISOString().slice(0,10);
+    const url = 'https://community-api.coinmetrics.io/v4/timeseries/asset-metrics' +
+      '?assets=btc&metrics=CapMVRVCur,CapRealUSD,CapMrktCurUSD,SplyCur,AdrActCnt&frequency=1d' +
+      '&start_time=' + bas + '&page_size=10000';
+    const res = await fetch(url);
     if(!res.ok) throw new Error();
-    const veri = await res.json();
-    try { document.getElementById("oc-guncelleme").textContent = new Date(veri.guncelleme).toLocaleDateString("tr-TR") + " · Coin Metrics"; } catch(e){}
+    const j = await res.json();
+    const veri = onchainHesapla(j.data || []);
+    try { document.getElementById("oc-guncelleme").textContent = new Date().toLocaleDateString("tr-TR") + " · Coin Metrics"; } catch(e){}
     onchainCiz(veri);
   }catch(e){
-    document.getElementById("oc-guncelleme").textContent = "veri henüz yok";
-    kap.innerHTML = '<div class="durum-kutu">On-chain verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>onchain_veri.json</b> oluşur.<br><button class="btn-gnc" onclick="onchainCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+    document.getElementById("oc-guncelleme").textContent = "veri alınamadı";
+    kap.innerHTML = '<div class="durum-kutu">On-chain verisi şu an alınamadı.<br><span style="color:var(--gnc-text-dim);font-size:12px;">Coin Metrics geçici olarak yanıt vermiyor olabilir.</span><br><button class="btn-gnc" onclick="onchainCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
   }
+}
+function onchainHesapla(ham){
+  const f = (x) => { const n = parseFloat(x); return isNaN(n) ? null : n; };
+  const seri = ham.map(r => {
+    const mkt = f(r.CapMrktCurUSD), real = f(r.CapRealUSD), sply = f(r.SplyCur);
+    return {
+      t: (r.time || "").slice(0,10),
+      mvrv: f(r.CapMVRVCur), mkt, real,
+      nupl: (mkt && real) ? (mkt - real) / mkt : null,
+      rprice: (real && sply) ? real / sply : null,
+      adr: f(r.AdrActCnt),
+    };
+  });
+  const mktler = seri.map(s => s.mkt).filter(x => x !== null);
+  let std = 0;
+  if(mktler.length > 2){
+    const ort = mktler.reduce((a,b)=>a+b,0) / mktler.length;
+    std = Math.sqrt(mktler.reduce((a,b)=>a+(b-ort)**2,0) / mktler.length);
+  }
+  seri.forEach(s => { s.mvrvz = (s.mkt && s.real && std) ? (s.mkt - s.real) / std : null; });
+
+  const son = (k) => { for(let i=seri.length-1;i>=0;i--){ if(seri[i][k]!=null) return seri[i][k]; } return null; };
+  const gecmis = (k) => seri.filter(s => s[k]!=null).map(s => ({t:s.t, v:Math.round(s[k]*10000)/10000}));
+  const metrikler = OC_TANIM.map(m => Object.assign({}, m, { son: son(m.anahtar), seri: gecmis(m.anahtar) }));
+  return { metrikler, linkler: OC_LINKLER };
 }
 function ocDeger(v, birim){
   if(v === null || v === undefined) return "—";
@@ -1528,9 +1605,11 @@ function ocDeger(v, birim){
   if(Math.abs(v) >= 1000) return Math.round(v).toLocaleString("tr-TR");
   return v.toLocaleString("tr-TR",{maximumFractionDigits:2});
 }
-function cizgiGrafik(seri){
+let CG_ID = 0; const CG = {};
+function cizgiGrafik(seri, opts){
+  opts = opts || {};
   if(!seri || seri.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);padding:20px 0;">Yeterli veri yok.</div>';
-  const W = 320, H = 90, P = 4;
+  const W = 320, H = 96, P = 4;
   const vals = seri.map(s => s.v);
   const min = Math.min(...vals), max = Math.max(...vals), aralik = (max - min) || 1;
   const x = (i) => P + (i / (seri.length - 1)) * (W - 2*P);
@@ -1538,23 +1617,61 @@ function cizgiGrafik(seri){
   const nokta = seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
   const cizgi = "M" + nokta.join(" L");
   const alan = cizgi + " L" + x(seri.length-1).toFixed(1) + "," + (H-P) + " L" + x(0).toFixed(1) + "," + (H-P) + " Z";
-  const sonX = x(seri.length-1), sonY = y(seri[seri.length-1].v);
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+  const id = "cg" + (++CG_ID);
+  CG[id] = { seri, min, aralik, H, P, birim: opts.birim || "", fmt: opts.fmt || null };
+  return '<div class="cg-wrap" id="' + id + '" onmousemove="cgMove(event,\'' + id + '\')" onmouseleave="cgLeave(\'' + id + '\')" ontouchmove="cgMove(event,\'' + id + '\')" ontouchend="cgLeave(\'' + id + '\')">' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="height:' + H + 'px">' +
     '<path class="oc-alan" d="' + alan + '"/>' +
     '<path class="oc-cizgi" d="' + cizgi + '" vector-effect="non-scaling-stroke"/>' +
-    '<circle class="oc-nokta" cx="' + sonX.toFixed(1) + '" cy="' + sonY.toFixed(1) + '" r="3"/>' +
-    '</svg>';
+    '</svg>' +
+    '<div class="cg-guide"></div><div class="cg-dot"></div><div class="cg-tip"></div>' +
+  '</div>';
 }
+function cgFmt(v, birim){
+  if(birim === "$") return "$" + Math.round(v).toLocaleString("tr-TR");
+  if(birim === "x") return v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + "x";
+  if(birim === "ratio") return v.toFixed(5);
+  if(Math.abs(v) >= 1000) return Math.round(v).toLocaleString("tr-TR");
+  return v.toLocaleString("tr-TR",{maximumFractionDigits:2});
+}
+function cgMove(e, id){
+  const c = CG[id]; if(!c) return;
+  const wrap = document.getElementById(id); if(!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const n = c.seri.length;
+  let i = Math.round((cx / rect.width) * (n - 1));
+  i = Math.max(0, Math.min(n - 1, i));
+  const s = c.seri[i];
+  const px = (i / (n - 1)) * rect.width;
+  const yv = c.P + (1 - (s.v - c.min) / c.aralik) * (c.H - 2*c.P);
+  const py = (yv / c.H) * rect.height;
+  const deger = c.fmt ? c.fmt(s.v) : cgFmt(s.v, c.birim);
+  wrap.classList.add("aktif");
+  wrap.querySelector(".cg-guide").style.left = px + "px";
+  const dot = wrap.querySelector(".cg-dot"); dot.style.left = px + "px"; dot.style.top = py + "px";
+  const tip = wrap.querySelector(".cg-tip");
+  tip.innerHTML = deger + (s.t ? ' <span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
+  tip.style.left = Math.max(30, Math.min(rect.width - 30, px)) + "px";
+  tip.style.top = py + "px";
+}
+function cgLeave(id){ const w = document.getElementById(id); if(w) w.classList.remove("aktif"); }
+let OC_VERI = null, OC_OLCEK = 365;
 function onchainCiz(veri){
-  const m = veri.metrikler || [];
-  const linkler = veri.linkler || [];
-  let html = '<div class="oc-grid">' + m.map(x => {
-    const ilk = x.seri && x.seri.length ? x.seri[0].t : "";
-    const son = x.seri && x.seri.length ? x.seri[x.seri.length-1].t : "";
+  if(veri) OC_VERI = veri;
+  if(!OC_VERI) return;
+  const m = OC_VERI.metrikler || [];
+  const linkler = OC_VERI.linkler || [];
+  let html = '<div class="grafik-olcek" id="oc-olcek">' +
+    [["90","3 Ay"],["365","Yıl"],["1095","3 Yıl"],["9999","Tüm"]].map(o =>
+      '<button class="chip ocolcek' + (parseInt(o[0])===OC_OLCEK?' active':'') + '" data-n="' + o[0] + '">' + o[1] + '</button>').join("") + '</div>';
+  html += '<div class="oc-grid">' + m.map(x => {
+    const dilim = (x.seri || []).slice(-OC_OLCEK);
     return '<div class="oc-kart">' +
-      '<div class="oc-ust"><div class="oc-isim">' + x.isim + '</div><div class="oc-deger">' + ocDeger(x.son, x.birim) + '</div></div>' +
-      '<div class="oc-grafik">' + cizgiGrafik(x.seri) + '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gnc-text-dim);margin-top:2px;"><span>' + ilk + '</span><span>' + son + '</span></div></div>' +
-      '<div class="oc-yorum">' + x.yorum + '</div>' +
+      '<div class="oc-ust"><div class="oc-isim">' + x.isim +
+        ' <span class="grafik-info" data-tip="' + (x.yorum||"").replace(/"/g,"&quot;") + '"><i class="bi bi-info-circle"></i></span>' +
+      '</div><div class="oc-deger">' + ocDeger(x.son, x.birim) + '</div></div>' +
+      '<div class="oc-grafik">' + cizgiGrafik(dilim, {birim:x.birim}) + '</div>' +
       '<a class="oc-link" href="' + x.kaynak + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Checkonchain\'de tam grafiği aç</a>' +
     '</div>';
   }).join("") + '</div>';
@@ -1567,6 +1684,7 @@ function onchainCiz(veri){
           '<div class="aciklama">' + l.aciklama + '</div></a>').join("") + '</div></div>';
   }
   document.getElementById("oc-icerik").innerHTML = html;
+  document.querySelectorAll(".ocolcek").forEach(c => c.addEventListener("click", () => { OC_OLCEK = parseInt(c.dataset.n); onchainCiz(); }));
 }
 
 /* ---- gorunum gecisi ---- */
@@ -1633,6 +1751,12 @@ document.querySelectorAll(".donem2").forEach(c => c.addEventListener("click", ()
   c.classList.add("active");
   sektGrafikDonem = c.dataset.d;
   sektorGrafikCiz();
+}));
+document.querySelectorAll("#ethbtc-olcek .olcek").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll("#ethbtc-olcek .olcek").forEach(x => x.classList.remove("active"));
+  c.classList.add("active");
+  ETHBTC_OLCEK = parseInt(c.dataset.n);
+  ethbtcCiz();
 }));
 anaSayfaYukle();
 setInterval(saatTik, 1000);
