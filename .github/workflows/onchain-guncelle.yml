@@ -1,0 +1,28 @@
+name: On-chain verisi guncelle
+
+on:
+  schedule:
+    # Her gun 06:00 UTC (on-chain gunluk degisir)
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: On-chain veriyi cek
+        run: python onchain_cek.py
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/onchain_veri.json
+          git commit -m "On-chain verisi guncellendi" || echo "Degisiklik yok"
+          git push
