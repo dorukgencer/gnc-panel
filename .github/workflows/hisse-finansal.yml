@@ -2,8 +2,10 @@ name: Hisse finansal verisi guncelle
 
 on:
   schedule:
-    # Ayin 3'unde 06:00 UTC (finansallar ceyrekte bir; ayda bir yeterli)
-    - cron: "0 6 3 * *"
+    # Her gun 16:30 UTC (19:30 TR) - KAP bilancolari genelde kapanis sonrasi gelir.
+    # Toplu cekim ~5 dk surdugu icin gunluk calismak sorun degil; yeni bilanco
+    # ertesi gun otomatik panele duser (git yalnizca degisen dosyayi commit'ler).
+    - cron: "30 16 * * *"
   workflow_dispatch: {}
 
 permissions:
