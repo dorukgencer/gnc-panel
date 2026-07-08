@@ -406,6 +406,8 @@
   .tr-rozet.alt { color: var(--gnc-danger); background: rgba(var(--gnc-danger-rgb),.12); }
   .tr-rozet.esit { color: var(--gnc-text-dim); background: var(--gnc-card-bg-elevated); }
   .tr-not { font-size: 12px; line-height: 1.55; color: var(--gnc-text-faded); margin-top: 12px; }
+  .tr-gecmis-grafik { margin-top: 14px; background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); border-radius: 9px; padding: 12px 14px; }
+  .tr-gecmis-grafik .baslik { font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 8px; }
   @media (max-width: 700px){ .tr-satir { grid-template-columns: 48px 1fr auto 18px; } .tr-satir .tr-deg:nth-of-type(3){ display:none; } .tr-deg { text-align: right; min-width: 56px; } }
 
   /* Sektor filtre araci */
@@ -624,7 +626,22 @@
   .as-kart:hover .blok-indir, .oc-kart:hover .blok-indir { opacity: 1; }
   .blok-indir:hover { color: var(--gnc-accent); border-color: rgba(var(--gnc-accent-rgb),.5); }
 
-  /* Dikey sektor bar */
+  /* Dikey sektor listesi (yatay barli satirlar) */
+  .skt-liste { display: flex; flex-direction: column; gap: 3px; }
+  .skt-row { display: grid; grid-template-columns: 74px 1fr 56px; gap: 10px; align-items: center; padding: 3px 0; position: relative; }
+  .skt-kod { font-size: 11px; font-weight: 700; color: var(--bs-emphasis-color); white-space: nowrap; }
+  .skt-track { position: relative; height: 14px; }
+  .skt-mid { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--bs-border-color); }
+  .skt-bar { position: absolute; height: 10px; top: 2px; border-radius: 3px; transition: width .4s cubic-bezier(.2,.7,.3,1); }
+  .skt-bar.pos { left: 50%; background: rgba(var(--gnc-success-rgb), 0.8); }
+  .skt-bar.neg { right: 50%; background: rgba(var(--gnc-danger-rgb), 0.8); }
+  .skt-deg { font-size: 11px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .skt-row::after { content: attr(data-ad); position: absolute; left: 74px; bottom: 120%; z-index: 40;
+    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 10px; border-radius: 7px;
+    font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+  .skt-row:hover::after { opacity: 1; }
+  .skt-row:hover .skt-bar { filter: brightness(1.2); }
+  @media (max-width: 640px){ .skt-row { grid-template-columns: 60px 1fr 48px; gap: 8px; } }
   .sekt-vbar-kap { display: flex; align-items: stretch; gap: 4px; overflow-x: auto; padding: 6px 2px 2px; }
   .sekt-vbar-col { flex: 1 0 26px; min-width: 26px; display: flex; flex-direction: column; align-items: center; cursor: default; position: relative; }
   .sekt-vbar-alan { position: relative; width: 100%; height: 150px; display: flex; flex-direction: column; }
@@ -902,6 +919,17 @@
 
       <div id="sektor-icerik">
         <div class="durum-kutu">Sektör verileri çekiliyor…</div>
+      </div>
+
+      <div class="as-eyebrow" style="margin-top:24px;"><span>Sektör Rotasyonu</span><small>tüm sektörler</small></div>
+      <div class="as-kart">
+        <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Sektör Rotasyonu')" title="PNG indir"><i class="bi bi-download"></i></button>
+        <div class="as-sekt-arac">
+          <button class="chip donem2 active" data-d="g1">Günlük</button>
+          <button class="chip donem2" data-d="h1">Haftalık</button>
+          <button class="chip donem2" data-d="a1">Aylık</button>
+        </div>
+        <div id="sekt-sayfa-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
     </section>
 
@@ -1328,7 +1356,9 @@ function hdGrafikCard(baslik, kalem, aciklama){
   const seri = finKalemSeri(kalem);
   if(seri.length < 2) return "";
   const son = seri[seri.length-1].v;
-  return '<div class="oc-kart"><div class="oc-ust"><div class="oc-isim">' + baslik +
+  return '<div class="oc-kart">' +
+    '<button class="blok-indir" onclick="blokIndir(this,\'' + HD_KOD + ' · ' + baslik.replace(/'/g,"") + '\')" title="PNG indir"><i class="bi bi-download"></i></button>' +
+    '<div class="oc-ust"><div class="oc-isim">' + baslik +
     ' <span class="grafik-info" data-tip="' + aciklama + '"><i class="bi bi-info-circle"></i></span></div>' +
     '<div class="oc-deger">' + finBuyuk(son) + '</div></div>' +
     '<div class="oc-grafik">' + cizgiGrafik(seri, {fmt: finBuyuk}) + '</div></div>';
@@ -1616,20 +1646,23 @@ async function anaSayfaYukle(){
   veriDurumYukle();
 }
 function sektorGrafikCiz(){
-  const kap = document.getElementById("as-sektor-grafik");
-  if(!SEKTOR_GRAFIK_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Veri yok.</div>'; return; }
+  if(!SEKTOR_GRAFIK_VERI.length){ return; }
   const liste = [...SEKTOR_GRAFIK_VERI].sort((a,b) => (b[sektGrafikDonem]||0) - (a[sektGrafikDonem]||0));
   const maxAbs = Math.max(...liste.map(s => Math.abs(s[sektGrafikDonem]||0)), 0.1);
-  kap.innerHTML = '<div class="sekt-vbar-kap">' + liste.map(s => {
+  const html = '<div class="skt-liste">' + liste.map(s => {
     const v = s[sektGrafikDonem] || 0;
-    const yuk = (Math.abs(v) / maxAbs) * 100;
+    const gen = (Math.abs(v) / maxAbs) * 50;
     const bar = v >= 0
-      ? '<div class="sekt-vbar-ust"><div class="sekt-vbar pos" style="height:' + yuk.toFixed(0) + '%"></div></div><div class="sekt-vbar-alt"></div>'
-      : '<div class="sekt-vbar-ust"></div><div class="sekt-vbar-alt"><div class="sekt-vbar neg" style="height:' + yuk.toFixed(0) + '%"></div></div>';
-    return '<div class="sekt-vbar-col" data-ad="' + (SEKTOR_AD[s.kod]||s.kod) + '" data-deg="' + fmtYuzde(v) + '">' +
-      '<div class="sekt-vbar-alan"><div class="sekt-vbar-mid"></div>' + bar + '</div>' +
-      '<div class="sekt-vbar-kod">' + s.kod + '</div></div>';
+      ? '<div class="skt-bar pos" style="width:' + gen.toFixed(1) + '%"></div>'
+      : '<div class="skt-bar neg" style="width:' + gen.toFixed(1) + '%"></div>';
+    return '<div class="skt-row" data-ad="' + (SEKTOR_AD[s.kod]||s.kod) + '">' +
+      '<div class="skt-kod">' + s.kod + '</div>' +
+      '<div class="skt-track"><div class="skt-mid"></div>' + bar + '</div>' +
+      '<div class="skt-deg ' + yon(v) + '">' + fmtYuzde(v) + '</div>' +
+    '</div>';
   }).join("") + '</div>';
+  const a = document.getElementById("as-sektor-grafik"); if(a) a.innerHTML = html;
+  const b = document.getElementById("sekt-sayfa-grafik"); if(b) b.innerHTML = html;
 }
 async function blokIndir(btn, baslik){
   if(typeof html2canvas === "undefined"){ alert("Görsel aracı yükleniyor, birkaç saniye sonra tekrar deneyin."); return; }
@@ -1637,27 +1670,37 @@ async function blokIndir(btn, baslik){
   if(!kart) return;
   btn.style.visibility = "hidden";
   try{
-    const bg = getComputedStyle(document.body).backgroundColor || "#0a0a0a";
-    const cv = await html2canvas(kart, { backgroundColor: "#0a0a0a", scale: 2, logging: false, useCORS: true });
+    const cv = await html2canvas(kart, { backgroundColor: "#0d0d0d", scale: 2, logging: false, useCORS: true });
     const W = 1080, H = 1350;
     const out = document.createElement("canvas"); out.width = W; out.height = H;
     const ctx = out.getContext("2d");
+    // Arka plan
     ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, W, 168);
     // Marka basligi
-    ctx.fillStyle = "#d4af37"; ctx.font = "bold 44px Arial"; ctx.textBaseline = "alphabetic";
-    ctx.fillText("GNC INSIGHT", 64, 96);
-    ctx.fillStyle = "#8a8a92"; ctx.font = "600 24px Arial";
-    ctx.fillText((baslik || "Veri Paneli") + " · gncinsight.com", 64, 134);
-    // Karti ortala/sigdir
-    const padX = 64, ustY = 190, altY = 120;
-    const availW = W - 2*padX, availH = H - ustY - altY;
-    const r = Math.min(availW / cv.width, availH / cv.height);
+    ctx.fillStyle = "#d4af37"; ctx.font = "bold 46px Arial"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("GNC INSIGHT", 60, 82);
+    ctx.fillStyle = "#9a9aa2"; ctx.font = "600 24px Arial";
+    ctx.fillText(baslik || "Veri Paneli", 60, 122);
+    ctx.fillStyle = "#d4af37"; ctx.fillRect(60, 148, 64, 4);
+    // Icerigi TAM GENISLIKTE olceklendir, dikey ortala
+    const padX = 56, ustAlan = 210, altAlan = 150;
+    const availW = W - 2*padX, availH = H - ustAlan - altAlan;
+    let r = availW / cv.width;                 // once tam genislik
+    if(cv.height * r > availH) r = availH / cv.height;  // tasarsa sigdir
     const dw = cv.width * r, dh = cv.height * r;
-    const dx = (W - dw) / 2, dy = ustY + (availH - dh) / 2;
+    const dx = (W - dw) / 2, dy = ustAlan + (availH - dh) / 2;
+    // Kart arka plani (cerceve)
+    const fpad = 24;
+    ctx.fillStyle = "#0f0f0f";
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(dx - fpad, dy - fpad, dw + 2*fpad, dh + 2*fpad, 18); ctx.fill(); }
+    else { ctx.fillRect(dx - fpad, dy - fpad, dw + 2*fpad, dh + 2*fpad); }
     ctx.drawImage(cv, dx, dy, dw, dh);
-    // Alt uyari
-    ctx.fillStyle = "#66666e"; ctx.font = "500 20px Arial";
-    ctx.fillText("Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.", 64, H - 54);
+    // Alt bilgi
+    ctx.fillStyle = "#7a7a82"; ctx.font = "600 22px Arial";
+    ctx.fillText("gncinsight.com · " + new Date().toLocaleDateString("tr-TR"), 60, H - 92);
+    ctx.fillStyle = "#5a5a62"; ctx.font = "500 19px Arial";
+    ctx.fillText("Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.", 60, H - 56);
     const a = document.createElement("a");
     a.download = "gnc-insight-" + Date.now() + ".png";
     a.href = out.toDataURL("image/png"); a.click();
@@ -1772,6 +1815,7 @@ function turkiyeCiz(olaylar){
         '<div class="tr-caret"><i class="bi bi-chevron-down"></i></div>' +
       '</div>' +
       '<div class="tr-detay">' +
+        trGecmisGrafik(o.olay) +
         '<div class="tr-blok">' +
           '<div class="tr-kutu"><div class="e">Önceki</div><div class="d">' + (o.onceki || "—") + '</div></div>' +
           '<div class="tr-kutu"><div class="e">Beklenti</div><div class="d">' + (o.beklenti || "—") + '</div></div>' +
@@ -1785,6 +1829,22 @@ function turkiyeCiz(olaylar){
     '</div>';
   });
   kap.innerHTML = html + '</div>';
+}
+function trGecmisGrafik(olayAd){
+  if(!olayAd) return "";
+  const gecmis = TR_OLAYLAR
+    .filter(o => o.olay === olayAd && o.aciklanan != null && trSayi(o.aciklanan) != null)
+    .sort((a,b) => (a.tarih||"").localeCompare(b.tarih||""));
+  if(gecmis.length < 2) return "";
+  // birim: yuzde mi?
+  const yuzdeMi = /%/.test(gecmis[gecmis.length-1].aciklanan || "");
+  const seri = gecmis.map(o => {
+    let t = o.tarih;
+    try { t = new Date(o.tarih + "T00:00:00").toLocaleDateString("tr-TR",{month:"short",year:"2-digit"}); } catch(e){}
+    return { t: t, v: trSayi(o.aciklanan) };
+  });
+  return '<div class="tr-gecmis-grafik"><div class="baslik">Geçmiş açıklamalar (' + seri.length + ')</div>' +
+    cizgiGrafik(seri, {fmt: (v) => v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + (yuzdeMi?"%":"")}) + '</div>';
 }
 function trOlayAc(i){
   const row = document.getElementById("trrow-" + i);
@@ -2009,9 +2069,8 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
 
 // Baslangic: Ana Sayfa + canli saat
 document.querySelectorAll(".donem2").forEach(c => c.addEventListener("click", () => {
-  document.querySelectorAll(".donem2").forEach(x => x.classList.remove("active"));
-  c.classList.add("active");
   sektGrafikDonem = c.dataset.d;
+  document.querySelectorAll(".donem2").forEach(x => x.classList.toggle("active", x.dataset.d === sektGrafikDonem));
   sektorGrafikCiz();
 }));
 document.querySelectorAll("#ethbtc-olcek .olcek").forEach(c => c.addEventListener("click", () => {
