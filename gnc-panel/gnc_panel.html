@@ -262,6 +262,10 @@
   @media (max-width: 860px){ .hd-metrik-serit { grid-template-columns: 1fr 1fr 1fr; } }
   @media (max-width: 480px){ .hd-metrik-serit { grid-template-columns: 1fr 1fr; } }
 
+  .fin-arac { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .fin-sekme, .fin-donem-arac { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip.finsek span { font-size: 9px; opacity: .6; margin-left: 3px; }
+  .chip.finsek.pasif { opacity: .35; cursor: not-allowed; }
   .fin-tablo-sar { overflow-x: auto; background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; }
   .fin-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   .fin-tablo th, .fin-tablo td { padding: 10px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--bs-border-color); font-variant-numeric: tabular-nums; }
@@ -333,9 +337,10 @@
   /* Turkiye takvimi */
   .tr-liste { display: flex; flex-direction: column; gap: 7px; }
   .tr-gun { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); margin: 14px 4px 4px; }
-  .tr-satir { display: grid; grid-template-columns: 64px 1fr auto auto; gap: 12px; align-items: center;
-    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 11px 16px; }
-  .tr-satir.gelecek { opacity: 0.72; border-style: dashed; }
+  .tr-row { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; overflow: hidden; }
+  .tr-satir { display: grid; grid-template-columns: 64px 1fr auto auto 20px; gap: 12px; align-items: center; padding: 11px 16px; cursor: pointer; }
+  .tr-satir:hover { background: var(--gnc-card-bg-elevated); }
+  .tr-row .tr-satir.gelecek { opacity: 0.72; }
   .tr-saat { font-size: 12px; font-weight: 700; color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
   .tr-olay { font-size: 13px; font-weight: 600; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 8px; }
   .tr-onem { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
@@ -344,7 +349,24 @@
   .tr-deg .k { font-size: 8.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--gnc-text-dim); }
   .tr-deg .v { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
   .tr-deg .v.bekliyor { color: var(--gnc-accent); font-size: 11px; }
-  @media (max-width: 700px){ .tr-satir { grid-template-columns: 52px 1fr; } .tr-deg { text-align: left; } }
+  .tr-caret { color: var(--gnc-text-dim); font-size: 12px; text-align: center; transition: transform .18s; }
+  .tr-row.acik .tr-caret { transform: rotate(180deg); color: var(--gnc-accent); }
+  .tr-detay { display: none; padding: 4px 16px 16px; border-top: 1px solid var(--bs-border-color); }
+  .tr-row.acik .tr-detay { display: block; }
+  .tr-blok { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .tr-kutu { background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); border-radius: 9px; padding: 12px; text-align: center; }
+  .tr-kutu .e { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 5px; }
+  .tr-kutu .d { font-size: 16px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
+  .tr-kutu.ust { border-color: rgba(var(--gnc-success-rgb),.4); background: rgba(var(--gnc-success-rgb),.08); }
+  .tr-kutu.alt { border-color: rgba(var(--gnc-danger-rgb),.4); background: rgba(var(--gnc-danger-rgb),.08); }
+  .tr-kutu.bekliyor .d { color: var(--gnc-accent); font-size: 12px; }
+  .tr-rozet-satir { margin-top: 12px; }
+  .tr-rozet { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 6px; }
+  .tr-rozet.ust { color: var(--gnc-success); background: rgba(var(--gnc-success-rgb),.12); }
+  .tr-rozet.alt { color: var(--gnc-danger); background: rgba(var(--gnc-danger-rgb),.12); }
+  .tr-rozet.esit { color: var(--gnc-text-dim); background: var(--gnc-card-bg-elevated); }
+  .tr-not { font-size: 12px; line-height: 1.55; color: var(--gnc-text-faded); margin-top: 12px; }
+  @media (max-width: 700px){ .tr-satir { grid-template-columns: 48px 1fr auto 18px; } .tr-satir .tr-deg:nth-of-type(3){ display:none; } .tr-deg { text-align: right; min-width: 56px; } }
 
   /* Sektor filtre araci */
   .sektor-arac { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
@@ -1162,18 +1184,47 @@ function finBuyuk(x){
   if(a >= 1e6) return isaret + (a/1e6).toLocaleString("tr-TR",{maximumFractionDigits:1}) + " Mn";
   return x.toLocaleString("tr-TR",{maximumFractionDigits:0});
 }
+let FIN_VERI = null, FIN_GRUP = "bilanco", FIN_DONEM = 6;
+function finGrup(ad){
+  const s = (ad||"").toLocaleLowerCase("tr");
+  if(/nakit ak|faaliyetlerinden|faaliyetlerine|serbest nakit|dönem başı nakit|dönem sonu nakit|nakit benzer.*(değişim|artış|azalış)/.test(s)) return "nakit";
+  if(/hasıl|satış gel|satışların maliyet|brüt|faaliyet kâr|faaliyet zarar|favök|favok|esas faaliyet|finansman gel|finansman gid|vergi (gel|gid|önces)|sürdürülen faaliyet|durdurulan faaliyet|net dönem|dönem kâr|dönem zarar|hisse başına|amortisman|itfa|faiz gel|faiz gid|ana ortaklık|sürdürülen/.test(s)) return "gelir";
+  return "bilanco";
+}
 function finansalCiz(fin){
-  const d = fin.donemler || [];
-  const k = fin.kalemler || [];
-  if(!k.length){ document.getElementById("hd-icerik").innerHTML = '<div class="durum-kutu">Finansal kalem bulunamadı.</div>'; return; }
-  let html = '<div class="fin-tablo-sar"><table class="fin-tablo"><thead><tr><th class="kalem">Kalem (TL)</th>' +
-    d.map(x => '<th>' + x + '</th>').join("") + '</tr></thead><tbody>';
-  html += k.map(kl =>
-    '<tr><td class="kalem">' + kl.ad + '</td>' +
-    d.map(x => '<td>' + finBuyuk(kl.degerler[x]) + '</td>').join("") + '</tr>').join("");
-  html += '</tbody></table></div>' +
-    '<div class="hd-not">Değerler İş Yatırım kaynaklı finansal tablolardır (bilanço + gelir tablosu), TL bazında. Dönemler çeyrekliktir (örn. 2025/3 = ilk çeyrek). Temel oran hesaplayıcı (F/K, ROE, borçluluk vb.) sonraki adımda eklenecek.</div>';
+  FIN_VERI = fin;
+  if(!(fin.kalemler||[]).length){ document.getElementById("hd-icerik").innerHTML = '<div class="durum-kutu">Finansal kalem bulunamadı.</div>'; return; }
+  finRender();
+}
+function finRender(){
+  const fin = FIN_VERI;
+  const gruplar = [["bilanco","Bilanço"],["gelir","Gelir Tablosu"],["nakit","Nakit Akım"]];
+  const sayilar = { bilanco:0, gelir:0, nakit:0 };
+  fin.kalemler.forEach(kl => sayilar[finGrup(kl.ad)]++);
+  // bos grup varsa dolu bir gruba gec
+  if(sayilar[FIN_GRUP] === 0){ FIN_GRUP = gruplar.map(g=>g[0]).find(g => sayilar[g] > 0) || "bilanco"; }
+
+  const d = (fin.donemler || []).slice(0, FIN_DONEM);
+  const kalemler = fin.kalemler.filter(kl => finGrup(kl.ad) === FIN_GRUP);
+
+  let html = '<div class="fin-arac">' +
+    '<div class="fin-sekme">' + gruplar.map(g =>
+      '<button class="chip finsek' + (g[0]===FIN_GRUP?' active':'') + (sayilar[g[0]]===0?' pasif':'') + '" data-g="' + g[0] + '">' + g[1] + ' <span>' + sayilar[g[0]] + '</span></button>').join("") + '</div>' +
+    '<div class="fin-donem-arac">' + [4,6,8,99].map(n =>
+      '<button class="chip findonem' + (n===FIN_DONEM?' active':'') + '" data-n="' + n + '">' + (n===99?"Tümü":"Son "+n) + '</button>').join("") + '</div>' +
+  '</div>';
+
+  html += '<div class="fin-tablo-sar"><table class="fin-tablo"><thead><tr><th class="kalem">Kalem (TL)</th>' +
+    d.map(x => '<th>' + x + '</th>').join("") + '</tr></thead><tbody>' +
+    kalemler.map(kl =>
+      '<tr><td class="kalem">' + kl.ad + '</td>' +
+      d.map(x => '<td>' + finBuyuk(kl.degerler[x]) + '</td>').join("") + '</tr>').join("") +
+    '</tbody></table></div>' +
+    '<div class="hd-not">Değerler İş Yatırım kaynaklı finansal tablolardır, TL bazında. Dönemler çeyrekliktir (örn. 2025/3 = ilk çeyrek). Kalemler adına göre Bilanço / Gelir Tablosu / Nakit Akım olarak gruplanır.</div>';
+
   document.getElementById("hd-icerik").innerHTML = html;
+  document.querySelectorAll(".finsek:not(.pasif)").forEach(b => b.addEventListener("click", () => { FIN_GRUP = b.dataset.g; finRender(); }));
+  document.querySelectorAll(".findonem").forEach(b => b.addEventListener("click", () => { FIN_DONEM = parseInt(b.dataset.n); finRender(); }));
 }
 function hisseDetayGeri(){
   document.getElementById("view-hissedetay").classList.add("hidden");
@@ -1514,15 +1565,22 @@ async function turkiyeCek(){
     kap.innerHTML = '<div class="durum-kutu">Türkiye takvimi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>turkiye_takvim.json</b> oluşur.<br><button class="btn-gnc" onclick="turkiyeCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
   }
 }
+let TR_OLAYLAR = [];
+function trSayi(x){
+  if(x == null) return null;
+  const n = parseFloat(String(x).replace(/[^0-9,.\-]/g, "").replace(/\./g, "").replace(",", "."));
+  return isNaN(n) ? null : n;
+}
 function turkiyeCiz(olaylar){
   const kap = document.getElementById("tr-icerik");
   if(!olaylar.length){ kap.innerHTML = '<div class="durum-kutu">Bu dönemde açıklama bulunamadı.</div>'; return; }
   olaylar.sort((a,b) => (a.tarih||"").localeCompare(b.tarih||"") || (a.saat||"").localeCompare(b.saat||""));
+  TR_OLAYLAR = olaylar;
   const onemSinif = (o) => { const s=(o||"").toLowerCase(); return s.includes("high")||s.includes("yüksek")||s==="3"?"high":s.includes("medium")||s.includes("orta")||s==="2"?"medium":"low"; };
   const bugunStr = new Date().toISOString().slice(0,10);
 
   let html = '<div class="tr-liste">', sonGun = "";
-  for(const o of olaylar){
+  olaylar.forEach((o, i) => {
     if(o.tarih !== sonGun){
       sonGun = o.tarih;
       let etiket = o.tarih || "";
@@ -1531,14 +1589,42 @@ function turkiyeCiz(olaylar){
       html += '<div class="tr-gun">' + etiket + (bugunMu?' <span class="tr-bugun">bugün</span>':'') + '</div>';
     }
     const gelecek = o.aciklanan == null;
-    html += '<div class="tr-satir' + (gelecek?' gelecek':'') + '">' +
-      '<div class="tr-saat">' + (o.saat || "—") + '</div>' +
-      '<div class="tr-olay"><span class="tr-onem ' + onemSinif(o.onem) + '"></span>' + (o.olay || "") + (o.donem?' <span style="color:var(--gnc-text-dim);font-size:11px;">('+o.donem+')</span>':'') + '</div>' +
-      '<div class="tr-deg"><div class="k">Önceki</div><div class="v" style="color:var(--gnc-text-faded)">' + (o.onceki || "—") + '</div></div>' +
-      '<div class="tr-deg"><div class="k">' + (gelecek?"Durum":"Açıklanan") + '</div><div class="v' + (gelecek?' bekliyor':'') + '">' + (gelecek?"bekleniyor":(o.aciklanan||"—")) + '</div></div>' +
+    // surpriz (aciklanan vs beklenti)
+    let rozet = "";
+    const sa = trSayi(o.aciklanan), sb = trSayi(o.beklenti);
+    if(!gelecek && sa != null && sb != null){
+      if(sa > sb) rozet = '<span class="tr-rozet ust">↑ Üstünde</span>';
+      else if(sa < sb) rozet = '<span class="tr-rozet alt">↓ Altında</span>';
+      else rozet = '<span class="tr-rozet esit">= Beklentide</span>';
+    }
+    html += '<div class="tr-row" id="trrow-' + i + '">' +
+      '<div class="tr-satir' + (gelecek?' gelecek':'') + '" onclick="trOlayAc(' + i + ')">' +
+        '<div class="tr-saat">' + (o.saat || "—") + '</div>' +
+        '<div class="tr-olay"><span class="tr-onem ' + onemSinif(o.onem) + '"></span>' + (o.olay || "") + (o.donem?' <span style="color:var(--gnc-text-dim);font-size:11px;">('+o.donem+')</span>':'') + '</div>' +
+        '<div class="tr-deg"><div class="k">Önceki</div><div class="v" style="color:var(--gnc-text-faded)">' + (o.onceki || "—") + '</div></div>' +
+        '<div class="tr-deg"><div class="k">' + (gelecek?"Durum":"Açıklanan") + '</div><div class="v' + (gelecek?' bekliyor':'') + '">' + (gelecek?"bekleniyor":(o.aciklanan||"—")) + '</div></div>' +
+        '<div class="tr-caret"><i class="bi bi-chevron-down"></i></div>' +
+      '</div>' +
+      '<div class="tr-detay">' +
+        '<div class="tr-blok">' +
+          '<div class="tr-kutu"><div class="e">Önceki</div><div class="d">' + (o.onceki || "—") + '</div></div>' +
+          '<div class="tr-kutu"><div class="e">Beklenti</div><div class="d">' + (o.beklenti || "—") + '</div></div>' +
+          '<div class="tr-kutu ' + (gelecek?'bekliyor':(rozet.includes("ust")?'ust':rozet.includes("alt")?'alt':'')) + '"><div class="e">' + (gelecek?"Durum":"Açıklanan") + '</div><div class="d">' + (gelecek?"bekleniyor":(o.aciklanan||"—")) + '</div></div>' +
+        '</div>' +
+        (rozet ? '<div class="tr-rozet-satir">' + rozet + ' <span style="color:var(--gnc-text-dim);font-size:11px;">açıklanan, beklentiye göre</span></div>' : '') +
+        '<div class="tr-not">' + (gelecek
+          ? 'Bu veri henüz açıklanmadı. Tarih ve saatinde ' + (o.beklenti?('beklenti: <b>'+o.beklenti+'</b>'):'piyasa beklentisiyle') + ' takip edilebilir.'
+          : 'Açıklanan değerin bir önceki döneme ve beklentiye göre yönü, verinin piyasa üzerindeki etkisini belirler. Yüksek önemli veriler kur ve faizde oynaklık yaratabilir.') + '</div>' +
+      '</div>' +
     '</div>';
-  }
+  });
   kap.innerHTML = html + '</div>';
+}
+function trOlayAc(i){
+  const row = document.getElementById("trrow-" + i);
+  const acik = row.classList.contains("acik");
+  document.querySelectorAll("#tr-icerik .tr-row.acik").forEach(r => r.classList.remove("acik"));
+  if(!acik) row.classList.add("acik");
 }
 
 /* ---- ON-CHAIN ---- */
