@@ -615,11 +615,28 @@
   @media (max-width: 860px){ .oc-grid { grid-template-columns: 1fr; } }
 
   /* Dashboard grid */
-  .dash-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .dash-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+  .dash-sag { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .dash-sag .as-kart { flex: 1; display: flex; flex-direction: column; }
+  .dash-sag .dash-ethbtc { flex: 1.4; }
   @media (max-width: 900px){ .dash-grid { grid-template-columns: 1fr; } }
-  .as-kart { position: relative; }
+
+  /* Piyasa genisligi */
+  .pg-ust { display: flex; align-items: baseline; gap: 14px; margin: 6px 0 14px; }
+  .pg-buyuk { font-size: 30px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  .pg-buyuk small { font-size: 14px; font-weight: 600; color: var(--gnc-text-dim); letter-spacing: 0; }
+  .pg-bar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin-bottom: 6px; background: var(--gnc-card-bg-elevated); }
+  .pg-bar .pos { background: rgba(var(--gnc-success-rgb), .8); }
+  .pg-bar .neg { background: rgba(var(--gnc-danger-rgb), .8); }
+  .pg-bar span { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; transition: width .5s cubic-bezier(.2,.7,.3,1); }
+  .pg-etiket { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 16px; }
+  .pg-etiket .y { color: var(--gnc-success); } .pg-etiket .d { color: var(--gnc-danger); }
+  .pg-satir { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--bs-border-color); }
+  .pg-satir .et { font-size: 11px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--gnc-text-dim); }
+  .pg-satir .dg { font-size: 13px; font-weight: 700; }
 
   /* PNG indirme butonu */
+  .as-kart, .oc-kart { position: relative; }
   .blok-indir { position: absolute; top: 12px; right: 12px; z-index: 5; width: 30px; height: 30px; border-radius: 8px;
     background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); color: var(--gnc-text-dim);
     cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, color .15s; font-size: 13px; }
@@ -840,18 +857,28 @@
           <div id="as-sektor-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
         </div>
 
-        <div class="as-kart dash-ethbtc">
-          <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · ETH/BTC')" title="PNG indir"><i class="bi bi-download"></i></button>
-          <div class="as-kart-baslik"><i class="bi bi-arrow-left-right"></i> ETH/BTC · Para Rotasyonu
-            <span class="grafik-info" data-tip="ETH/BTC yükseliyorsa para altcoinlere kayıyor (risk iştahı). Düşüyorsa BTC'ye kaçış (temkin). Kripto rotasyonunu okumanın pratik yolu."><i class="bi bi-info-circle"></i></span>
+        <div class="dash-sag">
+          <div class="as-kart dash-ethbtc">
+            <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · ETH/BTC')" title="PNG indir"><i class="bi bi-download"></i></button>
+            <div class="as-kart-baslik"><i class="bi bi-arrow-left-right"></i> ETH/BTC · Para Rotasyonu
+              <span class="grafik-info" data-tip="ETH/BTC yükseliyorsa para altcoinlere kayıyor (risk iştahı). Düşüyorsa BTC'ye kaçış (temkin). Kripto rotasyonunu okumanın pratik yolu."><i class="bi bi-info-circle"></i></span>
+            </div>
+            <div class="grafik-olcek" id="ethbtc-olcek">
+              <button class="chip olcek active" data-n="30">Ay</button>
+              <button class="chip olcek" data-n="90">3 Ay</button>
+              <button class="chip olcek" data-n="365">Yıl</button>
+              <button class="chip olcek" data-n="9999">Tüm</button>
+            </div>
+            <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
           </div>
-          <div class="grafik-olcek" id="ethbtc-olcek">
-            <button class="chip olcek active" data-n="30">Ay</button>
-            <button class="chip olcek" data-n="90">3 Ay</button>
-            <button class="chip olcek" data-n="365">Yıl</button>
-            <button class="chip olcek" data-n="9999">Tüm</button>
+
+          <div class="as-kart dash-genislik">
+            <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Piyasa Genişliği')" title="PNG indir"><i class="bi bi-download"></i></button>
+            <div class="as-kart-baslik"><i class="bi bi-pie-chart"></i> Piyasa Genişliği
+              <span class="grafik-info" data-tip="Kaç sektörün artıda/ekside olduğunu gösterir. Geniş katılımlı yükseliş sağlıklı risk iştahına işaret eder; dar katılım zayıflık sinyalidir."><i class="bi bi-info-circle"></i></span>
+            </div>
+            <div id="as-genislik"><div class="durum-kutu">Yükleniyor…</div></div>
           </div>
-          <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
         </div>
       </div>
 
@@ -1663,6 +1690,27 @@ function sektorGrafikCiz(){
   }).join("") + '</div>';
   const a = document.getElementById("as-sektor-grafik"); if(a) a.innerHTML = html;
   const b = document.getElementById("sekt-sayfa-grafik"); if(b) b.innerHTML = html;
+  piyasaGenisligiCiz();
+}
+function piyasaGenisligiCiz(){
+  const kap = document.getElementById("as-genislik");
+  if(!kap || !SEKTOR_GRAFIK_VERI.length) return;
+  const g = SEKTOR_GRAFIK_VERI, m = sektGrafikDonem;
+  const yuk = g.filter(s => (s[m]||0) > 0).length;
+  const dus = g.filter(s => (s[m]||0) < 0).length;
+  const toplam = g.length || 1;
+  const yuzYuk = Math.round(yuk / toplam * 100);
+  const sirali = [...g].sort((x,y) => (y[m]||0) - (x[m]||0));
+  const enIyi = sirali[0], enKotu = sirali[sirali.length-1];
+  const oran = dus > 0 ? (yuk / dus).toFixed(2) : "—";
+  const donemAd = m === "g1" ? "günlük" : m === "h1" ? "haftalık" : "aylık";
+  kap.innerHTML =
+    '<div class="pg-ust"><div class="pg-buyuk">' + yuzYuk + '<small>% sektör artıda (' + donemAd + ')</small></div></div>' +
+    '<div class="pg-bar"><span class="pos" style="width:' + (yuk/toplam*100).toFixed(1) + '%">' + (yuk||"") + '</span><span class="neg" style="width:' + (dus/toplam*100).toFixed(1) + '%">' + (dus||"") + '</span></div>' +
+    '<div class="pg-etiket"><span class="y">' + yuk + ' artıda</span><span class="d">' + dus + ' ekside</span></div>' +
+    '<div class="pg-satir"><span class="et">En güçlü</span><span class="dg ' + yon(enIyi[m]) + '">' + enIyi.kod + ' · ' + fmtYuzde(enIyi[m]) + '</span></div>' +
+    '<div class="pg-satir"><span class="et">En zayıf</span><span class="dg ' + yon(enKotu[m]) + '">' + enKotu.kod + ' · ' + fmtYuzde(enKotu[m]) + '</span></div>' +
+    '<div class="pg-satir"><span class="et">Artan / Azalan</span><span class="dg">' + oran + '</span></div>';
 }
 async function blokIndir(btn, baslik){
   if(typeof html2canvas === "undefined"){ alert("Görsel aracı yükleniyor, birkaç saniye sonra tekrar deneyin."); return; }
@@ -1780,21 +1828,30 @@ function trSayi(x){
   const n = parseFloat(String(x).replace(/[^0-9,.\-]/g, "").replace(/\./g, "").replace(",", "."));
   return isNaN(n) ? null : n;
 }
+function trOnemli(olay){
+  const s = (olay||"").toLocaleLowerCase("tr");
+  return /enflasyon|tüfe|tufe|üfe|ufe|faiz|işsizlik|issizlik|istihdam|gsyih|büyüme|buyume|cari (denge|işlem|açık)|sanayi üretim|kapasite kullanım|tüketici güven|reel kesim|ekonomik güven|imalat pmi|\bpmi\b|merkez bankas|tcmb|politika faiz|bütçe|dış ticaret dengesi|konut sat|perakende sat|dış borç/.test(s);
+}
+function trTarihGun(t){ return (t || "").slice(0, 10); }
 function turkiyeCiz(olaylar){
   const kap = document.getElementById("tr-icerik");
-  if(!olaylar.length){ kap.innerHTML = '<div class="durum-kutu">Bu dönemde açıklama bulunamadı.</div>'; return; }
-  olaylar.sort((a,b) => (a.tarih||"").localeCompare(b.tarih||"") || (a.saat||"").localeCompare(b.saat||""));
+  // Sadece onemli makro verileri tut (enflasyon, faiz, issizlik vb.)
+  olaylar = (olaylar || []).filter(o => trOnemli(o.olay));
+  if(!olaylar.length){ kap.innerHTML = '<div class="durum-kutu">Bu dönemde önemli veri bulunamadı.</div>'; return; }
+  olaylar.sort((a,b) => trTarihGun(a.tarih).localeCompare(trTarihGun(b.tarih)) || (a.saat||"").localeCompare(b.saat||""));
   TR_OLAYLAR = olaylar;
   const onemSinif = (o) => { const s=(o||"").toLowerCase(); return s.includes("high")||s.includes("yüksek")||s==="3"?"high":s.includes("medium")||s.includes("orta")||s==="2"?"medium":"low"; };
   const bugunStr = new Date().toISOString().slice(0,10);
 
   let html = '<div class="tr-liste">', sonGun = "";
   olaylar.forEach((o, i) => {
-    if(o.tarih !== sonGun){
-      sonGun = o.tarih;
-      let etiket = o.tarih || "";
-      try { etiket = new Date(o.tarih + "T00:00:00").toLocaleDateString("tr-TR", {weekday:"long", day:"numeric", month:"long"}); } catch(e){}
-      const bugunMu = o.tarih === bugunStr;
+    const gun = trTarihGun(o.tarih);
+    if(gun !== sonGun){
+      sonGun = gun;
+      let etiket = gun;
+      const dt = new Date(gun + "T00:00:00");
+      if(!isNaN(dt)) etiket = dt.toLocaleDateString("tr-TR", {weekday:"long", day:"numeric", month:"long"});
+      const bugunMu = gun === bugunStr;
       html += '<div class="tr-gun">' + etiket + (bugunMu?' <span class="tr-bugun">bugün</span>':'') + '</div>';
     }
     const gelecek = o.aciklanan == null;
@@ -1839,8 +1896,9 @@ function trGecmisGrafik(olayAd){
   // birim: yuzde mi?
   const yuzdeMi = /%/.test(gecmis[gecmis.length-1].aciklanan || "");
   const seri = gecmis.map(o => {
-    let t = o.tarih;
-    try { t = new Date(o.tarih + "T00:00:00").toLocaleDateString("tr-TR",{month:"short",year:"2-digit"}); } catch(e){}
+    let t = trTarihGun(o.tarih);
+    const dt = new Date(t + "T00:00:00");
+    if(!isNaN(dt)) t = dt.toLocaleDateString("tr-TR",{month:"short",year:"2-digit"});
     return { t: t, v: trSayi(o.aciklanan) };
   });
   return '<div class="tr-gecmis-grafik"><div class="baslik">Geçmiş açıklamalar (' + seri.length + ')</div>' +
