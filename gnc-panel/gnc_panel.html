@@ -272,8 +272,6 @@
   .hd-content { min-width: 0; }
   .hd-baslik-ic { font-size: 16px; font-weight: 800; color: var(--bs-emphasis-color); margin-bottom: 14px; display: flex; align-items: baseline; gap: 8px; }
   .hd-baslik-ic span { font-size: 11px; font-weight: 600; color: var(--gnc-text-dim); }
-  .hd-tv { height: 380px; border-radius: 10px; overflow: hidden; border: 1px solid var(--bs-border-color); background: #131722; }
-  .hd-tv iframe { width: 100%; height: 100%; border: 0; }
   @media (max-width: 820px){
     .hd-layout { grid-template-columns: 1fr; }
     .hd-submenu { flex-direction: row; overflow-x: auto; position: static; padding-bottom: 4px; }
@@ -895,7 +893,7 @@
         <span class="status-update" id="oc-guncelleme"></span>
       </div>
       <div class="page-intro">
-        Bitcoin ağ verileri, senin eğitim serindeki metrikler; grafikler doğrudan <b>Checkonchain'den canlı gömülüdür</b> (eğitimde gösterdiğin kaynağın aynısı). Başlıktaki ⓘ ikonuna gelince nasıl okunacağı açılır. <b>Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</b>
+        Bitcoin ağ (on-chain) verileri; grafikler <b>Checkonchain'den</b> canlı gömülüdür. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
       </div>
       <div id="oc-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
     </section>
@@ -907,7 +905,7 @@
         <span class="status-update" id="tr-guncelleme"></span>
       </div>
       <div class="page-intro">
-        Türkiye'de açıklanan makro veriler, tarihleriyle birlikte (kaynak: doviz.com). Geçmiş açıklamalarda <b>açıklanan</b> ve <b>önceki</b> değer görünür; yaklaşan veriler tarih ve saatiyle listelenir.
+        Türkiye makro ekonomik takvimi (kaynak: doviz.com). Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
       </div>
       <div id="tr-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
     </section>
@@ -1265,7 +1263,7 @@ async function sektorHisseAc(kod, ad){
         '<div class="h-cell"><span class="et">Hacim</span><span class="dg kucuk">' + buyukFmt(h.hacim) + '</span></div>' +
         '<div class="h-ok"><i class="bi bi-chevron-right"></i></div>' +
       '</div>').join("") + '</div>' +
-    '<div class="arac-not" style="margin-top:16px;border:none;padding:0;">Fiyat ve getiriler İş Yatırım kaynaklıdır, günde birkaç kez güncellenir. Piyasa değeri ve hacim son işlem gününe aittir. Hisseye tıklayınca finansallar (bilanço) yakında eklenecek.</div>';
+    '<div class="arac-not" style="margin-top:16px;border:none;padding:0;">Fiyat ve getiriler İş Yatırım kaynaklıdır. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
 }
 
 let ONCEKI_VIEW = "hisseliste";
@@ -1392,23 +1390,18 @@ function hdGrafikCard(baslik, kalem, aciklama){
 }
 function hdGrafikler(){
   const kap = document.getElementById("hd-icerik");
-  const kod = HD_KOD;
   let html = '<div class="hd-baslik-ic">Grafikler & Raporlar</div>';
-  // 1) Fiyat grafigi (TradingView)
-  html += '<div class="oc-kart" style="margin-bottom:16px;"><div class="oc-ust"><div class="oc-isim">Fiyat Grafiği</div>' +
-    '<div style="font-size:10px;color:var(--gnc-text-dim)">TradingView · BIST:' + kod + '</div></div>' +
-    '<div class="hd-tv"><iframe src="https://s.tradingview.com/widgetembed/?symbol=BIST%3A' + kod + '&interval=D&theme=dark&style=1&locale=tr&hidesidetoolbar=1&saveimage=0&withdateranges=1" loading="lazy" title="Fiyat"></iframe></div></div>';
 
-  // 2-5) Finansaldan turetilen trend grafikleri
+  // Finansaldan turetilen trend grafikleri
   const kartlar = [
-    ["Net Dönem Kârı", finKalemBul(/net dönem k|dönem net k|dönem kâr\/zarar|dönem kârı|net kâr/), "Şirketin dönemsel net kârı. Yükselen trend kârlılığın arttığını gösterir."],
-    ["Hasılat / Gelir", finKalemBul(/^hasılat|satış gel|kâr payı geli|toplam gelir|faiz gel/), "Şirketin ana gelir kalemi. Büyüyen hasılat operasyonel büyümeyi gösterir."],
-    ["Özkaynaklar", finKalemBul(/toplam özkaynak|özkaynaklar$|ana ortaklığa ait özkaynak/), "Şirketin öz sermayesi. Artışı sermaye birikimini gösterir."],
+    ["Net Dönem Kârı", finKalemBul(/net dönem k|dönem net k|dönem kâr\/zarar|dönem kârı|net kâr/), "Şirketin dönemsel net kârı."],
+    ["Hasılat / Gelir", finKalemBul(/^hasılat|satış gel|kâr payı geli|toplam gelir|faiz gel/), "Şirketin ana gelir kalemi."],
+    ["Özkaynaklar", finKalemBul(/toplam özkaynak|özkaynaklar$|ana ortaklığa ait özkaynak/), "Şirketin öz sermayesi."],
     ["Toplam Varlıklar", finKalemBul(/toplam varlık|aktif toplam/), "Şirketin toplam varlık büyüklüğü (aktif)."],
   ];
   const kartHtml = kartlar.map(k => hdGrafikCard(k[0], k[1], k[2])).filter(Boolean).join("");
-  html += '<div class="oc-grid">' + (kartHtml || '<div class="durum-kutu">Bu hisse için trend grafiği çıkarılamadı (finansal kalem eşleşmedi).</div>') + '</div>';
-  html += '<div class="hd-not">Fiyat grafiği TradingView\'den canlıdır. Diğer grafikler İş Yatırım finansallarından türetilir; dönemler kümülatiftir.</div>';
+  html += '<div class="oc-grid">' + (kartHtml || '<div class="durum-kutu">Bu hisse için finansal grafik bulunamadı.</div>') + '</div>';
+  html += '<div class="hd-not">Grafikler İş Yatırım finansallarından türetilmiştir. Dönemler kümülatiftir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
   kap.innerHTML = html;
 }
 function finGrupAc(g){
@@ -1880,8 +1873,8 @@ function turkiyeCiz(olaylar){
         '</div>' +
         (rozet ? '<div class="tr-rozet-satir">' + rozet + ' <span style="color:var(--gnc-text-dim);font-size:11px;">açıklanan, beklentiye göre</span></div>' : '') +
         '<div class="tr-not">' + (gelecek
-          ? 'Bu veri henüz açıklanmadı. Tarih ve saatinde ' + (o.beklenti?('beklenti: <b>'+o.beklenti+'</b>'):'piyasa beklentisiyle') + ' takip edilebilir.'
-          : 'Açıklanan değerin bir önceki döneme ve beklentiye göre yönü, verinin piyasa üzerindeki etkisini belirler. Yüksek önemli veriler kur ve faizde oynaklık yaratabilir.') + '</div>' +
+          ? 'Bu veri henüz açıklanmadı; ' + (o.beklenti?('beklenti: <b>'+o.beklenti+'</b>.'):'tarih ve saatinde açıklanacak.')
+          : 'Kaynak: doviz.com. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.') + '</div>' +
       '</div>' +
     '</div>';
   });
