@@ -20,6 +20,7 @@ workflow bu dosyayi cagirir.
 import json
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -62,6 +63,7 @@ DENEME = 3
 BEKLE = 2
 
 HISSE_GRUP_BOYUT = 50
+PARALEL_ISCI = 4  # ayni anda kac grup istegi atilsin (Is Yatirim'i asiri yuklememek icin sinirli)
 
 
 # ---------------- ORTAK ----------------
@@ -285,27 +287,44 @@ def hisse_calistir(now_iso):
     hedef.parent.mkdir(parents=True, exist_ok=True)
     eski = hisse_eski_yukle(hedef)
 
-    print(f"{len(kodlar)} hisse {HISSE_GRUP_BOYUT}'li gruplarla cekiliyor (Is Yatirim)...")
+    print(f"{len(kodlar)} hisse {HISSE_GRUP_BOYUT}'li gruplarla, {PARALEL_ISCI} paralel istekle cekiliyor (Is Yatirim)...")
     sonuc = {}
     taze_sayi = 0
 
-    for i in range(0, len(kodlar), HISSE_GRUP_BOYUT):
-        parca = kodlar[i:i + HISSE_GRUP_BOYUT]
+    gruplar = [kodlar[i:i + HISSE_GRUP_BOYUT] for i in range(0, len(kodlar), HISSE_GRUP_BOYUT)]
+
+    def grup_isle(parca):
         df = hisse_grup_cek(parca, baslangic, bitis)
         if df is None:
-            print(f"  grup {i}-{i+len(parca)}: taze gelmedi (eski korunacak)")
-            continue
+            return parca, None
         kod_k = kolon_bul(df, ["HGDG_HS_KODU"])
         kap_k = kolon_bul(df, ["HGDG_KAPANIS"])
         tar_k = kolon_bul(df, ["HGDG_TARIH"])
         hac_k = kolon_bul(df, ["HGDG_HACIM", "HG_HACIM", "DOLAR_HACIM"])
         pd_k = kolon_bul(df, ["PD", "PD_TL", "HAO_PD", "HG_PD"])
+        grup_sonuc = {}
         for kod in parca:
             v = hisse_isle(df, kod, kod_k, kap_k, tar_k, hac_k, pd_k)
             if v is not None:
-                sonuc[kod] = v
-                taze_sayi += 1
-        print(f"  grup {i}-{i+len(parca)}: tamam")
+                grup_sonuc[kod] = v
+        return parca, grup_sonuc
+
+    with ThreadPoolExecutor(max_workers=PARALEL_ISCI) as havuz:
+        gelecekler = {havuz.submit(grup_isle, parca): parca for parca in gruplar}
+        for gelecek in as_completed(gelecekler):
+            parca = gelecekler[gelecek]
+            ilk, son = parca[0], parca[-1]
+            try:
+                _, grup_sonuc = gelecek.result()
+            except Exception as e:
+                print(f"  grup [{ilk}..{son}]: hata {str(e)[:60]}")
+                continue
+            if grup_sonuc is None:
+                print(f"  grup [{ilk}..{son}]: taze gelmedi (eski korunacak)")
+                continue
+            sonuc.update(grup_sonuc)
+            taze_sayi += len(grup_sonuc)
+            print(f"  grup [{ilk}..{son}]: tamam ({len(grup_sonuc)} hisse)")
 
     korunan = 0
     for kod in kodlar:
