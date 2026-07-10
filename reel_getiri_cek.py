@@ -1,42 +1,35 @@
 # -*- coding: utf-8 -*-
 """
-GNC Insight - Reel Getiri Deflatoru Cekici (TCMB EVDS)
-Enflasyon (TUFE), USD/TRY ve gram altin aylik serilerini EVDS'ten ceker;
-her horizon (1A / 3A / YBB / 1Y) icin yuzde degisim hesaplar ve ham aylik
-seriyi de yazar. Panel bu deflator.json'u nominal getirilerle birlestirip
-reel getiriyi tarayicida hesaplar.
+GNC Insight - Reel Getiri Deflatoru + TCMB Politika Faizi Cekici
+Enflasyon (TUFE), USD/TRY, gram altin VE TCMB politika faizi (1 hafta repo)
+aylik serilerini ceker; deflator.json'a yazar.
 
-Kaynak: TCMB EVDS v3. Anahtar EVDS_API_KEY ortam degiskeninden okunur
-(GitHub Actions secret). evds paketi kullanilir.
+ONEMLI (Tem 2026): Bu script eskiden `evds` (PyPI) paketini kullaniyordu.
+TCMB, EVDS altyapisini 2025 sonunda evds3.tcmb.gov.tr'ye tasidi ve eski
+evds2.tcmb.gov.tr/service/evds/ uc noktalarini tamamen kapatti. Eski `evds`
+paketi artik CALISMIYOR (302 -> SPA HTML donuyor, sessizce bos veri
+uretiyordu - "Ocak sonrasi veri yok" sorununun kok nedeni buydu).
+Bu yuzden `borsapy` kutuphanesine tasindi (repo'da zaten sektor_hisseler_cek.py
+ve turkiye_cek.py'de kullaniliyor, EVDS v3'u sarmalıyor).
 
-Seri kodlari:
-  TUFE (2003=100 endeks) : TP.FG.J0          [KESIN]
-  USD/TRY (aylik ort.)   : TP.DK.USD.A.YTL   [KESIN]
-  Gram altin TL          : ALTIN_SERI (asagida) [DOGRULANACAK]
-      -> Actions ilk calistiginda log'a bak. Kod yanlissa altin null gelir,
-         pipeline kirilmaz. Dogru kodu bulmak icin (borsapy kuruluysa):
-             import borsapy as bp; print(bp.evds_search("altin"))
-         ve ALTIN_SERI'yi guncelle.
+Kaynak: TCMB EVDS v3 (borsapy uzerinden). Anahtar EVDS_API_KEY ortam
+degiskeninden okunur (GitHub Actions secret) - borsapy bu ismi otomatik tanir.
 """
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
-import pandas as pd
-from evds import evdsAPI
+import borsapy as bp
 
 KLASOR = Path(__file__).parent
 HEDEF = KLASOR / "gnc-panel" / "deflator.json"
+HEDEF_FAIZ = KLASOR / "gnc-panel" / "faiz_gecmis.json"
 
-# --- Seri kodlari ---
 TUFE_SERI = "TP.FG.J0"          # TUFE genel endeks (2003=100), aylik
-USD_SERI = "TP.DK.USD.A.YTL"    # ABD Dolari alis, gunluk (aylik ort. cekilir)
-ALTIN_SERI = "TP.MK.CUM.YTL"    # Gram altin adayi -- DOGRULANACAK (bkz. ust not)
-
-# frequency: 5 = Aylik (evds paketi bu kodu kullanir)
-FREQ_AYLIK = 5
+USD_SERI = "TP.DK.USD.A.YTL"    # ABD Dolari alis
+ALTIN_SERI = "TP.MK.CUM.YTL"    # Gram altin (dogrulanmis - degismedi)
 
 
 def _key():
@@ -46,44 +39,87 @@ def _key():
     return k
 
 
-def _seri_cek(evds, kod, bas, bit):
-    """Tek seriyi aylik ceker -> [{'tarih':'YYYY-MM','deger':float}, ...] (yeni->eski).
-    Hata olursa bos liste doner (pipeline kirilmaz)."""
-    try:
-        df = evds.get_data([kod], startdate=bas, enddate=bit, frequency=FREQ_AYLIK)
-    except Exception as e:
-        print(f"  {kod}: cekilemedi ({e})")
-        return []
+def _df_to_seri(df, deger_kolon_ipucu=None):
+    """borsapy DataFrame -> [{'tarih':'YYYY-MM','deger':float}, ...] (yeni->eski).
+    Tarih index (DatetimeIndex) veya ilk kolon olabilir; deger kolonunu
+    esnek bulur (tam kolon adini bilmeden calismasi icin - borsapy surumden
+    surume kolon adini degistirebilir)."""
     if df is None or not len(df):
-        print(f"  {kod}: bos")
         return []
-    # evds kolon adini nokta yerine alt cizgi ile verir: TP_FG_J0
-    kol = kod.replace(".", "_")
-    tar_kol = "Tarih" if "Tarih" in df.columns else df.columns[0]
-    if kol not in df.columns:
-        # tek veri kolonu varsa onu al
-        adaylar = [c for c in df.columns if c not in (tar_kol, "YEARWEEK", "UNIXTIME")]
+    df = df.reset_index()
+    kolonlar = list(df.columns)
+    tarih_kol = kolonlar[0]
+    for k in kolonlar:
+        if str(k).lower() in ("tarih", "date", "index"):
+            tarih_kol = k
+            break
+    deger_kol = None
+    if deger_kolon_ipucu:
+        for k in kolonlar:
+            if deger_kolon_ipucu.lower() in str(k).lower():
+                deger_kol = k
+                break
+    if deger_kol is None:
+        adaylar = [k for k in kolonlar if k != tarih_kol]
         if not adaylar:
-            print(f"  {kod}: deger kolonu yok")
             return []
-        kol = adaylar[-1]
+        deger_kol = adaylar[0]
+
     seri = []
     for _, r in df.iterrows():
         try:
-            v = float(r[kol])
+            v = float(r[deger_kol])
         except (TypeError, ValueError):
             continue
-        if pd.isna(v):
+        if v != v:  # NaN kontrolu
             continue
-        t = str(r[tar_kol]).strip()  # "2026-6" ya da "2026-06"
-        parca = t.replace(".", "-").split("-")
-        if len(parca) >= 2:
-            yil, ay = parca[0], parca[1].zfill(2)
-            seri.append({"tarih": f"{yil}-{ay}", "deger": round(v, 4)})
-    # yeni -> eski sirala
+        try:
+            t = str(r[tarih_kol])[:10]
+            yil, ay = t.split("-")[0], t.split("-")[1]
+        except Exception:
+            continue
+        seri.append({"tarih": f"{yil}-{ay}", "deger": round(v, 4)})
+    # ay bazinda tekillestir (gunluk veri aylik'a indirgenmisse coklanabilir) - SON degeri tut
+    tekil = {}
+    for s in seri:
+        tekil[s["tarih"]] = s["deger"]
+    seri = [{"tarih": t, "deger": d} for t, d in tekil.items()]
     seri.sort(key=lambda x: x["tarih"], reverse=True)
-    print(f"  {kod}: {len(seri)} aylik gozlem")
     return seri
+
+
+def _seri_cek(kod, baslangic, deger_ipucu=None):
+    """Tek EVDS serisini aylik ceker. Hata olursa bos liste doner (pipeline kirilmaz)."""
+    try:
+        ev = bp.EVDS()
+        s = ev.series(kod)
+        df = s.history(start=baslangic, frequency="monthly", aggregation="avg")
+        seri = _df_to_seri(df, deger_ipucu)
+        print(f"  {kod}: {len(seri)} aylik gozlem")
+        return seri
+    except Exception as e:
+        print(f"  {kod}: cekilemedi ({e})")
+        return []
+
+
+def _faiz_cek(baslangic):
+    """TCMB politika faizi (1 hafta repo) - borsapy'nin ozel TCMB sinifi ile,
+    EVDS seri kodu tahmin etmeye gerek yok."""
+    try:
+        tcmb = bp.TCMB()
+        df = tcmb.history("policy", start=baslangic)
+        seri = _df_to_seri(df, "borrowing" if df is not None and "borrowing" in getattr(df, "columns", []) else None)
+        # Aylik degil gunluk/degisken frekansli gelebilir - ay bazinda SON degeri tut
+        aylik = {}
+        for s in seri:
+            aylik[s["tarih"]] = s["deger"]
+        aylik_liste = [{"tarih": t, "deger": d} for t, d in aylik.items()]
+        aylik_liste.sort(key=lambda x: x["tarih"], reverse=True)
+        print(f"  TCMB politika faizi: {len(aylik_liste)} aylik gozlem")
+        return aylik_liste
+    except Exception as e:
+        print(f"  TCMB politika faizi: cekilemedi ({e})")
+        return []
 
 
 def _yuzde(son, onceki):
@@ -93,13 +129,10 @@ def _yuzde(son, onceki):
 
 
 def _ay_geri(seri, n):
-    """seri: yeni->eski. n ay onceki degeri getir (yoksa None)."""
     return seri[n]["deger"] if len(seri) > n else None
 
 
 def _ybb_baz(seri):
-    """Bu yilin baslangic bazi = gecen yilin Aralik endeksi (YBB icin dogru baz).
-    Bulunamazsa bu yilin ilk gozlemi."""
     if not seri:
         return None
     son_yil = int(seri[0]["tarih"][:4])
@@ -107,13 +140,11 @@ def _ybb_baz(seri):
     for x in seri:
         if x["tarih"] == aralik:
             return x["deger"]
-    # fallback: bu yilin en eski ayi
     bu_yil = [x for x in seri if x["tarih"][:4] == str(son_yil)]
     return bu_yil[-1]["deger"] if bu_yil else None
 
 
 def _horizonlar(seri):
-    """seri (yeni->eski) icin 1A/3A/YBB/1Y yuzde degisim."""
     if len(seri) < 2:
         return {"1a": None, "3a": None, "ybb": None, "1y": None, "son": None, "son_tarih": None}
     son = seri[0]["deger"]
@@ -128,19 +159,19 @@ def _horizonlar(seri):
 
 
 def main():
-    evds = evdsAPI(_key())
+    bp.set_evds_key(_key())
     yil = datetime.now().year
-    bas = f"01-01-{yil - 2}"                 # 2 yil geriye (1Y + YBB icin bol pay)
-    bit = datetime.now().strftime("%d-%m-%Y")
+    baslangic = f"{yil - 10}-01-01"  # deflator icin 2 yil yeterliydi ama faiz/tarihsel analiz icin 10 yil cekiyoruz
 
-    print("EVDS deflator serileri cekiliyor...")
-    tufe = _seri_cek(evds, TUFE_SERI, bas, bit)
-    usd = _seri_cek(evds, USD_SERI, bas, bit)
-    altin = _seri_cek(evds, ALTIN_SERI, bas, bit)
+    print("EVDS serileri cekiliyor (borsapy uzerinden)...")
+    tufe = _seri_cek(TUFE_SERI, baslangic)
+    usd = _seri_cek(USD_SERI, baslangic)
+    altin = _seri_cek(ALTIN_SERI, baslangic)
+    faiz = _faiz_cek(baslangic)
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
-        "kaynak": "TCMB EVDS",
+        "kaynak": "TCMB EVDS (borsapy)",
         "not": "Aylik seriler. Reel getiri = (1+nominal)/(1+deflator)-1. Gunluk/haftalik reel getiri anlamsizdir (enflasyon aylik).",
         "deflatorler": {
             "tufe": {"ad": "TÜFE (Enflasyon)", "seri_kod": TUFE_SERI, **_horizonlar(tufe), "seri": tufe[:24]},
@@ -148,15 +179,27 @@ def main():
             "altin": {"ad": "Gram Altın", "seri_kod": ALTIN_SERI, **_horizonlar(altin), "seri": altin[:24]},
         },
     }
-
     HEDEF.parent.mkdir(parents=True, exist_ok=True)
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
+
+    # Faiz gecmisini AYRI dosyaya yaz (10 yillik, rotasyon haritasindaki
+    # "ortam" bandi icin kullanilacak - deflator.json'u sismemek icin ayri tutuldu)
+    faiz_cikti = {
+        "guncelleme": datetime.now().isoformat(),
+        "kaynak": "TCMB (borsapy)",
+        "not": "TCMB politika faizi (1 hafta repo), aylik son deger. Yeniden eskiye siralidir.",
+        "seri": faiz,
+    }
+    HEDEF_FAIZ.write_text(json.dumps(faiz_cikti, ensure_ascii=False), encoding="utf-8")
 
     ozet = {k: v.get("1y") for k, v in cikti["deflatorler"].items()}
     print(f"\nTamamlandi -> {HEDEF}")
     print(f"  1Y degisim: TÜFE={ozet['tufe']}%  USD={ozet['usd']}%  Altın={ozet['altin']}%")
+    print(f"Faiz gecmisi -> {HEDEF_FAIZ} ({len(faiz)} aylik gozlem)")
     if not altin:
-        print("  UYARI: Altin serisi bos. ALTIN_SERI kodunu dogrula (bkz. dosya basi notu).")
+        print("  UYARI: Altin serisi bos geldi, kontrol et.")
+    if not faiz:
+        print("  UYARI: Faiz serisi bos geldi, kontrol et (bp.TCMB().history('policy') donen kolonlari logla).")
 
 
 if __name__ == "__main__":
