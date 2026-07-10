@@ -959,13 +959,17 @@
         <div id="sekt-sayfa-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
 
-      <div class="as-eyebrow" style="margin-top:24px;"><span>Rotasyon Haritası</span><small>para nereden nereye akıyor</small></div>
+      <div class="as-eyebrow" style="margin-top:24px;"><span>Sektör Isı Haritası</span><small>hangi sektöre ne zaman para girdi</small></div>
       <div class="as-kart">
-        <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Rotasyon Haritası')" title="PNG indir"><i class="bi bi-download"></i></button>
+        <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Sektör Isı Haritası')" title="PNG indir"><i class="bi bi-download"></i></button>
         <div class="as-kart-baslik" style="margin-bottom:2px;">
-          <span class="grafik-info" data-tip="Her nokta bir sektörün XU100'e göre GÖRELİ GÜCÜNÜ (yatay eksen) ve bu gücün YÖNÜNÜ/HIZINI (dikey eksen) gösterir. Kuyruk, son 6 ayın izidir. Öncü: güçlü ve hızlanan. Zayıflayan: güçlü ama ivme kaybediyor. Geride: zayıf ve yavaşlıyor. Toparlanan: zayıf ama güçleniyor. Bu bir tarama aracıdır, alım-satım sinyali değildir."><i class="bi bi-info-circle"></i></span>
+          <span class="grafik-info" data-tip="Her hücre, o dönemde sektörün XU100'e göre yüzde puan farkını gösterir (yeşil: XU100'den güçlü, kırmızı: zayıf). Üstteki turuncu şerit TCMB politika faizini gösterir; ortamı sektör performansıyla birlikte okumanı sağlar. Bir hücreye tıklayınca o sektörün hisselerine gidersin. Bu bir tarama aracıdır, alım-satım sinyali değildir."><i class="bi bi-info-circle"></i></span>
         </div>
-        <div id="rrg-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
+        <div class="as-sekt-arac">
+          <button class="chip isimod active" data-m="yillik" onclick="isiModSec('yillik')">Yıllık</button>
+          <button class="chip isimod" data-m="ceyreklik" onclick="isiModSec('ceyreklik')">Çeyreklik</button>
+        </div>
+        <div id="isi-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
     </section>
 
@@ -2066,129 +2070,137 @@ function sektorGrafikCiz(){
   piyasaGenisligiCiz();
 }
 /* ---- ROTASYON HARİTASI (RRG) ---- */
-let RRG_VERI = null;
-async function rrgYukle(){
-  const kap = document.getElementById("rrg-icerik");
-  try{
-    const res = await fetch('/.netlify/functions/veri?dosya=sektor_gecmis.json&t=' + Date.now());
-    if(!res.ok) throw new Error();
-    const veri = await res.json();
-    RRG_VERI = rrgHesapla(veri.sektorler || {});
-    rrgCiz();
-  }catch(e){
-    if(kap) kap.innerHTML = '<div class="durum-kutu">Rotasyon haritası verisi henüz yok.</div>';
-  }
-}
 function rrgEndeksle(aylikGetiriler){
   // [{ay,getiri}] (eskiden yeniye) -> kumulatif endeks, 100'den basliyor
+  // NOT: Bu fonksiyon hem Isi Haritasi hem Reel Getiri Karsilastir tarafindan kullanilir.
   let deger = 100;
   return aylikGetiriler.map(a => { deger *= (1 + (a.getiri || 0) / 100); return { ay: a.ay, deger }; });
 }
-function rrgSMA(dizi, n, i){
-  const bas = Math.max(0, i - n + 1);
-  const dilim = dizi.slice(bas, i + 1);
-  return dilim.reduce((t, v) => t + v, 0) / dilim.length;
-}
-function rrgHesapla(sektorlerJson){
-  const xu = sektorlerJson["XU100"];
-  if(!xu || !xu.aylik || xu.aylik.length < 21) return null;
-  const xuEndeks = rrgEndeksle(xu.aylik);
-
-  const N_TREND = 12, M_MOMENTUM = 3, KUYRUK = 6;
-  const sonuc = [];
-  for(const kod of Object.keys(sektorlerJson)){
-    if(kod === "XU100") continue;
-    const s = sektorlerJson[kod];
-    if(!s.aylik || s.aylik.length < 21) continue;
-    const sEndeks = rrgEndeksle(s.aylik);
-    const n = Math.min(sEndeks.length, xuEndeks.length);
-    if(n < N_TREND + M_MOMENTUM + KUYRUK) continue;
-
-    const rs = [];
-    for(let i = 0; i < n; i++){ rs.push(sEndeks[i].deger / xuEndeks[i].deger); }
-    const ratio = [];
-    for(let i = 0; i < n; i++){ ratio.push(100 * rs[i] / rrgSMA(rs, N_TREND, i)); }
-    const momentum = [];
-    for(let i = 0; i < n; i++){ momentum.push(100 * ratio[i] / rrgSMA(ratio, M_MOMENTUM, i)); }
-
-    const kuyruk = [];
-    for(let i = n - KUYRUK; i < n; i++){
-      if(i < 0 || isNaN(ratio[i]) || isNaN(momentum[i])) continue;
-      kuyruk.push({ ratio: ratio[i], momentum: momentum[i], ay: s.aylik[i] ? s.aylik[i].ay : "" });
-    }
-    if(kuyruk.length < 2) continue;
-    sonuc.push({ kod, ad: SEKTOR_AD[kod] || s.ad || kod, kuyruk });
+/* ---- SEKTÖR ISI HARİTASI (yıllık / çeyreklik + TCMB faiz şeridi) ---- */
+let ISI_SEKTOR_HAM = null, ISI_FAIZ_HAM = null, ISI_MOD = "yillik";
+async function isiYukle(){
+  const kap = document.getElementById("isi-icerik");
+  try{
+    const [sektorler, faizRes] = await Promise.all([
+      sektorGecmisGetir(),
+      fetch('/.netlify/functions/veri?dosya=faiz_gecmis.json&t=' + Date.now())
+    ]);
+    ISI_SEKTOR_HAM = sektorler;
+    ISI_FAIZ_HAM = faizRes.ok ? ((await faizRes.json()).seri || []) : [];
+    isiCiz();
+  }catch(e){
+    if(kap) kap.innerHTML = '<div class="durum-kutu">Isı haritası verisi henüz yok.</div>';
   }
+}
+function isiModSec(m){
+  ISI_MOD = m;
+  document.querySelectorAll(".isimod").forEach(c => c.classList.toggle("active", c.dataset.m === m));
+  isiCiz();
+}
+function isiDonemAnahtari(ym, mod){
+  const [y, a] = ym.split("-");
+  if(mod === "yillik") return y;
+  const c = Math.ceil(parseInt(a, 10) / 3);
+  return y + " Ç" + c;
+}
+function isiDonemselGetiriler(aylikListe, mod){
+  const gruplar = {};
+  aylikListe.forEach(a => {
+    const k = isiDonemAnahtari(a.ay, mod);
+    if(!gruplar[k]) gruplar[k] = [];
+    gruplar[k].push(a.getiri || 0);
+  });
+  const sonuc = {};
+  Object.keys(gruplar).forEach(k => {
+    let carpim = 1;
+    gruplar[k].forEach(g => { carpim *= (1 + g / 100); });
+    sonuc[k] = (carpim - 1) * 100;
+  });
   return sonuc;
 }
-function rrgCeyrek(ratio, momentum){
-  if(ratio >= 100 && momentum >= 100) return { ad: "Öncü", sinif: "ok" };
-  if(ratio >= 100 && momentum < 100) return { ad: "Zayıflayan", sinif: "uyari" };
-  if(ratio < 100 && momentum < 100) return { ad: "Geride", sinif: "kotu" };
-  return { ad: "Toparlanan", sinif: "notr" };
-}
-function rrgRenk(sinif){
-  if(sinif === "ok") return "var(--gnc-success)";
-  if(sinif === "uyari") return "var(--gnc-warning, #f59e0b)";
-  if(sinif === "kotu") return "var(--gnc-danger)";
-  return "var(--gnc-accent)";
-}
-function rrgCiz(){
-  const kap = document.getElementById("rrg-icerik");
-  if(!kap) return;
-  if(!RRG_VERI || !RRG_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Rotasyon haritası için yeterli geçmiş veri yok.</div>'; return; }
+function isiHesapla(){
+  const sektorler = ISI_SEKTOR_HAM;
+  if(!sektorler) return null;
+  const xu = sektorler["XU100"];
+  if(!xu || !xu.aylik) return null;
 
-  const tumNoktalar = [];
-  RRG_VERI.forEach(s => s.kuyruk.forEach(k => tumNoktalar.push(k)));
-  const ratios = tumNoktalar.map(p => p.ratio), moms = tumNoktalar.map(p => p.momentum);
-  const rSpan = Math.max(Math.max(...ratios) - 100, 100 - Math.min(...ratios), 2) + 2;
-  const mSpan = Math.max(Math.max(...moms) - 100, 100 - Math.min(...moms), 2) + 2;
-  const minR = 100 - rSpan, maxR = 100 + rSpan, minM = 100 - mSpan, maxM = 100 + mSpan;
+  const xuDonem = isiDonemselGetiriler(xu.aylik, ISI_MOD);
+  const donemler = Object.keys(xuDonem).sort();
 
-  const W = 340, H = 340, P = 10;
-  const x = (r) => P + ((r - minR) / (maxR - minR)) * (W - 2*P);
-  const y = (m) => P + (1 - (m - minM) / (maxM - minM)) * (H - 2*P);
-  const midX = x(100), midY = y(100);
-
-  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-width:460px;display:block;margin:0 auto;">';
-  svg += '<rect x="' + midX.toFixed(1) + '" y="0" width="' + (W-midX).toFixed(1) + '" height="' + midY.toFixed(1) + '" fill="rgba(var(--gnc-success-rgb),0.06)"/>';
-  svg += '<rect x="' + midX.toFixed(1) + '" y="' + midY.toFixed(1) + '" width="' + (W-midX).toFixed(1) + '" height="' + (H-midY).toFixed(1) + '" fill="rgba(var(--gnc-warning-rgb, 245,158,11),0.06)"/>';
-  svg += '<rect x="0" y="' + midY.toFixed(1) + '" width="' + midX.toFixed(1) + '" height="' + (H-midY).toFixed(1) + '" fill="rgba(var(--gnc-danger-rgb),0.06)"/>';
-  svg += '<rect x="0" y="0" width="' + midX.toFixed(1) + '" height="' + midY.toFixed(1) + '" fill="rgba(var(--gnc-accent-rgb),0.06)"/>';
-  svg += '<line x1="' + midX.toFixed(1) + '" y1="0" x2="' + midX.toFixed(1) + '" y2="' + H + '" stroke="var(--bs-border-color)" stroke-width="1"/>';
-  svg += '<line x1="0" y1="' + midY.toFixed(1) + '" x2="' + W + '" y2="' + midY.toFixed(1) + '" stroke="var(--bs-border-color)" stroke-width="1"/>';
-  svg += '<text x="' + (W-6) + '" y="14" text-anchor="end" font-size="9" fill="var(--gnc-success)" font-weight="700">ÖNCÜ</text>';
-  svg += '<text x="' + (W-6) + '" y="' + (H-8) + '" text-anchor="end" font-size="9" fill="var(--gnc-warning, #f59e0b)" font-weight="700">ZAYIFLAYAN</text>';
-  svg += '<text x="6" y="' + (H-8) + '" text-anchor="start" font-size="9" fill="var(--gnc-danger)" font-weight="700">GERİDE</text>';
-  svg += '<text x="6" y="14" text-anchor="start" font-size="9" fill="var(--gnc-accent)" font-weight="700">TOPARLANAN</text>';
-
-  RRG_VERI.forEach(s => {
-    const k = s.kuyruk;
-    const nokta = k.map(p => x(p.ratio).toFixed(1) + "," + y(p.momentum).toFixed(1));
-    svg += '<polyline points="' + nokta.join(" ") + '" fill="none" stroke="var(--gnc-text-dim)" stroke-width="1" opacity="0.35"/>';
-    k.forEach((p, i) => {
-      const sonMu = i === k.length - 1;
-      const r = sonMu ? 5 : 2.5;
-      const op = sonMu ? 1 : (0.25 + 0.55 * (i / Math.max(1, k.length - 1)));
-      const renk = sonMu ? rrgRenk(rrgCeyrek(p.ratio, p.momentum).sinif) : "var(--gnc-text-dim)";
-      svg += '<circle cx="' + x(p.ratio).toFixed(1) + '" cy="' + y(p.momentum).toFixed(1) + '" r="' + r + '" fill="' + renk + '" opacity="' + op.toFixed(2) + '"' +
-        (sonMu ? ' style="cursor:pointer" onclick="sektorHisseAc(\'' + s.kod + '\',\'' + s.ad.replace(/'/g,"") + '\')"' : '') + '>' +
-        (sonMu ? '<title>' + s.kod + ' · ' + s.ad + ' · ' + rrgCeyrek(p.ratio, p.momentum).ad + '</title>' : '') +
-      '</circle>';
+  const satirlar = [];
+  Object.keys(sektorler).forEach(kod => {
+    if(kod === "XU100") return;
+    const s = sektorler[kod];
+    if(!s.aylik) return;
+    const sDonem = isiDonemselGetiriler(s.aylik, ISI_MOD);
+    const hucreler = donemler.map(d => {
+      if(sDonem[d] === undefined || xuDonem[d] === undefined) return null;
+      return Math.round((sDonem[d] - xuDonem[d]) * 10) / 10;
     });
-    const son = k[k.length-1];
-    svg += '<text x="' + (x(son.ratio)+7).toFixed(1) + '" y="' + (y(son.momentum)+3).toFixed(1) + '" font-size="9.5" font-weight="700" fill="var(--bs-emphasis-color)">' + s.kod + '</text>';
+    satirlar.push({ kod, ad: SEKTOR_AD[kod] || s.ad || kod, hucreler });
   });
-  svg += '</svg>';
+  satirlar.sort((a, b) => {
+    const av = a.hucreler[a.hucreler.length - 1], bv = b.hucreler[b.hucreler.length - 1];
+    return (bv === null ? -999 : bv) - (av === null ? -999 : av);
+  });
 
-  kap.innerHTML = svg +
-    '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:10px;font-size:10.5px;color:var(--gnc-text-dim);">' +
-      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-success);margin-right:4px;"></span>Öncü</span>' +
-      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-warning, #f59e0b);margin-right:4px;"></span>Zayıflayan</span>' +
-      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-danger);margin-right:4px;"></span>Geride</span>' +
-      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-accent);margin-right:4px;"></span>Toparlanan</span>' +
-    '</div>' +
-    '<div class="hd-not" style="text-align:center;">Yatay eksen XU100\'e göre göreli güç, dikey eksen bu gücün ivmesidir; ikisi de 100 baz alınarak son 10 yıllık aylık verilerden hesaplanır. Bu bir tarama aracıdır, alım-satım sinyali değildir.</div>';
+  const faizAy = {};
+  (ISI_FAIZ_HAM || []).forEach(f => { faizAy[f.tarih] = f.deger; });
+  const faizDonemGrup = {};
+  donemler.forEach(d => { faizDonemGrup[d] = []; });
+  Object.keys(faizAy).forEach(ym => {
+    const k = isiDonemAnahtari(ym, ISI_MOD);
+    if(faizDonemGrup[k]) faizDonemGrup[k].push(faizAy[ym]);
+  });
+  const faizOrtalama = donemler.map(d => {
+    const liste = faizDonemGrup[d];
+    if(!liste || !liste.length) return null;
+    return liste.reduce((t, v) => t + v, 0) / liste.length;
+  });
+
+  return { donemler, satirlar, faizOrtalama };
+}
+function isiRenk(v){
+  if(v === null || v === undefined) return "rgba(255,255,255,0.03)";
+  const yogunluk = Math.min(1, Math.abs(v) / 20);
+  if(v >= 0) return "rgba(34,197,94," + (0.15 + yogunluk * 0.65).toFixed(2) + ")";
+  return "rgba(239,68,68," + (0.15 + yogunluk * 0.65).toFixed(2) + ")";
+}
+function isiCiz(){
+  const kap = document.getElementById("isi-icerik");
+  if(!kap) return;
+  const veri = isiHesapla();
+  if(!veri || !veri.donemler.length){ kap.innerHTML = '<div class="durum-kutu">Isı haritası için yeterli veri yok.</div>'; return; }
+
+  const { donemler, satirlar, faizOrtalama } = veri;
+  const genislik = 150 + donemler.length * 44;
+
+  let html = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:10.5px;min-width:' + genislik + 'px;width:100%;">';
+  html += '<tr><td style="padding:4px 8px;"></td>' +
+    donemler.map(d => '<td style="padding:4px 6px;text-align:center;color:var(--gnc-text-dim);font-weight:700;white-space:nowrap;">' + d + '</td>').join("") +
+  '</tr>';
+  html += '<tr style="border-bottom:1px solid var(--bs-border-color);">' +
+    '<td style="padding:4px 10px;font-weight:700;color:var(--gnc-accent);white-space:nowrap;">Politika Faizi</td>' +
+    faizOrtalama.map(f => '<td style="padding:4px 6px;text-align:center;color:var(--gnc-accent);font-weight:700;white-space:nowrap;">' + (f !== null ? Math.round(f) + '%' : '—') + '</td>').join("") +
+  '</tr>';
+  satirlar.forEach(s => {
+    html += '<tr>' +
+      '<td style="padding:4px 10px;font-weight:700;color:var(--bs-emphasis-color);white-space:nowrap;">' + s.kod + '</td>' +
+      s.hucreler.map(v =>
+        '<td style="padding:1px;"><div' + (v !== null ? ' onclick="sektorHisseAc(\'' + s.kod + '\',\'' + s.ad.replace(/'/g,"") + '\')" style="cursor:pointer;' : ' style="') +
+        'width:38px;height:24px;background:' + isiRenk(v) + ';display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--bs-emphasis-color);font-weight:700;">' +
+        (v !== null ? (v >= 0 ? '+' : '') + Math.round(v) : '') + '</div></td>'
+      ).join("") +
+    '</tr>';
+  });
+  html += '</table></div>';
+  html += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:10.5px;color:var(--gnc-text-dim);">' +
+    '<span><span style="display:inline-block;width:12px;height:12px;background:rgba(34,197,94,0.6);margin-right:4px;vertical-align:middle;"></span>XU100\'den güçlü</span>' +
+    '<span><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,0.6);margin-right:4px;vertical-align:middle;"></span>XU100\'den zayıf</span>' +
+  '</div>';
+  html += '<div class="hd-not">Hücre değeri, o dönemde sektörün XU100\'e göre yüzde puan farkıdır (sektör getirisi eksi XU100 getirisi). Politika Faizi şeridi, o dönemin ortalama TCMB 1 hafta repo faizidir. Bir hücreye tıklayınca o sektörün hisselerine gidersin. Bu bir tarama aracıdır, alım-satım sinyali değildir.</div>';
+
+  kap.innerHTML = html;
 }
 function piyasaGenisligiCiz(){
   const kap = document.getElementById("as-genislik");
@@ -2612,7 +2624,7 @@ document.querySelectorAll(".nav-link-gnc").forEach(link => {
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebarOverlay").classList.remove("show");
     if(v === "anasayfa") anaSayfaYukle();
-    if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); rrgYukle(); }
+    if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); isiYukle(); }
     if(v === "hisseliste") hisseListeYukle();
     if(v === "reelgetiri" && !window._rgkYuklendi){ window._rgkYuklendi = true; rgkBaslat(); }
     if(v === "takvim" && !window._takvimYuklendi){ window._takvimYuklendi = true; takvimCek(); }
@@ -2629,7 +2641,7 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
   else if(aktif === "turkiye") turkiyeCek();
   else if(aktif === "hisseliste") hisseListeYukle();
   else if(aktif === "reelgetiri") rgkCiz();
-  else if(aktif === "sektorler"){ sektorCek(); rrgYukle(); }
+  else if(aktif === "sektorler"){ sektorCek(); isiYukle(); }
   else sektorCek();
 });
 
