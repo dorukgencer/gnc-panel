@@ -256,9 +256,6 @@
   .hl-kart .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
   .hl-kart .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hd-metrik-serit { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
-  .rg-bloklar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 28px; }
-  .rg-ufuk-baslik { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 6px; }
-  @media (max-width: 560px){ .rg-bloklar { grid-template-columns: 1fr; } }
   .hd-mkutu { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; }
   .hd-mkutu .k { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 5px; }
   .hd-mkutu .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
@@ -573,8 +570,10 @@
   .cg-wrap svg { display: block; width: 100%; }
   .cg-guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--gnc-text-dim); opacity: 0; pointer-events: none; }
   .cg-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--gnc-accent); border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
+  .cg-dot2 { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--bs-emphasis-color); border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
+  .cg-cizgi2 { fill: none; stroke: var(--bs-emphasis-color); stroke-width: 1.75; stroke-dasharray: 5 4; }
   .cg-tip { position: absolute; z-index: 40; background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px; font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transform: translate(-50%, -130%); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-  .cg-wrap.aktif .cg-guide, .cg-wrap.aktif .cg-dot, .cg-wrap.aktif .cg-tip { opacity: 1; }
+  .cg-wrap.aktif .cg-guide, .cg-wrap.aktif .cg-dot, .cg-wrap.aktif .cg-dot2, .cg-wrap.aktif .cg-tip { opacity: 1; }
 
   .as-ethbtc-yorum { font-size: 12.5px; line-height: 1.5; color: var(--gnc-text-faded); }
   .as-ethbtc-yorum b { color: var(--bs-emphasis-color); }
@@ -1273,7 +1272,7 @@ let ONCEKI_VIEW = "hisseliste";
 let HD_KOD = "", HD_AD = "", HD_SUB = "reel";
 function hisseDetay(kod, ad){
   HD_KOD = kod; HD_AD = ad || ""; HD_SUB = "reel";
-  RG_VERI = null;
+  RG_HAM = null;
   ONCEKI_VIEW = document.getElementById("view-hisseler").classList.contains("hidden") ? "hisseliste" : "sektorhisse";
   ["view-hisseler","view-hisseliste","view-sektorler","view-takvim","view-turkiye","view-anasayfa","view-onchain"].forEach(v => document.getElementById(v).classList.add("hidden"));
   document.getElementById("view-hissedetay").classList.remove("hidden");
@@ -1348,9 +1347,10 @@ function hdRender(){
 }
 
 /* ---- REEL GETİRİ ---- */
-let RG_VERI = null, RG_BAZ = "tufe";
+let RG_HAM = null, RG_BAZ = "tufe", RG_OLCEK = 12;
 const RG_BAZ_AD = { tufe: "TÜFE'ye göre", usd: "USD/TRY'ye göre", altin: "Gram Altına göre" };
-const RG_UFUKLAR = ["1A", "3A", "YBB", "1Y"];
+const RG_OLCEK_AD = [[6,"6 Ay"],[12,"1 Yıl"],[9999,"Tüm"]];
+const TR_AY_KISA = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
 
 async function reelGetiriYukle(kod){
   try{
@@ -1362,84 +1362,99 @@ async function reelGetiriYukle(kod){
     if(!deflRes.ok) throw new Error("deflator-yok");
     const gecmis = await gecmisRes.json();
     const defl = await deflRes.json();
-    RG_VERI = { nominal: rgNominalHesapla(gecmis.seri || []), deflator: defl.deflatorler || {} };
+    RG_HAM = { hisseAylik: rgAylikSonKapanis(gecmis.seri || []), deflator: defl.deflatorler || {} };
     if(HD_SUB === "reel") reelGetiriCiz();
   }catch(e){
-    RG_VERI = { hata: true };
+    RG_HAM = { hata: true };
     if(HD_SUB === "reel") reelGetiriCiz();
   }
 }
-function rgNominalHesapla(seri){
-  // seri: [{tarih:'YYYY-MM-DD', kapanis}] eskiden yeniye sirali
-  if(!seri || seri.length < 2) return {};
-  const son = seri[seri.length - 1].kapanis;
-  const geri = (n) => seri.length > n ? seri[seri.length - 1 - n].kapanis : null;
-  const sonYil = seri[seri.length - 1].tarih.slice(0, 4);
-  const ilkBuYil = seri.find(x => x.tarih.slice(0, 4) === sonYil);
-  const yuzde = (a, b) => (b === null || b === undefined || b === 0) ? null : Math.round((a / b - 1) * 1000) / 10;
-  return {
-    "1A": yuzde(son, geri(21)),
-    "3A": yuzde(son, geri(63)),
-    "YBB": ilkBuYil ? yuzde(son, ilkBuYil.kapanis) : null,
-    "1Y": yuzde(son, geri(252)),
-  };
+function rgAylikSonKapanis(seri){
+  // seri: [{tarih:'YYYY-MM-DD', kapanis}] eskiden yeniye sirali -> her ay icin SON kapanisi tut
+  const ay = {};
+  for(const s of seri){ ay[s.tarih.slice(0,7)] = s.kapanis; }
+  return ay;
 }
-function rgReelHesapla(nominal, deflatorYuzde){
-  if(nominal === null || nominal === undefined || deflatorYuzde === null || deflatorYuzde === undefined) return null;
-  return Math.round((((1 + nominal / 100) / (1 + deflatorYuzde / 100)) - 1) * 1000) / 10;
+function rgAyEtiket(ym){
+  const [y, a] = ym.split("-");
+  return TR_AY_KISA[parseInt(a,10)-1] + " " + y.slice(2);
+}
+function rgSeriHesapla(baz, olcekAy){
+  const hisseAy = (RG_HAM && RG_HAM.hisseAylik) || {};
+  const deflGrup = (RG_HAM && RG_HAM.deflator && RG_HAM.deflator[baz]) || {};
+  const deflSeriDesc = deflGrup.seri || []; // yeniden eskiye
+  const deflAy = {};
+  for(const d of deflSeriDesc){ deflAy[d.tarih] = d.deger; }
+
+  let ortakAylar = Object.keys(hisseAy).filter(ym => deflAy[ym] !== undefined).sort();
+  if(olcekAy !== 9999) ortakAylar = ortakAylar.slice(-olcekAy);
+  if(ortakAylar.length < 2) return null;
+
+  const ilkFiyat = hisseAy[ortakAylar[0]];
+  const ilkDeflator = deflAy[ortakAylar[0]];
+  const nominalSeri = [], reelSeri = [];
+  for(const ym of ortakAylar){
+    const nominalEndeks = (hisseAy[ym] / ilkFiyat) * 100;
+    const deflatorEndeks = (deflAy[ym] / ilkDeflator) * 100;
+    const reelEndeks = (nominalEndeks / deflatorEndeks) * 100;
+    const t = rgAyEtiket(ym);
+    nominalSeri.push({ t, v: nominalEndeks });
+    reelSeri.push({ t, v: reelEndeks });
+  }
+  return { nominalSeri, reelSeri };
 }
 function rgBazSec(b){ RG_BAZ = b; reelGetiriCiz(); }
+function rgOlcekSec(n){ RG_OLCEK = n; reelGetiriCiz(); }
 function reelGetiriCiz(){
   const kap = document.getElementById("hd-icerik");
-  if(!RG_VERI){ kap.innerHTML = '<div class="durum-kutu">Reel getiri hesaplanıyor…</div>'; return; }
-  if(RG_VERI.hata){
+  if(!RG_HAM){ kap.innerHTML = '<div class="durum-kutu">Reel getiri hesaplanıyor…</div>'; return; }
+  if(RG_HAM.hata){
     kap.innerHTML = '<div class="durum-kutu">Bu hisse için fiyat geçmişi henüz oluşmadı.<br>Fiyat geçmişi her gün otomatik güncellenir, birkaç gün içinde burada görünür.</div>';
     return;
   }
-  const nom = RG_VERI.nominal || {};
-  const deflGrup = (RG_VERI.deflator || {})[RG_BAZ] || {};
-  const deflMap = { "1A": deflGrup["1a"], "3A": deflGrup["3a"], "YBB": deflGrup["ybb"], "1Y": deflGrup["1y"] };
-
-  const chipler = Object.keys(RG_BAZ_AD).map(b =>
+  const sonuc = rgSeriHesapla(RG_BAZ, RG_OLCEK);
+  const bazChip = Object.keys(RG_BAZ_AD).map(b =>
     '<button class="chip' + (b === RG_BAZ ? ' active' : '') + '" onclick="rgBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
+  const olcekChip = RG_OLCEK_AD.map(o =>
+    '<button class="chip olcek' + (o[0] === RG_OLCEK ? ' active' : '') + '" onclick="rgOlcekSec(' + o[0] + ')">' + o[1] + '</button>').join("");
 
-  // Tum degerleri topla, tek olcek (maxAbs) kullan ki cubuklar birbirine kiyasla dogru boyda olsun
-  const degerler = [];
-  RG_UFUKLAR.forEach(u => { degerler.push(nom[u]); degerler.push(rgReelHesapla(nom[u], deflMap[u])); });
-  const maxAbs = Math.max(...degerler.filter(v => v !== null && v !== undefined).map(Math.abs), 0.1);
-
-  const cubuk = (etiket, deger, nominalMi) => {
-    const v = (deger === null || deger === undefined) ? 0 : deger;
-    const gen = (Math.abs(v) / maxAbs) * 50;
-    const renkSinif = v >= 0 ? "pos" : "neg";
-    const opaklik = nominalMi ? "opacity:.45;" : "";
-    const bar = '<div class="skt-bar ' + renkSinif + '" style="width:' + gen.toFixed(1) + '%;' + opaklik + '"></div>';
-    return '<div class="skt-row">' +
-      '<div class="skt-kod">' + etiket + '</div>' +
-      '<div class="skt-track"><div class="skt-mid"></div>' + bar + '</div>' +
-      '<div class="skt-deg ' + yon(deger) + '">' + fmtYuzde(deger) + '</div>' +
-    '</div>';
-  };
-
-  const bloklar = RG_UFUKLAR.map(u => {
-    const n = nom[u];
-    const d = deflMap[u];
-    const r = rgReelHesapla(n, d);
-    return '<div class="rg-ufuk-blok">' +
-      '<div class="rg-ufuk-baslik">' + u + '</div>' +
-      '<div class="skt-liste">' + cubuk("Nominal", n, true) + cubuk("Reel", r, false) + '</div>' +
-    '</div>';
-  }).join("");
+  if(!sonuc){
+    kap.innerHTML =
+      '<div class="as-kart">' +
+        '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri</div>' +
+        '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
+        '<div class="grafik-olcek">' + olcekChip + '</div>' +
+        '<div class="durum-kutu">Bu dönem için yeterli örtüşen veri yok (fiyat geçmişi ile enflasyon/kur/altın verisi aynı ayları kapsamıyor). Daha kısa bir dönem dene.</div>' +
+      '</div>';
+    return;
+  }
+  const { nominalSeri, reelSeri } = sonuc;
+  const sonNom = nominalSeri[nominalSeri.length-1].v, sonReel = reelSeri[reelSeri.length-1].v;
+  const degNom = sonNom - 100, degReel = sonReel - 100;
+  const fmt = (v) => v.toLocaleString("tr-TR",{maximumFractionDigits:1});
 
   kap.innerHTML =
     '<div class="as-kart">' +
       '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri' +
-        '<span class="grafik-info" data-tip="Soluk çubuk nominal (ham) getiri, canlı renkli çubuk seçilen baza göre arındırılmış reel getiridir. İkisi arasındaki fark, enflasyon/kur/altının getirini ne kadar aşındırdığını gösterir."><i class="bi bi-info-circle"></i></span>' +
+        '<span class="grafik-info" data-tip="Altın çizgi nominal (ham) getiriyi, kesikli çizgi seçilen baza (TÜFE/USD/Altın) göre arındırılmış reel getiriyi gösterir. Her iki çizgi de dönem başına 100 olacak şekilde endekslenmiştir; grafiğin üzerinde gezinerek her ay için tam değerleri görebilirsin."><i class="bi bi-info-circle"></i></span>' +
       '</div>' +
-      '<div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">' + chipler + '</div>' +
-      '<div class="rg-bloklar">' + bloklar + '</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
+      '<div class="grafik-olcek">' + olcekChip + '</div>' +
+      '<div class="ethbtc-ust">' +
+        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Nominal</div>' +
+        '<div class="ethbtc-deger" style="font-size:18px;">' + fmt(sonNom) + '</div>' +
+        '<div class="ethbtc-deg ' + yon(degNom) + '" style="font-size:11px;">' + (degNom>=0?'+':'') + fmt(degNom) + '% dönem</div></div>' +
+        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Reel</div>' +
+        '<div class="ethbtc-deger" style="font-size:18px;">' + fmt(sonReel) + '</div>' +
+        '<div class="ethbtc-deg ' + yon(degReel) + '" style="font-size:11px;">' + (degReel>=0?'+':'') + fmt(degReel) + '% dönem</div></div>' +
+      '</div>' +
+      cizgiGrafik(nominalSeri, { seri2: reelSeri, birim: "endeks", etiket1: "Nominal", etiket2: "Reel" }) +
+      '<div style="display:flex;gap:14px;margin-top:8px;font-size:10.5px;color:var(--gnc-text-dim);">' +
+        '<span><span style="display:inline-block;width:10px;height:2px;background:var(--gnc-accent);margin-right:5px;vertical-align:middle;"></span>Nominal</span>' +
+        '<span><span style="display:inline-block;width:10px;height:2px;background:var(--bs-emphasis-color);margin-right:5px;vertical-align:middle;border-top:2px dashed var(--bs-emphasis-color);"></span>Reel</span>' +
+      '</div>' +
     '</div>' +
-    '<div class="hd-not">Soluk çubuk nominal getiri, canlı çubuk seçilen baza göre reel getiridir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
+    '<div class="hd-not">Her iki çizgi de dönemin ilk ayı 100 kabul edilerek endekslenmiştir (mutlak fiyat değil, göreli değişim gösterir). Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
 }
 function finTablo(grup){
   const kap = document.getElementById("hd-icerik");
@@ -2084,21 +2099,28 @@ function cizgiGrafik(seri, opts){
   opts = opts || {};
   if(!seri || seri.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);padding:20px 0;">Yeterli veri yok.</div>';
   const W = 320, H = 96, P = 4;
-  const vals = seri.map(s => s.v);
-  const min = Math.min(...vals), max = Math.max(...vals), aralik = (max - min) || 1;
+  const seri2 = (opts.seri2 && opts.seri2.length === seri.length) ? opts.seri2 : null;
+  const tumVals = seri.map(s => s.v).concat(seri2 ? seri2.map(s => s.v) : []);
+  const min = Math.min(...tumVals), max = Math.max(...tumVals), aralik = (max - min) || 1;
   const x = (i) => P + (i / (seri.length - 1)) * (W - 2*P);
   const y = (v) => P + (1 - (v - min) / aralik) * (H - 2*P);
   const nokta = seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
   const cizgi = "M" + nokta.join(" L");
   const alan = cizgi + " L" + x(seri.length-1).toFixed(1) + "," + (H-P) + " L" + x(0).toFixed(1) + "," + (H-P) + " Z";
+  let cizgi2Yol = "";
+  if(seri2){
+    const nokta2 = seri2.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
+    cizgi2Yol = '<path class="cg-cizgi2" d="M' + nokta2.join(" L") + '" vector-effect="non-scaling-stroke"/>';
+  }
   const id = "cg" + (++CG_ID);
-  CG[id] = { seri, min, aralik, H, P, birim: opts.birim || "", fmt: opts.fmt || null };
+  CG[id] = { seri, seri2, min, aralik, H, P, birim: opts.birim || "", fmt: opts.fmt || null, etiket1: opts.etiket1 || "", etiket2: opts.etiket2 || "" };
   return '<div class="cg-wrap" id="' + id + '" onmousemove="cgMove(event,\'' + id + '\')" onmouseleave="cgLeave(\'' + id + '\')" ontouchmove="cgMove(event,\'' + id + '\')" ontouchend="cgLeave(\'' + id + '\')">' +
     '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="height:' + H + 'px">' +
     '<path class="oc-alan" d="' + alan + '"/>' +
     '<path class="oc-cizgi" d="' + cizgi + '" vector-effect="non-scaling-stroke"/>' +
+    cizgi2Yol +
     '</svg>' +
-    '<div class="cg-guide"></div><div class="cg-dot"></div><div class="cg-tip"></div>' +
+    '<div class="cg-guide"></div><div class="cg-dot"></div>' + (seri2 ? '<div class="cg-dot2"></div>' : '') + '<div class="cg-tip"></div>' +
   '</div>';
 }
 function cgFmt(v, birim){
@@ -2125,7 +2147,19 @@ function cgMove(e, id){
   wrap.querySelector(".cg-guide").style.left = px + "px";
   const dot = wrap.querySelector(".cg-dot"); dot.style.left = px + "px"; dot.style.top = py + "px";
   const tip = wrap.querySelector(".cg-tip");
-  tip.innerHTML = deger + (s.t ? ' <span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
+  if(c.seri2){
+    const s2 = c.seri2[i];
+    const yv2 = c.P + (1 - (s2.v - c.min) / c.aralik) * (c.H - 2*c.P);
+    const py2 = (yv2 / c.H) * rect.height;
+    const dot2 = wrap.querySelector(".cg-dot2");
+    if(dot2){ dot2.style.left = px + "px"; dot2.style.top = py2 + "px"; }
+    const deger2 = c.fmt ? c.fmt(s2.v) : cgFmt(s2.v, c.birim);
+    tip.innerHTML =
+      (c.etiket1 ? c.etiket1 + ": " : "") + deger + " · " + (c.etiket2 ? c.etiket2 + ": " : "") + deger2 +
+      (s.t ? '<br><span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
+  } else {
+    tip.innerHTML = deger + (s.t ? ' <span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
+  }
   tip.style.left = Math.max(30, Math.min(rect.width - 30, px)) + "px";
   tip.style.top = py + "px";
 }
