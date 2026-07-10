@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: veri-yazma
+  group: veri-takvim
   cancel-in-progress: false
 
 jobs:
