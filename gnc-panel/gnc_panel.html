@@ -256,6 +256,8 @@
   .hl-kart .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
   .hl-kart .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hd-metrik-serit { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
+  .rg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 480px){ .rg-grid { grid-template-columns: 1fr 1fr; } }
   .hd-mkutu { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; }
   .hd-mkutu .k { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 5px; }
   .hd-mkutu .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
@@ -1099,7 +1101,7 @@ async function sektorCek(){
   document.getElementById("sektor-ozet").innerHTML = "";
   document.getElementById("sektor-arac").style.display = "none";
   try{
-    const res = await fetch('/sektor_verisi.json?t=' + Date.now());
+    const res = await fetch('/.netlify/functions/veri?dosya=sektor_verisi.json&t=' + Date.now());
     if(!res.ok) throw new Error();
     sektorCiz(await res.json());
   }catch(e){
@@ -1202,7 +1204,7 @@ let HISSE_MAP = null, HISSE_VERI = null;
 async function hisseMapYukle(){
   if(HISSE_MAP) return HISSE_MAP;
   try{
-    const res = await fetch('/sektor_hisseler.json?t=' + Date.now());
+    const res = await fetch('/.netlify/functions/veri?dosya=sektor_hisseler.json&t=' + Date.now());
     const data = await res.json();
     HISSE_MAP = data.hisseler || {};
   }catch(e){ HISSE_MAP = {}; }
@@ -1211,7 +1213,7 @@ async function hisseMapYukle(){
 async function hisseVeriYukle(){
   if(HISSE_VERI) return HISSE_VERI;
   try{
-    const res = await fetch('/sektor_hisse_veri.json?t=' + Date.now());
+    const res = await fetch('/.netlify/functions/veri?dosya=sektor_hisse_veri.json&t=' + Date.now());
     const data = await res.json();
     HISSE_VERI = data.hisseler || {};
   }catch(e){ HISSE_VERI = {}; }
@@ -1267,9 +1269,10 @@ async function sektorHisseAc(kod, ad){
 }
 
 let ONCEKI_VIEW = "hisseliste";
-let HD_KOD = "", HD_AD = "", HD_SUB = "bilanco";
+let HD_KOD = "", HD_AD = "", HD_SUB = "reel";
 function hisseDetay(kod, ad){
-  HD_KOD = kod; HD_AD = ad || ""; HD_SUB = "bilanco";
+  HD_KOD = kod; HD_AD = ad || ""; HD_SUB = "reel";
+  RG_VERI = null;
   ONCEKI_VIEW = document.getElementById("view-hisseler").classList.contains("hidden") ? "hisseliste" : "sektorhisse";
   ["view-hisseler","view-hisseliste","view-sektorler","view-takvim","view-turkiye","view-anasayfa","view-onchain"].forEach(v => document.getElementById(v).classList.add("hidden"));
   document.getElementById("view-hissedetay").classList.remove("hidden");
@@ -1281,10 +1284,11 @@ function hisseDetay(kod, ad){
   hdSubmenuCiz();
   window.scrollTo({ top: 0, behavior: "smooth" });
   metrikSeridiYukle(kod);
+  reelGetiriYukle(kod);
   finansalYukle(kod);
 }
 function hdSubmenuCiz(){
-  const menu = [["bilanco","Bilanço","bi-file-earmark-text"],["gelir","Gelir Tablosu","bi-graph-up-arrow"],["nakit","Nakit Akım","bi-cash-stack"],["grafikler","Grafikler & Raporlar","bi-bar-chart-line"]];
+  const menu = [["reel","Reel Getiri","bi-percent"],["bilanco","Bilanço","bi-file-earmark-text"],["gelir","Gelir Tablosu","bi-graph-up-arrow"],["nakit","Nakit Akım","bi-cash-stack"],["grafikler","Grafikler & Raporlar","bi-bar-chart-line"]];
   document.getElementById("hd-submenu").innerHTML = menu.map(m =>
     '<button class="hd-sub-link' + (m[0]===HD_SUB?' active':'') + '" onclick="hdSub(\'' + m[0] + '\')"><i class="bi ' + m[2] + '"></i><span>' + m[1] + '</span></button>').join("");
 }
@@ -1308,7 +1312,7 @@ async function finansalYukle(kod){
   const kap = document.getElementById("hd-icerik");
   kap.innerHTML = '<div class="durum-kutu">Finansallar yükleniyor…</div>';
   try{
-    const res = await fetch('/finansal/' + kod + '.json?t=' + Date.now());
+    const res = await fetch('/.netlify/functions/veri?dosya=finansal/' + kod + '.json&t=' + Date.now());
     if(!res.ok) throw new Error();
     const fin = await res.json();
     try { document.getElementById("hd-guncelleme").textContent = new Date(fin.guncelleme).toLocaleDateString("tr-TR") + " · İş Yatırım"; } catch(e){}
@@ -1338,7 +1342,84 @@ function finansalCiz(fin){
 }
 function hdRender(){
   if(HD_SUB === "grafikler"){ hdGrafikler(); return; }
+  if(HD_SUB === "reel"){ reelGetiriCiz(); return; }
   finTablo(HD_SUB);
+}
+
+/* ---- REEL GETİRİ ---- */
+let RG_VERI = null, RG_BAZ = "tufe";
+const RG_BAZ_AD = { tufe: "TÜFE'ye göre", usd: "USD/TRY'ye göre", altin: "Gram Altına göre" };
+const RG_UFUKLAR = ["1A", "3A", "YBB", "1Y"];
+
+async function reelGetiriYukle(kod){
+  try{
+    const [gecmisRes, deflRes] = await Promise.all([
+      fetch('/.netlify/functions/veri?dosya=hisse_gecmis/' + kod + '.json&t=' + Date.now()),
+      fetch('/.netlify/functions/veri?dosya=deflator.json&t=' + Date.now())
+    ]);
+    if(!gecmisRes.ok) throw new Error("gecmis-yok");
+    if(!deflRes.ok) throw new Error("deflator-yok");
+    const gecmis = await gecmisRes.json();
+    const defl = await deflRes.json();
+    RG_VERI = { nominal: rgNominalHesapla(gecmis.seri || []), deflator: defl.deflatorler || {} };
+    if(HD_SUB === "reel") reelGetiriCiz();
+  }catch(e){
+    RG_VERI = { hata: true };
+    if(HD_SUB === "reel") reelGetiriCiz();
+  }
+}
+function rgNominalHesapla(seri){
+  // seri: [{tarih:'YYYY-MM-DD', kapanis}] eskiden yeniye sirali
+  if(!seri || seri.length < 2) return {};
+  const son = seri[seri.length - 1].kapanis;
+  const geri = (n) => seri.length > n ? seri[seri.length - 1 - n].kapanis : null;
+  const sonYil = seri[seri.length - 1].tarih.slice(0, 4);
+  const ilkBuYil = seri.find(x => x.tarih.slice(0, 4) === sonYil);
+  const yuzde = (a, b) => (b === null || b === undefined || b === 0) ? null : Math.round((a / b - 1) * 1000) / 10;
+  return {
+    "1A": yuzde(son, geri(21)),
+    "3A": yuzde(son, geri(63)),
+    "YBB": ilkBuYil ? yuzde(son, ilkBuYil.kapanis) : null,
+    "1Y": yuzde(son, geri(252)),
+  };
+}
+function rgReelHesapla(nominal, deflatorYuzde){
+  if(nominal === null || nominal === undefined || deflatorYuzde === null || deflatorYuzde === undefined) return null;
+  return Math.round((((1 + nominal / 100) / (1 + deflatorYuzde / 100)) - 1) * 1000) / 10;
+}
+function rgBazSec(b){ RG_BAZ = b; reelGetiriCiz(); }
+function reelGetiriCiz(){
+  const kap = document.getElementById("hd-icerik");
+  if(!RG_VERI){ kap.innerHTML = '<div class="durum-kutu">Reel getiri hesaplanıyor…</div>'; return; }
+  if(RG_VERI.hata){
+    kap.innerHTML = '<div class="durum-kutu">Bu hisse için fiyat geçmişi henüz oluşmadı.<br>Fiyat geçmişi her gün otomatik güncellenir, birkaç gün içinde burada görünür.</div>';
+    return;
+  }
+  const nom = RG_VERI.nominal || {};
+  const deflGrup = (RG_VERI.deflator || {})[RG_BAZ] || {};
+  const deflMap = { "1A": deflGrup["1a"], "3A": deflGrup["3a"], "YBB": deflGrup["ybb"], "1Y": deflGrup["1y"] };
+
+  const chipler = Object.keys(RG_BAZ_AD).map(b =>
+    '<button class="chip' + (b === RG_BAZ ? ' active' : '') + '" onclick="rgBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
+
+  const kartlar = RG_UFUKLAR.map(u => {
+    const n = nom[u];
+    const d = deflMap[u];
+    const r = rgReelHesapla(n, d);
+    return '<div class="hd-mkutu">' +
+      '<div class="k">' + u + '</div>' +
+      '<div class="v ' + yon(r) + '">' + fmtYuzde(r) + '</div>' +
+      '<div style="font-size:10.5px;color:var(--gnc-text-dim);margin-top:3px;">nominal ' + fmtYuzde(n) + '</div>' +
+    '</div>';
+  }).join("");
+
+  kap.innerHTML =
+    '<div class="as-kart">' +
+      '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">' + chipler + '</div>' +
+      '<div class="rg-grid">' + kartlar + '</div>' +
+    '</div>' +
+    '<div class="hd-not">Reel getiri, nominal getirinin seçilen baza (TÜFE/USD/Altın) göre arındırılmış halidir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
 }
 function finTablo(grup){
   const kap = document.getElementById("hd-icerik");
@@ -1421,7 +1502,7 @@ function hisseDetayGeri(){
 }
 
 /* Hisseler tam listesi (sektore gore gruplu) */
-const SEKTOR_AD = { XBANK:"Bankacılık", XSGRT:"Sigorta", XFINK:"Fin. Kiralama Faktoring", XUTEK:"Teknoloji", XHOLD:"Holding ve Yatırım", XGYO:"Gayrimenkul Yat. Ort.", XYORT:"Menkul Kıymet Yat. Ort.", XGIDA:"Gıda ve İçecek", XKMYA:"Kimya Petrol Plastik", XMANA:"Metal Ana Sanayi", XMESY:"Metal Eşya Makina", XTAST:"Taş Toprak (Cam Çimento)", XTEKS:"Tekstil ve Deri", XKAGT:"Orman Kağıt Basım", XELKT:"Elektrik", XILTM:"İletişim", XULAS:"Ulaştırma", XTCRT:"Ticaret", XTRZM:"Turizm", XINSA:"İnşaat ve Bayındırlık", XMADN:"Madencilik", XBLSM:"Bilişim", XSPOR:"Spor" };
+const SEKTOR_AD = { XUTEK:"Teknoloji", XBANK:"Bankacılık", XSGRT:"Sigorta", XFINK:"Fin. Kiralama Faktoring", XHOLD:"Holding ve Yatırım", XGYO:"Gayrimenkul Yat. Ort.", XYORT:"Menkul Kıymet Yat. Ort.", XGIDA:"Gıda ve İçecek", XKMYA:"Kimya Petrol Plastik", XMANA:"Metal Ana Sanayi", XMESY:"Metal Eşya Makina", XTAST:"Taş Toprak (Cam Çimento)", XTEKS:"Tekstil ve Deri", XKAGT:"Orman Kağıt Basım", XELKT:"Elektrik", XILTM:"İletişim", XULAS:"Ulaştırma", XTCRT:"Ticaret", XTRZM:"Turizm", XINSA:"İnşaat ve Bayındırlık", XMADN:"Madencilik", XBLSM:"Bilişim", XSPOR:"Spor" };
 let HL_MAP = null;
 async function hisseListeYukle(){
   HL_MAP = await hisseMapYukle();
@@ -1657,7 +1738,7 @@ async function anaSayfaYukle(){
   ethbtcYukle();
   // Sektor rotasyon grafigi
   try{
-    const res = await fetch('/sektor_verisi.json?t=' + Date.now());
+    const res = await fetch('/.netlify/functions/veri?dosya=sektor_verisi.json&t=' + Date.now());
     const veri = await res.json();
     SEKTOR_GRAFIK_VERI = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null);
     try { document.getElementById("as-sekt-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR"); } catch(e){}
@@ -1783,13 +1864,13 @@ async function veriDurumYukle(){
   const kap = document.getElementById("as-veri-durum");
   const bicim = (iso) => { try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return "—"; } };
   const kaynaklar = [
-    ['Sektör verisi', '/sektor_verisi.json'],
-    ['Hisse fiyatları', '/sektor_hisse_veri.json'],
-    ['Türkiye takvimi', '/turkiye_takvim.json'],
+    ['Sektör verisi', '/.netlify/functions/veri?dosya=sektor_verisi.json'],
+    ['Hisse fiyatları', '/.netlify/functions/veri?dosya=sektor_hisse_veri.json'],
+    ['Türkiye takvimi', '/.netlify/functions/veri?dosya=turkiye_takvim.json'],
   ];
   let html = "";
   for(const [ad, url] of kaynaklar){
-    try{ const r = await fetch(url+'?t='+Date.now()); if(!r.ok) throw 0; const d = await r.json(); html += vdSatir(ad, bicim(d.guncelleme), true); }
+    try{ const r = await fetch(url+'&t='+Date.now()); if(!r.ok) throw 0; const d = await r.json(); html += vdSatir(ad, bicim(d.guncelleme), true); }
     catch(e){ html += vdSatir(ad, 'henüz yok', false); }
   }
   html += vdSatir('Ekonomik takvim (FRED)', 'canlı', true);
@@ -1805,7 +1886,7 @@ async function turkiyeCek(){
   const kap = document.getElementById("tr-icerik");
   kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
   try{
-    const res = await fetch('/turkiye_takvim.json?t=' + Date.now());
+    const res = await fetch('/.netlify/functions/veri?dosya=turkiye_takvim.json&t=' + Date.now());
     if(!res.ok) throw new Error();
     const veri = await res.json();
     try { document.getElementById("tr-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR") + " · doviz.com"; } catch(e){}
