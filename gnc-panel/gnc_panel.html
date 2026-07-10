@@ -570,10 +570,9 @@
   .cg-wrap svg { display: block; width: 100%; }
   .cg-guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--gnc-text-dim); opacity: 0; pointer-events: none; }
   .cg-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--gnc-accent); border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
-  .cg-dot2 { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--bs-emphasis-color); border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
-  .cg-cizgi2 { fill: none; stroke: var(--bs-emphasis-color); stroke-width: 1.75; stroke-dasharray: 5 4; }
+  .cg-dotx { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
   .cg-tip { position: absolute; z-index: 40; background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px; font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transform: translate(-50%, -130%); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-  .cg-wrap.aktif .cg-guide, .cg-wrap.aktif .cg-dot, .cg-wrap.aktif .cg-dot2, .cg-wrap.aktif .cg-tip { opacity: 1; }
+  .cg-wrap.aktif .cg-guide, .cg-wrap.aktif .cg-dot, .cg-wrap.aktif .cg-dotx, .cg-wrap.aktif .cg-tip { opacity: 1; }
 
   .as-ethbtc-yorum { font-size: 12.5px; line-height: 1.5; color: var(--gnc-text-faded); }
   .as-ethbtc-yorum b { color: var(--bs-emphasis-color); }
@@ -794,6 +793,7 @@
     <button class="nav-link-gnc active" data-view="anasayfa"><i class="bi bi-house-door-fill"></i><span>Ana Sayfa</span></button>
     <button class="nav-link-gnc" data-view="sektorler"><i class="bi bi-grid-3x3-gap-fill"></i><span>BIST Sektörler</span></button>
     <button class="nav-link-gnc" data-view="hisseliste"><i class="bi bi-bar-chart-line-fill"></i><span>Hisseler</span></button>
+    <button class="nav-link-gnc" data-view="reelgetiri"><i class="bi bi-arrow-left-right"></i><span>Reel Getiri Karşılaştır</span></button>
     <button class="nav-link-gnc" data-view="takvim"><i class="bi bi-calendar-event"></i><span>Ekonomik Takvim (ABD)</span></button>
     <button class="nav-link-gnc" data-view="turkiye"><i class="bi bi-flag-fill"></i><span>Türkiye Takvimi</span></button>
     <button class="nav-link-gnc" data-view="onchain"><i class="bi bi-diagram-3-fill"></i><span>On-Chain</span></button>
@@ -958,6 +958,15 @@
         </div>
         <div id="sekt-sayfa-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
       </div>
+
+      <div class="as-eyebrow" style="margin-top:24px;"><span>Rotasyon Haritası</span><small>para nereden nereye akıyor</small></div>
+      <div class="as-kart">
+        <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Rotasyon Haritası')" title="PNG indir"><i class="bi bi-download"></i></button>
+        <div class="as-kart-baslik" style="margin-bottom:2px;">
+          <span class="grafik-info" data-tip="Her nokta bir sektörün XU100'e göre GÖRELİ GÜCÜNÜ (yatay eksen) ve bu gücün YÖNÜNÜ/HIZINI (dikey eksen) gösterir. Kuyruk, son 6 ayın izidir. Öncü: güçlü ve hızlanan. Zayıflayan: güçlü ama ivme kaybediyor. Geride: zayıf ve yavaşlıyor. Toparlanan: zayıf ama güçleniyor. Bu bir tarama aracıdır, alım-satım sinyali değildir."><i class="bi bi-info-circle"></i></span>
+        </div>
+        <div id="rrg-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
+      </div>
     </section>
 
     <!-- ============ HİSSELER (TAM LİSTE) ============ -->
@@ -971,6 +980,18 @@
         <input type="text" id="hl-input" placeholder="Hisse kodu veya adı ara (örn: AKBNK, Tüpraş)…" oninput="hisseListeFiltre()">
       </div>
       <div id="hl-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
+    </section>
+
+    <!-- ============ REEL GETİRİ KARŞILAŞTIR ============ -->
+    <section id="view-reelgetiri" class="hidden">
+      <div class="section-head">
+        <h2 class="section-title"><i class="bi bi-arrow-left-right"></i> Reel Getiri Karşılaştır</h2>
+        <span class="status-update">en fazla 4 varlık</span>
+      </div>
+      <div class="page-intro">
+        İstediğin hisseleri ve/veya BIST endekslerini (sektör, XU100) ekleyip aynı grafikte, aynı baza göre reel getirilerini kıyasla. "X ne kadar kazandırdı, Y ne kadar" sorusuna cevap.
+      </div>
+      <div id="rgk-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
     </section>
 
     <!-- ============ HİSSE FİNANSAL DETAY ============ -->
@@ -1347,10 +1368,9 @@ function hdRender(){
 }
 
 /* ---- REEL GETİRİ ---- */
-let RG_HAM = null, RG_BAZ = "tufe", RG_OLCEK = 12;
+let RG_HAM = null, RG_BAZ = "tufe", RG_OLCEK = 90;
 const RG_BAZ_AD = { tufe: "TÜFE'ye göre", usd: "USD/TRY'ye göre", altin: "Gram Altına göre" };
-const RG_OLCEK_AD = [[6,"6 Ay"],[12,"1 Yıl"],[9999,"Tüm"]];
-const TR_AY_KISA = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+const RG_OLCEK_AD = [[21,"1 Ay"],[90,"3 Ay"],[180,"6 Ay"],[365,"1 Yıl"],[9999,"Tüm"]];
 
 async function reelGetiriYukle(kod){
   try{
@@ -1362,46 +1382,78 @@ async function reelGetiriYukle(kod){
     if(!deflRes.ok) throw new Error("deflator-yok");
     const gecmis = await gecmisRes.json();
     const defl = await deflRes.json();
-    RG_HAM = { hisseAylik: rgAylikSonKapanis(gecmis.seri || []), deflator: defl.deflatorler || {} };
+    RG_HAM = { gunluk: (gecmis.seri || []), deflator: defl.deflatorler || {} };
     if(HD_SUB === "reel") reelGetiriCiz();
   }catch(e){
     RG_HAM = { hata: true };
     if(HD_SUB === "reel") reelGetiriCiz();
   }
 }
-function rgAylikSonKapanis(seri){
-  // seri: [{tarih:'YYYY-MM-DD', kapanis}] eskiden yeniye sirali -> her ay icin SON kapanisi tut
-  const ay = {};
-  for(const s of seri){ ay[s.tarih.slice(0,7)] = s.kapanis; }
-  return ay;
+function rgTarihEtiket(tarihStr, uzunMu){
+  const d = new Date(tarihStr);
+  if(isNaN(d)) return tarihStr;
+  return d.toLocaleDateString("tr-TR", uzunMu ? {day:"numeric",month:"short",year:"2-digit"} : {day:"numeric",month:"short"});
 }
-function rgAyEtiket(ym){
-  const [y, a] = ym.split("-");
-  return TR_AY_KISA[parseInt(a,10)-1] + " " + y.slice(2);
+// Aylik TUFE/USD/Altin noktalarini (ay ortasina sabitlenmis) GUNLUK deger uretecek
+// sekilde dogrusal enterpolasyonla birlestirir. TUFE gibi seriler yalnizca ayda bir
+// aciklandigi icin gunler arasi degisimi "duz cizgi" ile TAHMIN eder - ekonomi
+// analizinde standart bir yontemdir, resmi TUFE rakamlarinin kendisini degistirmez.
+function rgEnterpolasyon(seriDesc){
+  const noktalar = (seriDesc || [])
+    .map(s => ({ d: new Date(s.tarih + "-15").getTime(), v: s.deger }))
+    .filter(p => !isNaN(p.d))
+    .sort((a,b) => a.d - b.d);
+  if(!noktalar.length) return { fn: () => null, sonTarih: null };
+  const fn = (tarihStr) => {
+    const t = new Date(tarihStr).getTime();
+    if(t <= noktalar[0].d) return noktalar[0].v;
+    if(t >= noktalar[noktalar.length-1].d) return noktalar[noktalar.length-1].v;
+    for(let i=0;i<noktalar.length-1;i++){
+      if(t >= noktalar[i].d && t <= noktalar[i+1].d){
+        const oran = (t - noktalar[i].d) / (noktalar[i+1].d - noktalar[i].d);
+        return noktalar[i].v + (noktalar[i+1].v - noktalar[i].v) * oran;
+      }
+    }
+    return noktalar[noktalar.length-1].v;
+  };
+  return { fn, sonTarih: new Date(noktalar[noktalar.length-1].d) };
 }
-function rgSeriHesapla(baz, olcekAy){
-  const hisseAy = (RG_HAM && RG_HAM.hisseAylik) || {};
+function rgSeriHesapla(baz, olcekGun){
+  const gunluk = (RG_HAM && RG_HAM.gunluk) || [];
   const deflGrup = (RG_HAM && RG_HAM.deflator && RG_HAM.deflator[baz]) || {};
-  const deflSeriDesc = deflGrup.seri || []; // yeniden eskiye
-  const deflAy = {};
-  for(const d of deflSeriDesc){ deflAy[d.tarih] = d.deger; }
+  if(gunluk.length < 2 || !(deflGrup.seri || []).length) return { hata: "veri-yok" };
 
-  let ortakAylar = Object.keys(hisseAy).filter(ym => deflAy[ym] !== undefined).sort();
-  if(olcekAy !== 9999) ortakAylar = ortakAylar.slice(-olcekAy);
-  if(ortakAylar.length < 2) return null;
+  const { fn: deflFn, sonTarih } = rgEnterpolasyon(deflGrup.seri);
+  if(!sonTarih) return { hata: "veri-yok" };
+  // Enflasyon verisinin guvenle temsil ettigi son tarihin ~20 gun otesine kadar
+  // enterpolasyona izin ver; bunun disinda "duz veri" uretip yaniltmak yerine kes.
+  const guvenSiniri = new Date(sonTarih); guvenSiniri.setDate(guvenSiniri.getDate() + 20);
 
-  const ilkFiyat = hisseAy[ortakAylar[0]];
-  const ilkDeflator = deflAy[ortakAylar[0]];
+  const talepEdilen = olcekGun === 9999 ? gunluk : gunluk.slice(-olcekGun);
+  const dilim = talepEdilen.filter(s => new Date(s.tarih) <= guvenSiniri);
+  if(dilim.length < 2){
+    // Secilen pencerenin TAMAMI enflasyon verisinin kapsadigi tarihin otesindeyse
+    // ("daha kisa dene" yanlis yonlendirme olur) - kullanicidan DAHA UZUN bir
+    // pencere denemesini iste, cunku eksik olan veri gecmiste degil, en guncelde.
+    return { hata: "kisa-pencere", sonTarih };
+  }
+
+  const kesildiMi = talepEdilen.length > 0 && dilim.length > 0 &&
+    talepEdilen[talepEdilen.length-1].tarih !== dilim[dilim.length-1].tarih;
+
+  const ilkFiyat = dilim[0].kapanis;
+  const ilkDeflator = deflFn(dilim[0].tarih);
+  const uzun = olcekGun >= 365 || olcekGun === 9999;
   const nominalSeri = [], reelSeri = [];
-  for(const ym of ortakAylar){
-    const nominalEndeks = (hisseAy[ym] / ilkFiyat) * 100;
-    const deflatorEndeks = (deflAy[ym] / ilkDeflator) * 100;
+  for(const s of dilim){
+    const nominalEndeks = (s.kapanis / ilkFiyat) * 100;
+    const deflatorEndeks = (deflFn(s.tarih) / ilkDeflator) * 100;
     const reelEndeks = (nominalEndeks / deflatorEndeks) * 100;
-    const t = rgAyEtiket(ym);
+    const t = rgTarihEtiket(s.tarih, uzun);
     nominalSeri.push({ t, v: nominalEndeks });
     reelSeri.push({ t, v: reelEndeks });
   }
-  return { nominalSeri, reelSeri };
+  return { nominalSeri, reelSeri, kesildiMi, sonTarih };
 }
 function rgBazSec(b){ RG_BAZ = b; reelGetiriCiz(); }
 function rgOlcekSec(n){ RG_OLCEK = n; reelGetiriCiz(); }
@@ -1417,44 +1469,256 @@ function reelGetiriCiz(){
     '<button class="chip' + (b === RG_BAZ ? ' active' : '') + '" onclick="rgBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
   const olcekChip = RG_OLCEK_AD.map(o =>
     '<button class="chip olcek' + (o[0] === RG_OLCEK ? ' active' : '') + '" onclick="rgOlcekSec(' + o[0] + ')">' + o[1] + '</button>').join("");
+  const ustCubuklar = '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
+    '<div class="grafik-olcek">' + olcekChip + '</div>';
 
-  if(!sonuc){
+  if(sonuc.hata === "kisa-pencere"){
+    const ay = sonuc.sonTarih.toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
     kap.innerHTML =
       '<div class="as-kart">' +
-        '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri</div>' +
-        '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
-        '<div class="grafik-olcek">' + olcekChip + '</div>' +
-        '<div class="durum-kutu">Bu dönem için yeterli örtüşen veri yok (fiyat geçmişi ile enflasyon/kur/altın verisi aynı ayları kapsamıyor). Daha kısa bir dönem dene.</div>' +
+        '<div class="as-kart-baslik"><i class="bi bi-percent"></i> 100 TL yatırsaydın ne olurdu?</div>' +
+        ustCubuklar +
+        '<div class="durum-kutu">Enflasyon/kur/altın verisi en son <b>' + ay + '</b> dönemine kadar açıklanmış. Seçtiğin dönem bu tarihten sonrasını kapsadığı için hesaplanamıyor.<br>Daha <b>uzun</b> bir dönem (6 Ay, 1 Yıl, Tüm) dene.</div>' +
       '</div>';
     return;
   }
-  const { nominalSeri, reelSeri } = sonuc;
-  const sonNom = nominalSeri[nominalSeri.length-1].v, sonReel = reelSeri[reelSeri.length-1].v;
-  const degNom = sonNom - 100, degReel = sonReel - 100;
-  const fmt = (v) => v.toLocaleString("tr-TR",{maximumFractionDigits:1});
+  if(sonuc.hata === "veri-yok"){
+    kap.innerHTML =
+      '<div class="as-kart">' +
+        '<div class="as-kart-baslik"><i class="bi bi-percent"></i> 100 TL yatırsaydın ne olurdu?</div>' +
+        ustCubuklar +
+        '<div class="durum-kutu">Bu hesap için gereken veri henüz yok.</div>' +
+      '</div>';
+    return;
+  }
+  const { nominalSeri, reelSeri, kesildiMi, sonTarih } = sonuc;
+  const nomTL = nominalSeri[nominalSeri.length-1].v;
+  const reelTL = reelSeri[reelSeri.length-1].v;
+  const paraFmt = (v) => Math.round(v).toLocaleString("tr-TR");
+
+  const uyari = kesildiMi
+    ? '<div style="font-size:11px;color:var(--gnc-warning);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;margin-bottom:12px;">' +
+      '<i class="bi bi-exclamation-triangle"></i> Enflasyon/kur/altın verisi ' + sonTarih.toLocaleDateString("tr-TR",{month:"long",year:"numeric"}) +
+      ' dönemine kadar açıklanmış; grafik bu tarihte kesiliyor, seçtiğin dönemin tamamını kapsamıyor olabilir.</div>'
+    : '';
 
   kap.innerHTML =
     '<div class="as-kart">' +
-      '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri' +
-        '<span class="grafik-info" data-tip="Altın çizgi nominal (ham) getiriyi, kesikli çizgi seçilen baza (TÜFE/USD/Altın) göre arındırılmış reel getiriyi gösterir. Her iki çizgi de dönem başına 100 olacak şekilde endekslenmiştir; grafiğin üzerinde gezinerek her ay için tam değerleri görebilirsin."><i class="bi bi-info-circle"></i></span>' +
+      '<div class="as-kart-baslik"><i class="bi bi-percent"></i> 100 TL yatırsaydın ne olurdu?' +
+        '<span class="grafik-info" data-tip="Bu dönemin başında hisseye 100 TL yatırdığını varsayarsak, bugün nominalde (ham) ve seçtiğin baza göre reel (enflasyon/kur/altın arındırılmış) olarak elinde ne olurdu. Grafiğin üzerinde gezinerek herhangi bir günün değerini görebilirsin."><i class="bi bi-info-circle"></i></span>' +
       '</div>' +
-      '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
-      '<div class="grafik-olcek">' + olcekChip + '</div>' +
+      ustCubuklar +
+      uyari +
       '<div class="ethbtc-ust">' +
-        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Nominal</div>' +
-        '<div class="ethbtc-deger" style="font-size:18px;">' + fmt(sonNom) + '</div>' +
-        '<div class="ethbtc-deg ' + yon(degNom) + '" style="font-size:11px;">' + (degNom>=0?'+':'') + fmt(degNom) + '% dönem</div></div>' +
-        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Reel</div>' +
-        '<div class="ethbtc-deger" style="font-size:18px;">' + fmt(sonReel) + '</div>' +
-        '<div class="ethbtc-deg ' + yon(degReel) + '" style="font-size:11px;">' + (degReel>=0?'+':'') + fmt(degReel) + '% dönem</div></div>' +
+        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Nominal (ham)</div>' +
+        '<div class="ethbtc-deger ' + yon(nomTL-100) + '" style="font-size:22px;">' + paraFmt(nomTL) + ' TL</div></div>' +
+        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Reel (' + RG_BAZ_AD[RG_BAZ].replace("'ye göre","").replace("'na göre","") + ')</div>' +
+        '<div class="ethbtc-deger ' + yon(reelTL-100) + '" style="font-size:22px;">' + paraFmt(reelTL) + ' TL</div></div>' +
       '</div>' +
-      cizgiGrafik(nominalSeri, { seri2: reelSeri, birim: "endeks", etiket1: "Nominal", etiket2: "Reel" }) +
+      cizgiGrafik(nominalSeri, { seri2: reelSeri, birim: "tl", fmt: (v)=>Math.round(v)+' TL', etiket1: "Nominal", etiket2: "Reel", yukseklik: 168 }) +
       '<div style="display:flex;gap:14px;margin-top:8px;font-size:10.5px;color:var(--gnc-text-dim);">' +
         '<span><span style="display:inline-block;width:10px;height:2px;background:var(--gnc-accent);margin-right:5px;vertical-align:middle;"></span>Nominal</span>' +
         '<span><span style="display:inline-block;width:10px;height:2px;background:var(--bs-emphasis-color);margin-right:5px;vertical-align:middle;border-top:2px dashed var(--bs-emphasis-color);"></span>Reel</span>' +
       '</div>' +
     '</div>' +
-    '<div class="hd-not">Her iki çizgi de dönemin ilk ayı 100 kabul edilerek endekslenmiştir (mutlak fiyat değil, göreli değişim gösterir). Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
+    '<div class="hd-not">100 TL, dönemin ilk gününe yatırılmış kabul edilir. Enflasyon/kur/altın verisi ayda bir açıklandığı için günler arası değişim düz bir tahmin çizgisiyle gösterilir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
+}
+/* ---- REEL GETİRİ KARŞILAŞTIR (çoklu varlık) ---- */
+let DEFLATOR_HAM = null;
+async function deflatorGetir(){
+  if(DEFLATOR_HAM) return DEFLATOR_HAM;
+  const res = await fetch('/.netlify/functions/veri?dosya=deflator.json&t=' + Date.now());
+  if(!res.ok) throw new Error("deflator-yok");
+  const veri = await res.json();
+  DEFLATOR_HAM = veri.deflatorler || {};
+  return DEFLATOR_HAM;
+}
+let SEKTOR_GECMIS_HAM = null;
+async function sektorGecmisGetir(){
+  if(SEKTOR_GECMIS_HAM) return SEKTOR_GECMIS_HAM;
+  const res = await fetch('/.netlify/functions/veri?dosya=sektor_gecmis.json&t=' + Date.now());
+  if(!res.ok) throw new Error("gecmis-yok");
+  const veri = await res.json();
+  SEKTOR_GECMIS_HAM = veri.sektorler || {};
+  return SEKTOR_GECMIS_HAM;
+}
+function rgAyKisaEtiket(ym){
+  const [y, a] = ym.split("-");
+  return TR_AY_KISA_RGK[parseInt(a,10)-1] + " " + y.slice(2);
+}
+const TR_AY_KISA_RGK = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+
+let RGK_SECILI = [], RGK_HAM = {}, RGK_BAZ = "tufe", RGK_OLCEK = 12, RGK_ISLENIYOR = false;
+const RGK_RENK = ["var(--gnc-accent)", "var(--gnc-success)", "var(--gnc-danger)", "var(--gnc-warning, #f59e0b)"];
+const RGK_OLCEK_AD = [[6,"6 Ay"],[12,"1 Yıl"],[36,"3 Yıl"],[9999,"Tüm"]];
+
+async function rgkBaslat(){
+  await hisseMapYukle();
+  rgkCiz();
+}
+function rgkAra(sorgu){
+  sorgu = (sorgu || "").trim().toLocaleUpperCase("tr");
+  if(!sorgu) return [];
+  const sonuc = [];
+  if("XU100".includes(sorgu) || "BIST 100".toLocaleUpperCase("tr").includes(sorgu)){
+    sonuc.push({ kod:"XU100", ad:"BIST 100", tip:"endeks" });
+  }
+  Object.keys(SEKTOR_AD).forEach(kod => {
+    if(sonuc.length >= 8) return;
+    if(kod.includes(sorgu) || SEKTOR_AD[kod].toLocaleUpperCase("tr").includes(sorgu)){
+      sonuc.push({ kod, ad: SEKTOR_AD[kod], tip:"endeks" });
+    }
+  });
+  if(HL_MAP){
+    for(const sk of Object.keys(HL_MAP)){
+      if(sonuc.length >= 8) break;
+      for(const h of HL_MAP[sk]){
+        if(sonuc.length >= 8) break;
+        if(h.kod.includes(sorgu) || (h.ad||"").toLocaleUpperCase("tr").includes(sorgu)){
+          if(!sonuc.some(x => x.kod === h.kod)) sonuc.push({ kod:h.kod, ad:h.ad, tip:"hisse" });
+        }
+      }
+    }
+  }
+  return sonuc.slice(0,8);
+}
+function rgkAramaCiz(sorgu){
+  const kap = document.getElementById("rgk-sonuclar");
+  if(!kap) return;
+  const sonuclar = rgkAra(sorgu);
+  if(!sonuclar.length){ kap.innerHTML = ""; return; }
+  kap.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">' +
+    sonuclar.map(s => '<button class="chip" onclick="rgkEkle(\'' + s.kod + '\',\'' + s.ad.replace(/'/g,"") + '\',\'' + s.tip + '\')">' + s.kod + ' <span style="opacity:.6;font-weight:400;">· ' + s.ad + '</span></button>').join("") +
+  '</div>';
+}
+async function rgkEkle(kod, ad, tip){
+  if(RGK_SECILI.some(s => s.kod === kod)) return;
+  if(RGK_SECILI.length >= 4){ alert("En fazla 4 varlık karşılaştırabilirsin. Önce birini çıkar."); return; }
+  RGK_SECILI.push({ kod, ad, tip });
+  document.getElementById("rgk-arama").value = "";
+  document.getElementById("rgk-sonuclar").innerHTML = "";
+  try{
+    if(tip === "hisse"){
+      const res = await fetch('/.netlify/functions/veri?dosya=hisse_gecmis/' + kod + '.json&t=' + Date.now());
+      if(!res.ok) throw new Error();
+      const veri = await res.json();
+      RGK_HAM[kod] = { tip:"hisse", gunluk: veri.seri || [] };
+    } else {
+      const sektorler = await sektorGecmisGetir();
+      const s = sektorler[kod];
+      if(!s || !s.aylik) throw new Error();
+      RGK_HAM[kod] = { tip:"endeks", aylik: s.aylik };
+    }
+  }catch(e){
+    RGK_HAM[kod] = { hata:true };
+  }
+  rgkCiz();
+}
+function rgkCikar(kod){
+  RGK_SECILI = RGK_SECILI.filter(s => s.kod !== kod);
+  rgkCiz();
+}
+function rgkBazSec(b){ RGK_BAZ = b; rgkCiz(); }
+function rgkOlcekSec(n){ RGK_OLCEK = n; rgkCiz(); }
+function rgkAylikSonKapanis(gunlukSeri){
+  const ay = {};
+  for(const s of gunlukSeri){ ay[s.tarih.slice(0,7)] = s.kapanis; }
+  return Object.keys(ay).sort().map(ym => ({ ay: ym, deger: ay[ym] }));
+}
+function rgkSeriHazirla(kod){
+  const ham = RGK_HAM[kod];
+  if(!ham || ham.hata) return null;
+  if(ham.tip === "hisse") return rgkAylikSonKapanis(ham.gunluk);
+  return rrgEndeksle(ham.aylik).map(x => ({ ay: x.ay, deger: x.deger }));
+}
+async function rgkHesapla(){
+  let deflator;
+  try{ deflator = await deflatorGetir(); }catch(e){ return { hata: "veri-yok", seriler: [] }; }
+  const deflGrup = deflator[RGK_BAZ] || {};
+  const { fn: deflFn, sonTarih } = rgEnterpolasyon(deflGrup.seri);
+  if(!sonTarih) return { hata: "veri-yok", seriler: [] };
+
+  const seriler = [];
+  for(const s of RGK_SECILI){
+    const aylikDeger = rgkSeriHazirla(s.kod);
+    if(!aylikDeger || aylikDeger.length < 2){ seriler.push(Object.assign({}, s, { hata:true })); continue; }
+    let dilim = RGK_OLCEK === 9999 ? aylikDeger : aylikDeger.slice(-RGK_OLCEK);
+    const guvenSiniri = new Date(sonTarih); guvenSiniri.setDate(guvenSiniri.getDate() + 20);
+    dilim = dilim.filter(d => new Date(d.ay + "-15") <= guvenSiniri);
+    if(dilim.length < 2){ seriler.push(Object.assign({}, s, { hata:true, kisaPencere:true })); continue; }
+    const ilkDeger = dilim[0].deger;
+    const ilkDeflator = deflFn(dilim[0].ay);
+    const reelSeri = dilim.map(d => {
+      const nominalEndeks = (d.deger / ilkDeger) * 100;
+      const deflatorEndeks = (deflFn(d.ay) / ilkDeflator) * 100;
+      return { t: rgAyKisaEtiket(d.ay), v: (nominalEndeks / deflatorEndeks) * 100 };
+    });
+    seriler.push(Object.assign({}, s, { reelSeri }));
+  }
+  const gecerli = seriler.filter(s => s.reelSeri);
+  if(gecerli.length){
+    const minUzunluk = Math.min(...gecerli.map(s => s.reelSeri.length));
+    gecerli.forEach(s => { s.reelSeri = s.reelSeri.slice(-minUzunluk); });
+  }
+  return { seriler, sonTarih };
+}
+async function rgkCiz(){
+  const kap = document.getElementById("rgk-icerik");
+  if(!kap) return;
+  if(RGK_ISLENIYOR) return;
+  RGK_ISLENIYOR = true;
+
+  const bazChip = Object.keys(RG_BAZ_AD).map(b =>
+    '<button class="chip' + (b===RGK_BAZ?' active':'') + '" onclick="rgkBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
+  const olcekChip = RGK_OLCEK_AD.map(o =>
+    '<button class="chip olcek' + (o[0]===RGK_OLCEK?' active':'') + '" onclick="rgkOlcekSec(' + o[0] + ')">' + o[1] + '</button>').join("");
+  const secilenler = RGK_SECILI.map((s,idx) =>
+    '<span class="chip active" style="border-color:' + RGK_RENK[idx%RGK_RENK.length] + ';color:' + RGK_RENK[idx%RGK_RENK.length] + ';background:transparent;">' +
+      s.kod + ' <i class="bi bi-x" style="cursor:pointer;margin-left:4px;" onclick="rgkCikar(\'' + s.kod + '\')"></i>' +
+    '</span>').join("");
+
+  let govde = '<div class="as-kart">' +
+    '<div style="margin-bottom:10px;">' +
+      '<input type="text" id="rgk-arama" placeholder="Hisse veya endeks ara (örn: THYAO, XBANK, XU100)…" oninput="rgkAramaCiz(this.value)" style="width:100%;background:var(--gnc-input-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:9px 12px;color:var(--bs-emphasis-color);font-size:13px;">' +
+    '</div>' +
+    '<div id="rgk-sonuclar"></div>' +
+    (secilenler ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">' + secilenler + '</div>' : '<div class="durum-kutu">Karşılaştırmak için yukarıdan en az bir hisse veya endeks ekle.</div>');
+
+  if(RGK_SECILI.length){
+    govde += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
+      '<div class="grafik-olcek">' + olcekChip + '</div>';
+    let sonuc;
+    try{ sonuc = await rgkHesapla(); }catch(e){ sonuc = { hata:"veri-yok", seriler: [] }; }
+    if(sonuc.hata){
+      govde += '<div class="durum-kutu">Bu karşılaştırma için veri henüz yok.</div>';
+    } else {
+      const gecerli = sonuc.seriler.filter(s => s.reelSeri);
+      const hatali = sonuc.seriler.filter(s => !s.reelSeri);
+      if(gecerli.length < 1){
+        govde += '<div class="durum-kutu">Seçilen varlıklar için yeterli örtüşen veri yok. Daha kısa/uzun bir dönem dene.</div>';
+      } else {
+        const ana = gecerli[0];
+        const ekstraSeriler = gecerli.slice(1).map((s,idx) => ({ seri: s.reelSeri, renk: RGK_RENK[(idx+1)%RGK_RENK.length], kesikli: false, etiket: s.kod }));
+        govde += cizgiGrafik(ana.reelSeri, { ekstraSeriler, birim:"tl", fmt:(v)=>Math.round(v)+' TL', etiket1: ana.kod, yukseklik:180 });
+        govde += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;">' +
+          gecerli.map((s,idx) => {
+            const son = s.reelSeri[s.reelSeri.length-1].v;
+            const renk = RGK_RENK[idx%RGK_RENK.length];
+            return '<span style="color:' + renk + ';font-weight:700;"><span style="display:inline-block;width:10px;height:2px;background:' + renk + ';margin-right:5px;vertical-align:middle;"></span>' +
+              s.kod + ': 100 TL → ' + Math.round(son) + ' TL</span>';
+          }).join("") +
+        '</div>';
+        if(hatali.length){
+          govde += '<div class="durum-kutu" style="margin-top:12px;">' + hatali.map(h => h.kod + (h.kisaPencere?' için bu dönemde yeterli veri yok':' için veri yüklenemedi')).join(", ") + '.</div>';
+        }
+      }
+    }
+  }
+  govde += '</div>' +
+    '<div class="hd-not">Her varlık, dönemin ilk ayına 100 TL yatırılmış kabul edilerek seçilen baza göre reel olarak endekslenir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
+
+  kap.innerHTML = govde;
+  RGK_ISLENIYOR = false;
 }
 function finTablo(grup){
   const kap = document.getElementById("hd-icerik");
@@ -1801,6 +2065,131 @@ function sektorGrafikCiz(){
   const b = document.getElementById("sekt-sayfa-grafik"); if(b) b.innerHTML = html;
   piyasaGenisligiCiz();
 }
+/* ---- ROTASYON HARİTASI (RRG) ---- */
+let RRG_VERI = null;
+async function rrgYukle(){
+  const kap = document.getElementById("rrg-icerik");
+  try{
+    const res = await fetch('/.netlify/functions/veri?dosya=sektor_gecmis.json&t=' + Date.now());
+    if(!res.ok) throw new Error();
+    const veri = await res.json();
+    RRG_VERI = rrgHesapla(veri.sektorler || {});
+    rrgCiz();
+  }catch(e){
+    if(kap) kap.innerHTML = '<div class="durum-kutu">Rotasyon haritası verisi henüz yok.</div>';
+  }
+}
+function rrgEndeksle(aylikGetiriler){
+  // [{ay,getiri}] (eskiden yeniye) -> kumulatif endeks, 100'den basliyor
+  let deger = 100;
+  return aylikGetiriler.map(a => { deger *= (1 + (a.getiri || 0) / 100); return { ay: a.ay, deger }; });
+}
+function rrgSMA(dizi, n, i){
+  const bas = Math.max(0, i - n + 1);
+  const dilim = dizi.slice(bas, i + 1);
+  return dilim.reduce((t, v) => t + v, 0) / dilim.length;
+}
+function rrgHesapla(sektorlerJson){
+  const xu = sektorlerJson["XU100"];
+  if(!xu || !xu.aylik || xu.aylik.length < 21) return null;
+  const xuEndeks = rrgEndeksle(xu.aylik);
+
+  const N_TREND = 12, M_MOMENTUM = 3, KUYRUK = 6;
+  const sonuc = [];
+  for(const kod of Object.keys(sektorlerJson)){
+    if(kod === "XU100") continue;
+    const s = sektorlerJson[kod];
+    if(!s.aylik || s.aylik.length < 21) continue;
+    const sEndeks = rrgEndeksle(s.aylik);
+    const n = Math.min(sEndeks.length, xuEndeks.length);
+    if(n < N_TREND + M_MOMENTUM + KUYRUK) continue;
+
+    const rs = [];
+    for(let i = 0; i < n; i++){ rs.push(sEndeks[i].deger / xuEndeks[i].deger); }
+    const ratio = [];
+    for(let i = 0; i < n; i++){ ratio.push(100 * rs[i] / rrgSMA(rs, N_TREND, i)); }
+    const momentum = [];
+    for(let i = 0; i < n; i++){ momentum.push(100 * ratio[i] / rrgSMA(ratio, M_MOMENTUM, i)); }
+
+    const kuyruk = [];
+    for(let i = n - KUYRUK; i < n; i++){
+      if(i < 0 || isNaN(ratio[i]) || isNaN(momentum[i])) continue;
+      kuyruk.push({ ratio: ratio[i], momentum: momentum[i], ay: s.aylik[i] ? s.aylik[i].ay : "" });
+    }
+    if(kuyruk.length < 2) continue;
+    sonuc.push({ kod, ad: SEKTOR_AD[kod] || s.ad || kod, kuyruk });
+  }
+  return sonuc;
+}
+function rrgCeyrek(ratio, momentum){
+  if(ratio >= 100 && momentum >= 100) return { ad: "Öncü", sinif: "ok" };
+  if(ratio >= 100 && momentum < 100) return { ad: "Zayıflayan", sinif: "uyari" };
+  if(ratio < 100 && momentum < 100) return { ad: "Geride", sinif: "kotu" };
+  return { ad: "Toparlanan", sinif: "notr" };
+}
+function rrgRenk(sinif){
+  if(sinif === "ok") return "var(--gnc-success)";
+  if(sinif === "uyari") return "var(--gnc-warning, #f59e0b)";
+  if(sinif === "kotu") return "var(--gnc-danger)";
+  return "var(--gnc-accent)";
+}
+function rrgCiz(){
+  const kap = document.getElementById("rrg-icerik");
+  if(!kap) return;
+  if(!RRG_VERI || !RRG_VERI.length){ kap.innerHTML = '<div class="durum-kutu">Rotasyon haritası için yeterli geçmiş veri yok.</div>'; return; }
+
+  const tumNoktalar = [];
+  RRG_VERI.forEach(s => s.kuyruk.forEach(k => tumNoktalar.push(k)));
+  const ratios = tumNoktalar.map(p => p.ratio), moms = tumNoktalar.map(p => p.momentum);
+  const rSpan = Math.max(Math.max(...ratios) - 100, 100 - Math.min(...ratios), 2) + 2;
+  const mSpan = Math.max(Math.max(...moms) - 100, 100 - Math.min(...moms), 2) + 2;
+  const minR = 100 - rSpan, maxR = 100 + rSpan, minM = 100 - mSpan, maxM = 100 + mSpan;
+
+  const W = 340, H = 340, P = 10;
+  const x = (r) => P + ((r - minR) / (maxR - minR)) * (W - 2*P);
+  const y = (m) => P + (1 - (m - minM) / (maxM - minM)) * (H - 2*P);
+  const midX = x(100), midY = y(100);
+
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-width:460px;display:block;margin:0 auto;">';
+  svg += '<rect x="' + midX.toFixed(1) + '" y="0" width="' + (W-midX).toFixed(1) + '" height="' + midY.toFixed(1) + '" fill="rgba(var(--gnc-success-rgb),0.06)"/>';
+  svg += '<rect x="' + midX.toFixed(1) + '" y="' + midY.toFixed(1) + '" width="' + (W-midX).toFixed(1) + '" height="' + (H-midY).toFixed(1) + '" fill="rgba(var(--gnc-warning-rgb, 245,158,11),0.06)"/>';
+  svg += '<rect x="0" y="' + midY.toFixed(1) + '" width="' + midX.toFixed(1) + '" height="' + (H-midY).toFixed(1) + '" fill="rgba(var(--gnc-danger-rgb),0.06)"/>';
+  svg += '<rect x="0" y="0" width="' + midX.toFixed(1) + '" height="' + midY.toFixed(1) + '" fill="rgba(var(--gnc-accent-rgb),0.06)"/>';
+  svg += '<line x1="' + midX.toFixed(1) + '" y1="0" x2="' + midX.toFixed(1) + '" y2="' + H + '" stroke="var(--bs-border-color)" stroke-width="1"/>';
+  svg += '<line x1="0" y1="' + midY.toFixed(1) + '" x2="' + W + '" y2="' + midY.toFixed(1) + '" stroke="var(--bs-border-color)" stroke-width="1"/>';
+  svg += '<text x="' + (W-6) + '" y="14" text-anchor="end" font-size="9" fill="var(--gnc-success)" font-weight="700">ÖNCÜ</text>';
+  svg += '<text x="' + (W-6) + '" y="' + (H-8) + '" text-anchor="end" font-size="9" fill="var(--gnc-warning, #f59e0b)" font-weight="700">ZAYIFLAYAN</text>';
+  svg += '<text x="6" y="' + (H-8) + '" text-anchor="start" font-size="9" fill="var(--gnc-danger)" font-weight="700">GERİDE</text>';
+  svg += '<text x="6" y="14" text-anchor="start" font-size="9" fill="var(--gnc-accent)" font-weight="700">TOPARLANAN</text>';
+
+  RRG_VERI.forEach(s => {
+    const k = s.kuyruk;
+    const nokta = k.map(p => x(p.ratio).toFixed(1) + "," + y(p.momentum).toFixed(1));
+    svg += '<polyline points="' + nokta.join(" ") + '" fill="none" stroke="var(--gnc-text-dim)" stroke-width="1" opacity="0.35"/>';
+    k.forEach((p, i) => {
+      const sonMu = i === k.length - 1;
+      const r = sonMu ? 5 : 2.5;
+      const op = sonMu ? 1 : (0.25 + 0.55 * (i / Math.max(1, k.length - 1)));
+      const renk = sonMu ? rrgRenk(rrgCeyrek(p.ratio, p.momentum).sinif) : "var(--gnc-text-dim)";
+      svg += '<circle cx="' + x(p.ratio).toFixed(1) + '" cy="' + y(p.momentum).toFixed(1) + '" r="' + r + '" fill="' + renk + '" opacity="' + op.toFixed(2) + '"' +
+        (sonMu ? ' style="cursor:pointer" onclick="sektorHisseAc(\'' + s.kod + '\',\'' + s.ad.replace(/'/g,"") + '\')"' : '') + '>' +
+        (sonMu ? '<title>' + s.kod + ' · ' + s.ad + ' · ' + rrgCeyrek(p.ratio, p.momentum).ad + '</title>' : '') +
+      '</circle>';
+    });
+    const son = k[k.length-1];
+    svg += '<text x="' + (x(son.ratio)+7).toFixed(1) + '" y="' + (y(son.momentum)+3).toFixed(1) + '" font-size="9.5" font-weight="700" fill="var(--bs-emphasis-color)">' + s.kod + '</text>';
+  });
+  svg += '</svg>';
+
+  kap.innerHTML = svg +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:10px;font-size:10.5px;color:var(--gnc-text-dim);">' +
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-success);margin-right:4px;"></span>Öncü</span>' +
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-warning, #f59e0b);margin-right:4px;"></span>Zayıflayan</span>' +
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-danger);margin-right:4px;"></span>Geride</span>' +
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gnc-accent);margin-right:4px;"></span>Toparlanan</span>' +
+    '</div>' +
+    '<div class="hd-not" style="text-align:center;">Yatay eksen XU100\'e göre göreli güç, dikey eksen bu gücün ivmesidir; ikisi de 100 baz alınarak son 10 yıllık aylık verilerden hesaplanır. Bu bir tarama aracıdır, alım-satım sinyali değildir.</div>';
+}
 function piyasaGenisligiCiz(){
   const kap = document.getElementById("as-genislik");
   if(!kap || !SEKTOR_GRAFIK_VERI.length) return;
@@ -2098,29 +2487,39 @@ let CG_ID = 0; const CG = {};
 function cizgiGrafik(seri, opts){
   opts = opts || {};
   if(!seri || seri.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);padding:20px 0;">Yeterli veri yok.</div>';
-  const W = 320, H = 96, P = 4;
-  const seri2 = (opts.seri2 && opts.seri2.length === seri.length) ? opts.seri2 : null;
-  const tumVals = seri.map(s => s.v).concat(seri2 ? seri2.map(s => s.v) : []);
+  const W = 320, H = opts.yukseklik || 96, P = 4;
+  // ekstraSeriler: [{seri,renk,kesikli,etiket}] - genel coklu-cizgi mekanizmasi.
+  // opts.seri2/etiket2 eski cagrilar icin otomatik ekstra'ya donusturulur (geriye uyumluluk).
+  let ekstra = (opts.ekstraSeriler || []).filter(e => e.seri && e.seri.length === seri.length);
+  if(opts.seri2 && opts.seri2.length === seri.length){
+    ekstra = [{ seri: opts.seri2, renk: "var(--bs-emphasis-color)", kesikli: true, etiket: opts.etiket2 || "" }].concat(ekstra);
+  }
+  const tumVals = seri.map(s => s.v).concat(...ekstra.map(e => e.seri.map(s => s.v)));
   const min = Math.min(...tumVals), max = Math.max(...tumVals), aralik = (max - min) || 1;
   const x = (i) => P + (i / (seri.length - 1)) * (W - 2*P);
   const y = (v) => P + (1 - (v - min) / aralik) * (H - 2*P);
   const nokta = seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
   const cizgi = "M" + nokta.join(" L");
-  const alan = cizgi + " L" + x(seri.length-1).toFixed(1) + "," + (H-P) + " L" + x(0).toFixed(1) + "," + (H-P) + " Z";
-  let cizgi2Yol = "";
-  if(seri2){
-    const nokta2 = seri2.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
-    cizgi2Yol = '<path class="cg-cizgi2" d="M' + nokta2.join(" L") + '" vector-effect="non-scaling-stroke"/>';
-  }
+  // Birden fazla cizgi varsa alan doldurma karisikligi onlemek icin kapatilir.
+  const alan = ekstra.length <= 1 ? (cizgi + " L" + x(seri.length-1).toFixed(1) + "," + (H-P) + " L" + x(0).toFixed(1) + "," + (H-P) + " Z") : null;
+  let ekstraYol = "";
+  ekstra.forEach((e, idx) => {
+    const noktaE = e.seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
+    const renk = e.renk || "var(--gnc-text-dim)";
+    const dash = e.kesikli !== false ? ' stroke-dasharray="5 4"' : "";
+    ekstraYol += '<path data-eidx="' + idx + '" d="M' + noktaE.join(" L") + '" fill="none" stroke="' + renk + '" stroke-width="1.75"' + dash + ' vector-effect="non-scaling-stroke"/>';
+  });
   const id = "cg" + (++CG_ID);
-  CG[id] = { seri, seri2, min, aralik, H, P, birim: opts.birim || "", fmt: opts.fmt || null, etiket1: opts.etiket1 || "", etiket2: opts.etiket2 || "" };
+  CG[id] = { seri, ekstra, min, aralik, H, P, birim: opts.birim || "", fmt: opts.fmt || null, etiket1: opts.etiket1 || "" };
+  const noktaHTML = '<div class="cg-guide"></div><div class="cg-dot"></div>' +
+    ekstra.map((e, idx) => '<div class="cg-dotx" data-eidx="' + idx + '" style="background:' + (e.renk || "var(--gnc-text-dim)") + '"></div>').join("") +
+    '<div class="cg-tip"></div>';
   return '<div class="cg-wrap" id="' + id + '" onmousemove="cgMove(event,\'' + id + '\')" onmouseleave="cgLeave(\'' + id + '\')" ontouchmove="cgMove(event,\'' + id + '\')" ontouchend="cgLeave(\'' + id + '\')">' +
     '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="height:' + H + 'px">' +
-    '<path class="oc-alan" d="' + alan + '"/>' +
+    (alan ? '<path class="oc-alan" d="' + alan + '"/>' : "") +
     '<path class="oc-cizgi" d="' + cizgi + '" vector-effect="non-scaling-stroke"/>' +
-    cizgi2Yol +
-    '</svg>' +
-    '<div class="cg-guide"></div><div class="cg-dot"></div>' + (seri2 ? '<div class="cg-dot2"></div>' : '') + '<div class="cg-tip"></div>' +
+    ekstraYol +
+    '</svg>' + noktaHTML +
   '</div>';
 }
 function cgFmt(v, birim){
@@ -2147,19 +2546,17 @@ function cgMove(e, id){
   wrap.querySelector(".cg-guide").style.left = px + "px";
   const dot = wrap.querySelector(".cg-dot"); dot.style.left = px + "px"; dot.style.top = py + "px";
   const tip = wrap.querySelector(".cg-tip");
-  if(c.seri2){
-    const s2 = c.seri2[i];
-    const yv2 = c.P + (1 - (s2.v - c.min) / c.aralik) * (c.H - 2*c.P);
-    const py2 = (yv2 / c.H) * rect.height;
-    const dot2 = wrap.querySelector(".cg-dot2");
-    if(dot2){ dot2.style.left = px + "px"; dot2.style.top = py2 + "px"; }
-    const deger2 = c.fmt ? c.fmt(s2.v) : cgFmt(s2.v, c.birim);
-    tip.innerHTML =
-      (c.etiket1 ? c.etiket1 + ": " : "") + deger + " · " + (c.etiket2 ? c.etiket2 + ": " : "") + deger2 +
-      (s.t ? '<br><span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
-  } else {
-    tip.innerHTML = deger + (s.t ? ' <span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
-  }
+  const satirlar = [(c.etiket1 ? c.etiket1 + ": " : "") + deger];
+  (c.ekstra || []).forEach((eS, idx) => {
+    const sE = eS.seri[i];
+    const yvE = c.P + (1 - (sE.v - c.min) / c.aralik) * (c.H - 2*c.P);
+    const pyE = (yvE / c.H) * rect.height;
+    const dotE = wrap.querySelector('.cg-dotx[data-eidx="' + idx + '"]');
+    if(dotE){ dotE.style.left = px + "px"; dotE.style.top = pyE + "px"; }
+    const degerE = c.fmt ? c.fmt(sE.v) : cgFmt(sE.v, c.birim);
+    satirlar.push((eS.etiket ? eS.etiket + ": " : "") + degerE);
+  });
+  tip.innerHTML = satirlar.join(" · ") + (s.t ? '<br><span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
   tip.style.left = Math.max(30, Math.min(rect.width - 30, px)) + "px";
   tip.style.top = py + "px";
 }
@@ -2196,7 +2593,7 @@ function onchainCiz(veri){
 }
 
 /* ---- gorunum gecisi ---- */
-const BASLIK = { anasayfa:"Ana Sayfa", sektorler:"BIST Sektörler", hisseliste:"Hisseler", takvim:"Ekonomik Takvim (ABD)", turkiye:"Türkiye Takvimi", onchain:"On-Chain" };
+const BASLIK = { anasayfa:"Ana Sayfa", sektorler:"BIST Sektörler", hisseliste:"Hisseler", reelgetiri:"Reel Getiri Karşılaştır", takvim:"Ekonomik Takvim (ABD)", turkiye:"Türkiye Takvimi", onchain:"On-Chain" };
 document.querySelectorAll(".nav-link-gnc").forEach(link => {
   link.addEventListener("click", () => {
     document.querySelectorAll(".nav-link-gnc").forEach(l => l.classList.remove("active"));
@@ -2207,6 +2604,7 @@ document.querySelectorAll(".nav-link-gnc").forEach(link => {
     document.getElementById("view-anasayfa").classList.toggle("hidden", v !== "anasayfa");
     document.getElementById("view-sektorler").classList.toggle("hidden", v !== "sektorler");
     document.getElementById("view-hisseliste").classList.toggle("hidden", v !== "hisseliste");
+    document.getElementById("view-reelgetiri").classList.toggle("hidden", v !== "reelgetiri");
     document.getElementById("view-takvim").classList.toggle("hidden", v !== "takvim");
     document.getElementById("view-turkiye").classList.toggle("hidden", v !== "turkiye");
     document.getElementById("view-onchain").classList.toggle("hidden", v !== "onchain");
@@ -2214,8 +2612,9 @@ document.querySelectorAll(".nav-link-gnc").forEach(link => {
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebarOverlay").classList.remove("show");
     if(v === "anasayfa") anaSayfaYukle();
-    if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); }
+    if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); rrgYukle(); }
     if(v === "hisseliste") hisseListeYukle();
+    if(v === "reelgetiri" && !window._rgkYuklendi){ window._rgkYuklendi = true; rgkBaslat(); }
     if(v === "takvim" && !window._takvimYuklendi){ window._takvimYuklendi = true; takvimCek(); }
     if(v === "turkiye" && !window._turkiyeYuklendi){ window._turkiyeYuklendi = true; turkiyeCek(); }
     if(v === "onchain" && !window._onchainYuklendi){ window._onchainYuklendi = true; onchainCek(); }
@@ -2229,6 +2628,8 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
   else if(aktif === "takvim") takvimCek();
   else if(aktif === "turkiye") turkiyeCek();
   else if(aktif === "hisseliste") hisseListeYukle();
+  else if(aktif === "reelgetiri") rgkCiz();
+  else if(aktif === "sektorler"){ sektorCek(); rrgYukle(); }
   else sektorCek();
 });
 
