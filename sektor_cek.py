@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-GNC Insight - BIST Sektor Verisi Cekici (Is Yatirim kaynagi)
+GNC Insight - BIST Sektor Verisi Cekici (Is Yatirim kaynagi) - DAYANIKLI
 GitHub Actions tarafindan zamanli calistirilir. Tum BIST sektor endekslerini
-ceker, gunluk/haftalik/aylik (+3ay, yilbasi) getirileri hesaplar ve panelin
+TEK TEK (retry ile) ceker, gunluk/haftalik/aylik getirileri hesaplar ve panelin
 okudugu statik dosyayi (gnc-panel/sektor_verisi.json) yazar.
 
-Kaynak: Is Yatirim (isyatirimhisse). Yahoo yerine kullaniliyor cunku Is Yatirim
-bulut sunuculari engellemiyor ve tum sektor endekslerini veriyor.
+DAYANIKLILIK:
+- Endeksler tek tek cekilir; biri timeout olsa digerleri devam eder.
+- Her endekste 3 defa tekrar denenir (Is Yatirim gecici yavaslamalarina karsi).
+- Taze gelmeyen endeks icin ELDEKI ESKI veri korunur (bosluk olusmaz).
+- Hic taze veri gelmezse mevcut dosyaya DOKUNULMAZ (panel eski saglam veriyle calisir).
+- guncelleme UTC-farkli yazilir (panelde saat kaymasi olmaz).
 """
 
 import json
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from isyatirimhisse import fetch_index_data
@@ -46,6 +51,8 @@ ENDEKSLER = [
 ]
 
 DONEMLER = ("g1", "h1", "a1", "a3", "ybb")
+DENEME = 3          # her endeks icin tekrar sayisi
+BEKLE = 2           # denemeler arasi saniye
 
 
 def yuzde(son, onceki):
@@ -55,7 +62,6 @@ def yuzde(son, onceki):
 
 
 def getiri_hesapla(kapanis, tarih):
-    """kapanis: kronolojik (eski->yeni) deger listesi, tarih: date listesi."""
     c = [(t, v) for t, v in zip(tarih, kapanis) if v is not None]
     if len(c) < 2:
         return {}
@@ -79,31 +85,77 @@ def getiri_hesapla(kapanis, tarih):
     }
 
 
+def cek_tek(kod, baslangic, bitis):
+    """Tek endeksi retry ile ceker; basarisizsa None."""
+    for i in range(DENEME):
+        try:
+            df = fetch_index_data(indices=[kod], start_date=baslangic, end_date=bitis)
+            if df is not None and len(df):
+                return df
+        except Exception as e:
+            print(f"  {kod:6s} deneme {i+1}/{DENEME} hata: {str(e)[:70]}")
+        if i < DENEME - 1:
+            time.sleep(BEKLE)
+    return None
+
+
+def eski_yukle(hedef):
+    """Mevcut sektor_verisi.json'u {kod: kayit} olarak yukler (koruma icin)."""
+    eski = {}
+    if hedef.exists():
+        try:
+            data = json.loads(hedef.read_text(encoding="utf-8"))
+            for e in data.get("endeksler", []):
+                if e.get("kod"):
+                    eski[e["kod"]] = e
+        except Exception as e:
+            print(f"Eski dosya okunamadi: {e}")
+    return eski
+
+
 def main():
-    kodlar = [k for k, _, _ in ENDEKSLER]
     bugun = datetime.now()
     baslangic = (bugun - timedelta(days=400)).strftime("%d-%m-%Y")
     bitis = bugun.strftime("%d-%m-%Y")
 
-    print(f"{len(kodlar)} endeks cekiliyor (Is Yatirim)...")
-    df = fetch_index_data(indices=kodlar, start_date=baslangic, end_date=bitis)
-    df = df.sort_values(["INDEX", "DATE"])
+    hedef = Path(__file__).parent / "gnc-panel" / "sektor_verisi.json"
+    hedef.parent.mkdir(parents=True, exist_ok=True)
+    eski = eski_yukle(hedef)
 
+    print(f"{len(ENDEKSLER)} endeks tek tek cekiliyor (Is Yatirim)...")
     sonuclar = []
+    taze_sayi = 0
+
     for kod, ad, tip in ENDEKSLER:
-        alt = df[df["INDEX"] == kod]
-        kayit = {"kod": kod, "ad": ad, "tip": tip}
-        if len(alt) >= 2:
-            kapanis = [float(v) for v in alt["VALUE"].tolist()]
-            tarih = list(alt["DATE"].tolist())
-            kayit.update(getiri_hesapla(kapanis, tarih))
-            print(f"  {kod:6s} tamam ({len(alt)} gun)")
+        df = cek_tek(kod, baslangic, bitis)
+        if df is not None:
+            alt = df[df["INDEX"] == kod].sort_values("DATE")
+            if len(alt) >= 2:
+                kapanis = [float(v) for v in alt["VALUE"].tolist()]
+                tarih = list(alt["DATE"].tolist())
+                kayit = {"kod": kod, "ad": ad, "tip": tip}
+                kayit.update(getiri_hesapla(kapanis, tarih))
+                sonuclar.append(kayit)
+                taze_sayi += 1
+                print(f"  {kod:6s} tamam ({len(alt)} gun)")
+                continue
+        # Taze gelmedi -> eski veriyi koru
+        if kod in eski:
+            korunan = dict(eski[kod])
+            korunan["ad"] = ad
+            korunan["tip"] = tip
+            sonuclar.append(korunan)
+            print(f"  {kod:6s} taze gelmedi -> eski veri korundu")
         else:
+            kayit = {"kod": kod, "ad": ad, "tip": tip, "son_deger": None, "hata": True}
             kayit.update({d: None for d in DONEMLER})
-            kayit["son_deger"] = None
-            kayit["hata"] = True
-            print(f"  {kod:6s} UYARI: veri gelmedi")
-        sonuclar.append(kayit)
+            sonuclar.append(kayit)
+            print(f"  {kod:6s} veri yok (eski de yok)")
+
+    # Hic taze veri gelmediyse mevcut dosyaya dokunma (panel eski saglam veriyle calissin)
+    if taze_sayi == 0:
+        print("\nHic taze veri gelmedi. Mevcut dosya KORUNUYOR (yazilmadi).")
+        return
 
     # XU100'e gore rolatif
     xu = next((s for s in sonuclar if s["kod"] == "XU100"), None)
@@ -115,16 +167,12 @@ def main():
                 s["rol_" + d] = None
 
     cikti = {
-        "guncelleme": bugun.isoformat(),
+        "guncelleme": datetime.now(timezone.utc).isoformat(),
         "kaynak": "Is Yatirim",
         "endeksler": sonuclar,
     }
-
-    hedef = Path(__file__).parent / "gnc-panel" / "sektor_verisi.json"
-    hedef.parent.mkdir(parents=True, exist_ok=True)
     hedef.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
-    gelen = sum(1 for s in sonuclar if s.get("son_deger") is not None)
-    print(f"\nTamamlandi: {gelen}/{len(sonuclar)} endeks -> {hedef}")
+    print(f"\nTamamlandi: {taze_sayi}/{len(ENDEKSLER)} endeks TAZE -> {hedef}")
 
 
 if __name__ == "__main__":
