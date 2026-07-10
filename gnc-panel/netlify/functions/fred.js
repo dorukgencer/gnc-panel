@@ -12,8 +12,16 @@ const https = require('https');
 // Panelin kullandigi seriler disinda baskasinin bu fonksiyonu genel FRED
 // proxy'si olarak kullanmasini engellemek icin whitelist.
 const IZINLI_SERILER = new Set([
-  // Panelde kullanilan FRED serilerini buraya ekle, ornek:
-  // 'VIXCLS', 'DXY', 'DFII10', 'BAMLH0A0HYM2'
+  'CPIAUCSL',          // Enflasyon (CPI, yillik)
+  'CPILFESL',          // Cekirdek CPI (yillik)
+  'PCEPILFE',          // Cekirdek PCE (yillik)
+  'PAYEMS',            // Tarim Disi Istihdam (NFP)
+  'UNRATE',            // Issizlik Orani
+  'FEDFUNDS',          // Fed Politika Faizi
+  'RSAFS',             // Perakende Satislar (aylik)
+  'A191RL1Q225SBEA',   // GSYIH Buyume (ceyreklik)
+  'ICSA',              // Issizlik Basvurulari (haftalik)
+  'UMCSENT',           // Michigan Tuketici Guveni
 ]);
 
 function getJson(url) {
