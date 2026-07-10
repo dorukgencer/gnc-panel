@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: veri-yazma
+  group: veri-deflator
   cancel-in-progress: false
 
 jobs:
