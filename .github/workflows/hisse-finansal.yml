@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: veri-yazma
+  group: veri-finansal
   cancel-in-progress: false
 
 jobs:
