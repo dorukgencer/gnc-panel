@@ -1421,7 +1421,7 @@ function hisseDetayGeri(){
 }
 
 /* Hisseler tam listesi (sektore gore gruplu) */
-const SEKTOR_AD = { XBANK:"Bankacılık", XSGRT:"Sigorta", XFINK:"Fin. Kiralama Faktoring", XHOLD:"Holding ve Yatırım", XGYO:"Gayrimenkul Yat. Ort.", XYORT:"Menkul Kıymet Yat. Ort.", XGIDA:"Gıda ve İçecek", XKMYA:"Kimya Petrol Plastik", XMANA:"Metal Ana Sanayi", XMESY:"Metal Eşya Makina", XTAST:"Taş Toprak (Cam Çimento)", XTEKS:"Tekstil ve Deri", XKAGT:"Orman Kağıt Basım", XELKT:"Elektrik", XILTM:"İletişim", XULAS:"Ulaştırma", XTCRT:"Ticaret", XTRZM:"Turizm", XINSA:"İnşaat ve Bayındırlık", XMADN:"Madencilik", XBLSM:"Bilişim", XSPOR:"Spor" };
+const SEKTOR_AD = { XBANK:"Bankacılık", XSGRT:"Sigorta", XFINK:"Fin. Kiralama Faktoring", XUTEK:"Teknoloji", XHOLD:"Holding ve Yatırım", XGYO:"Gayrimenkul Yat. Ort.", XYORT:"Menkul Kıymet Yat. Ort.", XGIDA:"Gıda ve İçecek", XKMYA:"Kimya Petrol Plastik", XMANA:"Metal Ana Sanayi", XMESY:"Metal Eşya Makina", XTAST:"Taş Toprak (Cam Çimento)", XTEKS:"Tekstil ve Deri", XKAGT:"Orman Kağıt Basım", XELKT:"Elektrik", XILTM:"İletişim", XULAS:"Ulaştırma", XTCRT:"Ticaret", XTRZM:"Turizm", XINSA:"İnşaat ve Bayındırlık", XMADN:"Madencilik", XBLSM:"Bilişim", XSPOR:"Spor" };
 let HL_MAP = null;
 async function hisseListeYukle(){
   HL_MAP = await hisseMapYukle();
