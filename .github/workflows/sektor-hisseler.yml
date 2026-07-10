@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: veri-yazma
+  group: veri-esleme
   cancel-in-progress: false
 
 jobs:
