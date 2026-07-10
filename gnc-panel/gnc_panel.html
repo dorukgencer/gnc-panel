@@ -256,8 +256,9 @@
   .hl-kart .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
   .hl-kart .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hd-metrik-serit { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
-  .rg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  @media (max-width: 480px){ .rg-grid { grid-template-columns: 1fr 1fr; } }
+  .rg-bloklar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 28px; }
+  .rg-ufuk-baslik { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 6px; }
+  @media (max-width: 560px){ .rg-bloklar { grid-template-columns: 1fr; } }
   .hd-mkutu { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; }
   .hd-mkutu .k { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 5px; }
   .hd-mkutu .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
@@ -1402,24 +1403,43 @@ function reelGetiriCiz(){
   const chipler = Object.keys(RG_BAZ_AD).map(b =>
     '<button class="chip' + (b === RG_BAZ ? ' active' : '') + '" onclick="rgBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
 
-  const kartlar = RG_UFUKLAR.map(u => {
+  // Tum degerleri topla, tek olcek (maxAbs) kullan ki cubuklar birbirine kiyasla dogru boyda olsun
+  const degerler = [];
+  RG_UFUKLAR.forEach(u => { degerler.push(nom[u]); degerler.push(rgReelHesapla(nom[u], deflMap[u])); });
+  const maxAbs = Math.max(...degerler.filter(v => v !== null && v !== undefined).map(Math.abs), 0.1);
+
+  const cubuk = (etiket, deger, nominalMi) => {
+    const v = (deger === null || deger === undefined) ? 0 : deger;
+    const gen = (Math.abs(v) / maxAbs) * 50;
+    const renkSinif = v >= 0 ? "pos" : "neg";
+    const opaklik = nominalMi ? "opacity:.45;" : "";
+    const bar = '<div class="skt-bar ' + renkSinif + '" style="width:' + gen.toFixed(1) + '%;' + opaklik + '"></div>';
+    return '<div class="skt-row">' +
+      '<div class="skt-kod">' + etiket + '</div>' +
+      '<div class="skt-track"><div class="skt-mid"></div>' + bar + '</div>' +
+      '<div class="skt-deg ' + yon(deger) + '">' + fmtYuzde(deger) + '</div>' +
+    '</div>';
+  };
+
+  const bloklar = RG_UFUKLAR.map(u => {
     const n = nom[u];
     const d = deflMap[u];
     const r = rgReelHesapla(n, d);
-    return '<div class="hd-mkutu">' +
-      '<div class="k">' + u + '</div>' +
-      '<div class="v ' + yon(r) + '">' + fmtYuzde(r) + '</div>' +
-      '<div style="font-size:10.5px;color:var(--gnc-text-dim);margin-top:3px;">nominal ' + fmtYuzde(n) + '</div>' +
+    return '<div class="rg-ufuk-blok">' +
+      '<div class="rg-ufuk-baslik">' + u + '</div>' +
+      '<div class="skt-liste">' + cubuk("Nominal", n, true) + cubuk("Reel", r, false) + '</div>' +
     '</div>';
   }).join("");
 
   kap.innerHTML =
     '<div class="as-kart">' +
-      '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri</div>' +
-      '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">' + chipler + '</div>' +
-      '<div class="rg-grid">' + kartlar + '</div>' +
+      '<div class="as-kart-baslik"><i class="bi bi-percent"></i> Reel Getiri' +
+        '<span class="grafik-info" data-tip="Soluk çubuk nominal (ham) getiri, canlı renkli çubuk seçilen baza göre arındırılmış reel getiridir. İkisi arasındaki fark, enflasyon/kur/altının getirini ne kadar aşındırdığını gösterir."><i class="bi bi-info-circle"></i></span>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">' + chipler + '</div>' +
+      '<div class="rg-bloklar">' + bloklar + '</div>' +
     '</div>' +
-    '<div class="hd-not">Reel getiri, nominal getirinin seçilen baza (TÜFE/USD/Altın) göre arındırılmış halidir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
+    '<div class="hd-not">Soluk çubuk nominal getiri, canlı çubuk seçilen baza göre reel getiridir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
 }
 function finTablo(grup){
   const kap = document.getElementById("hd-icerik");
