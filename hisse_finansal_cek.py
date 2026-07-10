@@ -16,7 +16,7 @@ from isyatirimhisse import fetch_financials
 
 KLASOR = Path(__file__).parent
 BASE_COLS = {"SYMBOL", "FINANCIAL_ITEM_CODE", "FINANCIAL_ITEM_NAME_TR", "FINANCIAL_ITEM_NAME_EN"}
-DONEM_SAYISI = 24  # ~6 yil (ceyreklik)
+DONEM_SAYISI = 40  # ~10 yil (ceyreklik) - eskiden 24 (~6 yil)
 GRUP_BOYUT = 25   # tek istekte kac sembol
 
 
@@ -102,7 +102,7 @@ def main():
         if not kalan:
             break
         print(f"Grup {grup} icin {len(kalan)} hisse deneniyor...")
-        yeni = toplu_cek(kalan, yil - 6, yil, grup)
+        yeni = toplu_cek(kalan, yil - 10, yil, grup)
         for kod, fin in yeni.items():
             if len(fin.get("kalemler", [])) >= MIN_KALEM:
                 veriler[kod] = fin
@@ -114,7 +114,7 @@ def main():
             kalan = [k for k in kodlar if k not in veriler]
             if not kalan:
                 break
-            yeni = toplu_cek(kalan, yil - 6, yil, grup)
+            yeni = toplu_cek(kalan, yil - 10, yil, grup)
             veriler.update(yeni)
 
     # Yaz
