@@ -2,10 +2,19 @@
 // Bu yuzden FRED'e giden istek CORS'a takilmaz - sunucudan sunucuya konusma,
 // tarayici kisitlamasi burada gecerli degil. Node'un yerlesik https modulu
 // kullaniliyor, hicbir npm paketi kurulumuna gerek yok.
+//
+// API KEY: Netlify environment variable'dan okunur (FRED_API_KEY).
+// Netlify dashboard -> Site settings -> Environment variables -> ekle.
+// Koda ASLA yazilmaz.
 
 const https = require('https');
 
-const FRED_API_KEY = 'bdd9fbd79b3af93b3f2889637eb27c7e';
+// Panelin kullandigi seriler disinda baskasinin bu fonksiyonu genel FRED
+// proxy'si olarak kullanmasini engellemek icin whitelist.
+const IZINLI_SERILER = new Set([
+  // Panelde kullanilan FRED serilerini buraya ekle, ornek:
+  // 'VIXCLS', 'DXY', 'DFII10', 'BAMLH0A0HYM2'
+]);
 
 function getJson(url) {
   return new Promise((resolve, reject) => {
@@ -33,12 +42,22 @@ exports.handler = async function (event) {
     'Content-Type': 'application/json',
   };
 
+  const apiKey = process.env.FRED_API_KEY;
+  if (!apiKey) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'FRED_API_KEY tanimli degil (Netlify env variable eksik)' }) };
+  }
+
   const seriesId = event.queryStringParameters && event.queryStringParameters.series_id;
   if (!seriesId) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'series_id parametresi eksik' }) };
   }
 
-  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${encodeURIComponent(seriesId)}&api_key=${FRED_API_KEY}&file_type=json&sort_order=desc&limit=25`;
+  // Whitelist bossa (henuz doldurulmadiysa) kontrolu atla; doldurulunca aktif olur.
+  if (IZINLI_SERILER.size > 0 && !IZINLI_SERILER.has(seriesId)) {
+    return { statusCode: 403, headers, body: JSON.stringify({ error: 'Bu seri izinli listede degil' }) };
+  }
+
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${encodeURIComponent(seriesId)}&api_key=${apiKey}&file_type=json&sort_order=desc&limit=25`;
 
   try {
     const data = await getJson(url);
