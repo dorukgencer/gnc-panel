@@ -102,12 +102,12 @@ def _seri_cek(kod, baslangic, deger_ipucu=None):
         return []
 
 
-def _faiz_cek(baslangic):
+def _faiz_cek():
     """TCMB politika faizi (1 hafta repo) - borsapy'nin ozel TCMB sinifi ile,
     EVDS seri kodu tahmin etmeye gerek yok."""
     try:
         tcmb = bp.TCMB()
-        df = tcmb.history("policy", start=baslangic)
+        df = tcmb.history("policy", period="10y")
         seri = _df_to_seri(df, "borrowing" if df is not None and "borrowing" in getattr(df, "columns", []) else None)
         # Aylik degil gunluk/degisken frekansli gelebilir - ay bazinda SON degeri tut
         aylik = {}
@@ -167,7 +167,7 @@ def main():
     tufe = _seri_cek(TUFE_SERI, baslangic)
     usd = _seri_cek(USD_SERI, baslangic)
     altin = _seri_cek(ALTIN_SERI, baslangic)
-    faiz = _faiz_cek(baslangic)
+    faiz = _faiz_cek()
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
