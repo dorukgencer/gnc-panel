@@ -25,7 +25,7 @@ KLASOR = Path(__file__).parent
 GRUP_BOYUT = 50
 DENEME = 3
 BEKLE = 2
-GUN_SAYISI = 550  # ~2 yil (hafta sonu/tatil dahil takvim gunu; ~380-400 islem gunu eder)
+GUN_SAYISI = 3700  # ~10 yil (hafta sonu/tatil dahil takvim gunu)
 
 
 def hisse_kodlari():
