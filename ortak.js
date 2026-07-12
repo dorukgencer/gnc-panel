@@ -4,33 +4,50 @@
    veri proxy fetch yardimcisi, ortak grafik fonksiyonlari burada.
    ============================================================ */
 
-const GNC_NAV = [
-  { id: "genel-bakis",       ikon: "🏠", ad: "Genel Bakış",        href: "index.html" },
-  { id: "ortam-modelleme",   ikon: "◈",  ad: "Ortam Modelleme",    href: "ortam-modelleme.html" },
-  { id: "sektor-rotasyonu",  ikon: "◐",  ad: "Sektör Rotasyonu",   href: "sektor-rotasyonu.html" },
-  { id: "makro-ortam",       ikon: "▤",  ad: "Makro Ortam",        href: "makro-ortam.html" },
-  { id: "kripto-ortam",      ikon: "◇",  ad: "Kripto Ortamı",      href: "kripto-ortam.html" },
-  { id: "bist-gorunumu",     ikon: "▥",  ad: "BIST Görünümü",      href: "bist-gorunumu.html" },
-  { id: "haftalik-raporlar", ikon: "▦",  ad: "Haftalık Raporlar",  href: "raporlar.html" },
-  { id: "makro-takvim",      ikon: "▧",  ad: "Makro Takvim",       href: "takvim.html" },
+const GNC_NAV_GRUPLARI = [
+  { grup: "Genel", ogeler: [
+    { id: "genel-bakis",      ad: "Genel Bakış",       href: "gnc_panel.html" },
+    { id: "ortam-modelleme",  ad: "Ortam Modelleme",   href: "ortam-modelleme.html" },
+    { id: "sektor-rotasyonu", ad: "Sektör Rotasyonu",  href: "sektor-rotasyonu.html" },
+  ]},
+  { grup: "Değerlendirme", ogeler: [
+    { id: "makro-ortam",  ad: "Makro Ortam",   href: "makro-ortam.html" },
+    { id: "kripto-ortam", ad: "Kripto Ortamı", href: "kripto-ortam.html" },
+    { id: "bist-gorunumu", ad: "BIST Görünümü", href: "bist-gorunumu.html" },
+  ]},
+  { grup: "Araştırma", ogeler: [
+    { id: "haftalik-raporlar", ad: "Haftalık Raporlar", href: "raporlar.html" },
+    { id: "makro-takvim",      ad: "Makro Takvim",      href: "takvim.html" },
+    { id: "arsiv",             ad: "Arşiv",             href: "arsiv.html" },
+  ]},
+  { grup: "Hesap", ogeler: [
+    { id: "uyelik",  ad: "Üyelik",  href: "uyelik.html" },
+    { id: "ayarlar", ad: "Ayarlar", href: "ayarlar.html" },
+  ]},
 ];
 
 /**
- * Sidebar'i olusturur ve verilen elemente basar.
- * aktifId: GNC_NAV icindeki hangi id'nin aktif (vurgulu) gorunecegi.
+ * Sidebar'i olusturur (gruplu nav + marka + alt not, tasarim mockup'iyla birebir).
+ * aktifId: hangi nav-item'in aktif gorunecegi.
  */
 function gncSidebarOlustur(aktifId, hedefElementId) {
   const el = document.getElementById(hedefElementId);
   if (!el) return;
-  const linkler = GNC_NAV.map(item => {
-    const aktifSinif = item.id === aktifId ? " active" : "";
-    return `<a class="gnc-nav-item${aktifSinif}" href="${item.href}">
-      <span class="ikon">${item.ikon}</span><span>${item.ad}</span>
-    </a>`;
-  }).join("");
+  let navHtml = "";
+  GNC_NAV_GRUPLARI.forEach(grup => {
+    navHtml += `<div class="nav-group">${grup.grup}</div>`;
+    grup.ogeler.forEach(item => {
+      const aktifSinif = item.id === aktifId ? " active" : "";
+      navHtml += `<a class="nav-item${aktifSinif}" href="${item.href}">${item.ad}</a>`;
+    });
+  });
   el.innerHTML = `
-    <div class="gnc-logo">GNC <span>Insight</span></div>
-    <nav class="gnc-nav">${linkler}</nav>
+    <div class="sidebar-brand">
+      <div class="mark font-display">GNC Insight</div>
+      <div class="sub">Ortam Paneli</div>
+    </div>
+    <nav class="nav-scroll">${navHtml}</nav>
+    <div class="sidebar-foot">Bu panel <b>dönemsel</b> okuma içindir.<br>Her Pazartesi güncellenir.</div>
   `;
 }
 
