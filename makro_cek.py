@@ -26,12 +26,14 @@ HEDEF = KLASOR / "gnc-panel" / "makro_gecmis.json"
 
 # FRED seri kodlari - hepsi ucretsiz, dogrulanmis:
 SERILER = {
-    "dxy":    {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (geniş)",   "birim": "endeks"},
-    "us10y":  {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
-    "tr10y":  {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%"},
-    "tufe":   {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
-    "vix":    {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
-    "nasdaq": {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
+    "dxy":     {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (geniş)",   "birim": "endeks"},
+    "us10y":   {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
+    "tr10y":   {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%"},
+    "tufe":    {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
+    "vix":     {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
+    "nasdaq":  {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
+    "buyume":  {"kod": "TURLOLITOAASTSAM", "ad": "Türkiye Öncü Gösterge Endeksi (OECD)", "birim": "endeks"},
+    "breakeven": {"kod": "T10YIE",         "ad": "ABD 10Y Breakeven Enflasyon", "birim": "%"},
 }
 
 
@@ -80,7 +82,7 @@ def main():
 
     print("FRED makro serileri cekiliyor...")
     cikti_seriler = {}
-    with ThreadPoolExecutor(max_workers=6) as havuz:
+    with ThreadPoolExecutor(max_workers=8) as havuz:
         gelecekler = {havuz.submit(fred_cek, tanim["kod"], api_key, baslangic): (anahtar, tanim) for anahtar, tanim in SERILER.items()}
         for gelecek in as_completed(gelecekler):
             anahtar, tanim = gelecekler[gelecek]
@@ -104,6 +106,20 @@ def main():
         # (bazi seriler geldi) boyle yapmiyoruz - o normal, alarm yorgunlugu
         # yaratmasin diye sessiz UYARI olarak kaliyor (asagida).
         raise SystemExit("HICBIR seri gelmedi (FRED tamamen erisilemez oldu ya da API key gecersiz). Dosya yazilmadi, mevcut korunuyor.")
+
+    # ABD 10Y reel faiz = US10Y - Breakeven enflasyon (ikisi de aylik, ayni aylari eslestir)
+    us10y_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("us10y", {}).get("seri", [])}
+    breakeven_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("breakeven", {}).get("seri", [])}
+    ortak_aylar = sorted(set(us10y_map) & set(breakeven_map), reverse=True)
+    reel_faiz_seri = [{"tarih": ay, "deger": round(us10y_map[ay] - breakeven_map[ay], 3)} for ay in ortak_aylar]
+    if reel_faiz_seri:
+        cikti_seriler["us_reel_faiz"] = {
+            "ad": "ABD 10Y Reel Faiz (US10Y - Breakeven)",
+            "seri_kod": "hesaplanmis: DGS10 - T10YIE",
+            "birim": "%",
+            "seri": reel_faiz_seri,
+        }
+        print(f"  ABD 10Y reel faiz (hesaplanmis): {len(reel_faiz_seri)} aylik gozlem")
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
