@@ -42,7 +42,6 @@ TRAIL_GERI_HAFTA = 12  # iz'in basladigi nokta (~3 ay once)
 # Grafik geometrisi (sartnamedeki SVG koordinat sistemiyle birebir)
 MERKEZ_X, MERKEZ_Y = 300, 300
 MAX_YARICAP = 240  # 260'in biraz altinda, kenara yapismasin diye pay birakildi
-OLCEK_TAVANI = 15.0  # +-15 puanlik fark, maks yaricapa denk gelsin (normalize icin)
 
 
 def sektor_listesi():
@@ -109,14 +108,38 @@ def evre_belirle(x, y):
     return "daralma"
 
 
-def koordinat_hesapla(x, y):
-    """X,Y puan farkini dogru ceyrege ve merkeze gore piksel konumuna cevirir."""
-    x_olcekli = max(-1.0, min(1.0, x / OLCEK_TAVANI)) * MAX_YARICAP
-    y_olcekli = max(-1.0, min(1.0, y / OLCEK_TAVANI)) * MAX_YARICAP
-    # SVG'de y asagi dogru artar; Y ekseni "momentum yukari = grafikte yukari"
-    # olmasi icin isaretini ters ceviriyoruz (matematiksel yukari = kucuk SVG y).
-    cx = MERKEZ_X + x_olcekli
-    cy = MERKEZ_Y - y_olcekli
+def rank_olcekle(deger, ayni_isaretli_degerler):
+    """deger'in AYNI ISARETLI (>0 veya <=0) diger degerler arasindaki BUYUKLUK
+    SIRASINI (percentile rank) 0..MAX_YARICAP araligina esler.
+
+    NEDEN: Ham puan farkini sabit bir tavana (orn. +-15 puan) bolup olceklersek,
+    gercek veride farklar bu tavanin cok altinda kaldiginda (Turkiye piyasasinda
+    13 haftalik goreli guc farklari genelde kucuk) TUM baloncuklar merkeze
+    yapisir, etiketler kenara sabitlendigi icin de merkez-kenar arasinda uzun,
+    birbirine karisan cizgiler olusur (ilk versiyonda yasanan sorun buydu).
+    Sira-tabanli olcek, ham buyukluk ne olursa olsun baloncuklarin HER ZAMAN
+    ceyregin tum alanina yayilmasini garanti eder - gorsel karisikligi kokten
+    cozer. Bedeli: konum artik "mutlak puan" degil "diger sektorlere gore sira"
+    anlamina gelir - bu, orijinal sartnamenin zaten izin verdigi bir yaklasimdir
+    ("ceyrek icindeki tam konum yaklasik olabilir").
+    """
+    if len(ayni_isaretli_degerler) <= 1:
+        return MAX_YARICAP * 0.5
+    kucuklerin_sayisi = sum(1 for d in ayni_isaretli_degerler if abs(d) < abs(deger))
+    yuzde = kucuklerin_sayisi / max(1, len(ayni_isaretli_degerler) - 1)
+    return 20 + yuzde * (MAX_YARICAP - 20)  # 20px min mesafe, tam merkeze yapismasin
+
+
+def koordinat_hesapla_rank(x, y, tum_x, tum_y):
+    x_ayni_isaret = [v for v in tum_x if (v > 0) == (x > 0)]
+    y_ayni_isaret = [v for v in tum_y if (v > 0) == (y > 0)]
+    x_mesafe = rank_olcekle(x, x_ayni_isaret)
+    y_mesafe = rank_olcekle(y, y_ayni_isaret)
+    x_yon = 1 if x > 0 else -1
+    y_yon = 1 if y > 0 else -1
+    cx = MERKEZ_X + x_yon * x_mesafe
+    # SVG'de y asagi dogru artar; "momentum yukari = grafikte yukari" olsun diye ters ceviriyoruz.
+    cy = MERKEZ_Y - y_yon * y_mesafe
     return round(cx, 1), round(cy, 1)
 
 
@@ -149,8 +172,8 @@ def main():
         raise SystemExit("Hicbir sektor endeks_gecmis dosyasi bulunamadi.")
 
     agirliklar = sektor_agirliklari()
-    sonuc = []
     atlanan = []
+    ham = []  # ilk gecis: sadece ham X/Y degerleri (koordinat henuz yok)
 
     for kod in kodlar:
         yuklenen = seriyi_yukle(kod)
@@ -174,31 +197,47 @@ def main():
         y_simdi = x_simdi - x_4hf_once
 
         trail_i = son_i - TRAIL_GERI_HAFTA
+        x_trail = y_trail = None
         if trail_i - Y_PENCERE_HAFTA >= 0 and x_serisi[trail_i] is not None and x_serisi[trail_i - Y_PENCERE_HAFTA] is not None:
             x_trail = x_serisi[trail_i]
             y_trail = x_serisi[trail_i] - x_serisi[trail_i - Y_PENCERE_HAFTA]
-            cx_trail, cy_trail = koordinat_hesapla(x_trail, y_trail)
+
+        agirlik = agirliklar.get(kod)
+        ham.append({
+            "kod": kod, "ad": sek_ad, "agirlik": agirlik,
+            "x_simdi": x_simdi, "y_simdi": y_simdi,
+            "x_trail": x_trail, "y_trail": y_trail,
+        })
+
+    if not ham:
+        raise SystemExit("Hicbir sektor icin rotasyon hesaplanamadi (yetersiz gecmis veri).")
+
+    # Ikinci gecis: TUM sektorlerin ham degerlerini bilerek sira-tabanli koordinat hesapla.
+    tum_x_simdi = [h["x_simdi"] for h in ham]
+    tum_y_simdi = [h["y_simdi"] for h in ham]
+    tum_x_trail = [h["x_trail"] for h in ham if h["x_trail"] is not None]
+    tum_y_trail = [h["y_trail"] for h in ham if h["y_trail"] is not None]
+
+    sonuc = []
+    for h in ham:
+        cx, cy = koordinat_hesapla_rank(h["x_simdi"], h["y_simdi"], tum_x_simdi, tum_y_simdi)
+        evre = evre_belirle(h["x_simdi"], h["y_simdi"])
+        if h["x_trail"] is not None and h["y_trail"] is not None:
+            cx_trail, cy_trail = koordinat_hesapla_rank(h["x_trail"], h["y_trail"], tum_x_trail, tum_y_trail)
         else:
             cx_trail, cy_trail = None, None
 
-        cx, cy = koordinat_hesapla(x_simdi, y_simdi)
-        evre = evre_belirle(x_simdi, y_simdi)
-        agirlik = agirliklar.get(kod)
-
         sonuc.append({
-            "kod": kod,
-            "ad": sek_ad,
+            "kod": h["kod"],
+            "ad": h["ad"],
             "evre": evre,
-            "x_goreli_guc_13hf": round(x_simdi, 2),
-            "y_momentum_4hf": round(y_simdi, 2),
+            "x_goreli_guc_13hf": round(h["x_simdi"], 2),
+            "y_momentum_4hf": round(h["y_simdi"], 2),
             "cx": cx, "cy": cy,
             "cx_3ay_once": cx_trail, "cy_3ay_once": cy_trail,
-            "yaricap": bubble_yaricap(agirlik),
-            "agirlik": agirlik,
+            "yaricap": bubble_yaricap(h["agirlik"]),
+            "agirlik": h["agirlik"],
         })
-
-    if not sonuc:
-        raise SystemExit("Hicbir sektor icin rotasyon hesaplanamadi (yetersiz gecmis veri).")
 
     cikti = {
         "guncelleme": datetime.now(timezone.utc).isoformat(),
@@ -207,6 +246,9 @@ def main():
             "resmi/akademik RRG (Relative Rotation Graph) formulu degildir. "
             f"X ekseni: {X_PENCERE_HAFTA} haftalik goreli guc (XU100'e gore yuzde puan fark). "
             f"Y ekseni: bu farkin son {Y_PENCERE_HAFTA} haftadaki degisimi (momentum). "
+            "Grafikteki KONUM, ham puan degil, sektorler arasi SIRALAMAYA (rank) gore "
+            "olceklenmistir - boylece farklar kucuk olsa bile baloncuklar ceyrek alanini "
+            "tam kullanir. x_goreli_guc_13hf / y_momentum_4hf alanlari HAM puan degeridir. "
             "Egitim ve arastirma amaclidir, yatirim tavsiyesi degildir."
         ),
         "parametreler": {"x_pencere_hafta": X_PENCERE_HAFTA, "y_pencere_hafta": Y_PENCERE_HAFTA, "trail_geri_hafta": TRAIL_GERI_HAFTA},
