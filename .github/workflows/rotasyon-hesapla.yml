@@ -24,11 +24,13 @@ jobs:
           python-version: "3.12"
       - name: Rotasyonu hesapla (yeni veri cekmez, endeks_gecmis'ten)
         run: python rotasyon_hesapla.py
+      - name: Evre degisimlerini takip et (Degisim Gunlugu icin)
+        run: python rotasyon_degisim_takip.py
       - name: Kaydet
         run: |
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add gnc-panel/rotasyon_gecmis.json
-          git commit -m "Sektor rotasyonu guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          git add gnc-panel/rotasyon_gecmis.json gnc-panel/rotasyon_onceki_hafta.json gnc-panel/rotasyon_degisim_log.json
+          git commit -m "Sektor rotasyonu ve degisim gunlugu guncellendi" || { echo "Degisiklik yok"; exit 0; }
           git pull --rebase --autostash origin main
           git push
