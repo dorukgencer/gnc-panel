@@ -80,6 +80,19 @@
   .note-body .nd { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
   .section-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; }
   .section-title a { font-size: 10.5px; color: var(--copper-dark); text-decoration: none; font-weight: 400; }
+
+  /* --- Veri Sağlık Paneli (küçük, alt bilgi amaçlı) --- */
+  .vsp { margin-top: 22px; border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; }
+  .vsp-baslik { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+  .vsp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 16px; }
+  .vsp-satir { display: flex; justify-content: space-between; gap: 8px; font-size: 10.5px; padding: 3px 0; }
+  .vsp-satir .ad { color: var(--ink-soft); }
+  .vsp-satir .zaman { font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+  .vsp-nokta { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+  .vsp-nokta.taze { background: var(--pine-dark); }
+  .vsp-nokta.eski { background: var(--ochre); }
+  .vsp-nokta.cok-eski { background: var(--brick); }
+  .vsp-nokta.yok { background: var(--ink-faint); }
 </style>
 </head>
 <body>
@@ -150,6 +163,12 @@
         </div>
       </div>
 
+      <!-- VERİ SAĞLIK PANELİ -->
+      <div class="vsp">
+        <div class="vsp-baslik">Veri Sağlığı — kaynak, son güncelleme</div>
+        <div class="vsp-grid" id="vsp-icerik"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -181,6 +200,7 @@ async function anaSayfaBaslat(){
   gaBist(sektorVerisi, xu100Ma);
   gaTakvim(takvim);
   gaOneCikan(oneCikan);
+  gaVeriSagligi();
 }
 
 function gaSonDeger(seri){
@@ -410,6 +430,48 @@ function gaOneCikan(oneCikan){
       `<span class="note-tag ${m.tag}">${m.tag}</span>` +
       `<div class="note-body"><div class="nt">${m.title}</div><div class="nd">${m.note}</div></div>` +
     `</div>`;
+  });
+  kap.innerHTML = html;
+}
+
+/* ============ VERİ SAĞLIK PANELİ ============
+   Ana Sayfa'da zaten YUKLENMIS olanlarin ustune, sadece Ana Sayfa'da
+   yuklenmeyen birkac ek dosyayi de guncelleme tarihi icin ceker.
+   Beklenen tazelik esikleri kaynagin dogal guncelleme sikligina gore
+   ayarlanmistir (haftalik veri 2 gun eskiyse "eski" degil "taze" sayilir). */
+const VSP_KAYNAKLAR = [
+  { ad: "BIST verisi (sektor_verisi)", dosya: "sektor_verisi.json", esik_saat: 24 },
+  { ad: "TÜFE/USD/Altın (deflator)",   dosya: "deflator.json",       esik_saat: 40*24 },
+  { ad: "TCMB faizi",                  dosya: "faiz_gecmis.json",    esik_saat: 40*24 },
+  { ad: "Makro (FRED)",                dosya: "makro_gecmis.json",   esik_saat: 48 },
+  { ad: "Sektör Rotasyonu",            dosya: "rotasyon_gecmis.json",esik_saat: 10*24 },
+  { ad: "F/K Değerleme",               dosya: "degerleme_gecmis.json",esik_saat: 10*24 },
+  { ad: "Kripto ETF akışı",            dosya: "kripto_etf.json",     esik_saat: 48 },
+  { ad: "Kripto global (BTC dom.)",    dosya: "kripto_global.json",  esik_saat: 24 },
+  { ad: "XU100 200gün mesafesi",       dosya: "xu100_ma_mesafe.json",esik_saat: 48 },
+  { ad: "Türkiye Takvimi",             dosya: "turkiye_takvim.json", esik_saat: 48 },
+];
+
+async function gaVeriSagligi(){
+  const kap = document.getElementById("vsp-icerik");
+  const simdi = Date.now();
+  const sonuclar = await Promise.all(VSP_KAYNAKLAR.map(async k => {
+    const veri = await gncVeriCek(k.dosya);
+    const guncelleme = veri && veri.guncelleme ? new Date(veri.guncelleme) : null;
+    return { ad: k.ad, esik_saat: k.esik_saat, guncelleme };
+  }));
+
+  let html = "";
+  sonuclar.forEach(s => {
+    let durumSinif = "yok", zamanMetni = "veri yok";
+    if(s.guncelleme && !isNaN(s.guncelleme)){
+      const farkSaat = (simdi - s.guncelleme.getTime()) / 3600000;
+      durumSinif = farkSaat <= s.esik_saat ? "taze" : farkSaat <= s.esik_saat*2 ? "eski" : "cok-eski";
+      if(farkSaat < 1) zamanMetni = Math.round(farkSaat*60) + " dk önce";
+      else if(farkSaat < 48) zamanMetni = Math.round(farkSaat) + " sa önce";
+      else zamanMetni = Math.round(farkSaat/24) + " gün önce";
+    }
+    html += `<div class="vsp-satir"><span class="ad"><span class="vsp-nokta ${durumSinif}"></span>${s.ad}</span><span class="zaman">${zamanMetni}</span></div>`;
   });
   kap.innerHTML = html;
 }
