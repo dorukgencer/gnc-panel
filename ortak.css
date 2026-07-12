@@ -19,10 +19,14 @@
   /* Vurgu renkleri */
   --copper: #A8552A;
   --copper-dark: #823F1C;
+  --copper-soft: #EAD9C9;
   --pine: #1D6555;
   --pine-dark: #124B3F;
+  --pine-soft: #CDDCD3;
   --ochre: #8C6C28;
+  --ochre-soft: #E4DAC1;
   --brick: #9B3A2C;
+  --brick-soft: #E7D2CC;
 
   /* Anlamsal renkler */
   --up: #124B3F;
@@ -69,40 +73,27 @@ a:hover { text-decoration: underline; }
 .gnc-shell { display: flex; min-height: 100vh; }
 
 .gnc-sidebar {
-  width: 240px;
+  width: 204px;
   flex-shrink: 0;
-  background: var(--surface);
+  background: var(--paper);
   border-right: 1px solid var(--line);
-  padding: 24px 0;
   position: fixed;
   top: 0; bottom: 0; left: 0;
+  display: flex; flex-direction: column;
   overflow-y: auto;
 }
-.gnc-logo {
-  font-family: 'Fraunces', serif;
-  font-weight: 700;
-  font-size: 20px;
-  padding: 0 24px 20px;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-}
-.gnc-logo span { color: var(--copper); }
-.gnc-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
-.gnc-nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--ink-soft);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background .12s;
-}
-.gnc-nav-item:hover { background: rgba(0,0,0,0.03); text-decoration: none; }
-.gnc-nav-item.active { background: var(--surface-raised); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.gnc-nav-item .ikon { width: 16px; text-align: center; opacity: .75; }
+.sidebar-brand { padding: 26px 22px 20px; }
+.sidebar-brand .mark { font-weight: 600; font-size: 16px; }
+.sidebar-brand .sub { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); margin-top: 3px; }
+.nav-scroll { flex: 1; padding: 6px 0; border-top: 1px solid var(--line); margin-top: 2px; }
+.nav-group { padding: 16px 22px 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+.nav-item { display: block; padding: 7px 22px; color: var(--ink-soft); text-decoration: none; font-size: 13px; border-left: 2px solid transparent; }
+.nav-item:hover { color: var(--ink); text-decoration: none; }
+.nav-item.active { color: var(--ink); border-left: 2px solid var(--copper); background: var(--surface-raised); font-weight: 500; }
+.sidebar-foot { padding: 16px 22px; border-top: 1px solid var(--line); font-size: 10.5px; color: var(--ink-faint); line-height: 1.5; }
+.sidebar-foot b { color: var(--ink-soft); }
 
-.gnc-main { margin-left: 240px; flex: 1; min-width: 0; }
+.gnc-main { margin-left: 204px; flex: 1; min-width: 0; }
 .gnc-topbar {
   height: 56px;
   border-bottom: 1px solid var(--line);
