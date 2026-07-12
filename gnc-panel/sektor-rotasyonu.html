@@ -25,8 +25,8 @@
   .sr-bubble { cursor: pointer; transition: opacity .15s; }
   .sr-bubble.sonuk { opacity: .18; }
   .sr-bubble-etiket { font-family: 'IBM Plex Sans', sans-serif; font-size: 10.5px; font-weight: 600; fill: var(--ink); }
-  .sr-leader { stroke: #A8B2A2; stroke-width: .8; }
-  .sr-trail { stroke-dasharray: 3 3; fill: none; }
+  .sr-leader { stroke: #C7CEC3; stroke-width: .6; opacity: .35; }
+  .sr-trail { stroke-dasharray: 3 3; fill: none; stroke-width: 2; opacity: 0.8; }
 
   .sr-gunluk-satir { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .sr-gunluk-satir:last-child { border-bottom: none; }
@@ -38,6 +38,8 @@
   .sr-katki-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
   .sr-katki-bar.pozitif { left: 50%; background: var(--up); }
   .sr-katki-bar.negatif { right: 50%; background: var(--down); }
+  .sr-katki-bar.ucuz { right: 50%; background: var(--up); }
+  .sr-katki-bar.pahali { left: 50%; background: var(--down); }
 
   .sr-deger-satir { display: grid; grid-template-columns: 130px 1fr 180px; align-items: center; gap: 10px; padding: 7px 0; font-size: 12px; }
 
@@ -92,6 +94,7 @@
       <div class="gnc-panel-kart" style="margin-bottom:18px;">
         <div class="gnc-panel-baslik">
           <h2><i class="bi bi-journal-text"></i> Rotasyon Değişim Günlüğü</h2>
+          <span class="gnc-info">i<span class="gnc-tooltip">Bir sektörün rotasyon evresi değiştiğinde burada otomatik kaydedilir. "Önceki evrede kalma süresi", o sektörün bir önceki evrede kaç hafta kaldığını gösterir. Not alanı, geçişin kısa gerekçesini şablon cümleyle özetler.</span></span>
         </div>
         <div id="gunluk-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
       </div>
@@ -100,6 +103,7 @@
       <div class="gnc-panel-kart" style="margin-bottom:18px;">
         <div class="gnc-panel-baslik">
           <h2><i class="bi bi-table"></i> Tüm Sektörler</h2>
+          <span class="gnc-info">i<span class="gnc-tooltip">Yukarıdaki Günlük/Haftalık/Aylık düğmesi hangi sütuna göre sıralandığını belirler. Ağırlık, sektörün BIST100 içindeki payını gösterir (halka açıklık düzeltmeli).</span></span>
         </div>
         <div id="tablo-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
       </div>
@@ -120,7 +124,7 @@
             <h2><i class="bi bi-graph-up"></i> Değerleme Karşılaştırması</h2>
             <span class="gnc-info">i<span class="gnc-tooltip">Sapma % = (güncel F/K − 5 yıllık ortalama F/K) / 5 yıllık ortalama F/K × 100. Tek başına alım-satım sinyali değildir, eğitim ve araştırma amaçlıdır.</span></span>
           </div>
-          <div id="deger-icerik"><div class="gnc-durum-kutu">Sektör bazında F/K verisi henüz hesaplanmıyor. Bu panel, sektör şirketlerinin F/K agregasyonu tamamlanınca aktif olacak.</div></div>
+          <div id="deger-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
         </div>
       </div>
 
@@ -128,6 +132,7 @@
       <div class="gnc-panel-kart">
         <div class="gnc-panel-baslik">
           <h2><i class="bi bi-grid-3x3"></i> Yıllara Göre Sektör Getirileri</h2>
+          <span class="gnc-info">i<span class="gnc-tooltip">Her hücre, o sektörün o yılki toplam (bileşik) getirisidir. 2026 sütunu yıl başından bugüne kadarki kısmi getiriyi gösterir, tam yıl değildir. Renk skalası koyu yeşilden koyu kırmızıya, en yüksekten en düşük getiriye gider.</span></span>
         </div>
         <div id="isi-icerik" style="overflow-x:auto;"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
       </div>
@@ -145,17 +150,19 @@ let SR_ROTASYON = [];       // rotasyon_gecmis.json sektorler[]
 let SR_GETIRI = {};         // kod -> {g1,h1,a1,agirlik} (sektor_verisi.json'dan)
 let SR_GUNLUK = [];         // rotasyon_degisim_log.json kayitlar[]
 let SR_ISI = null;          // sektor_gecmis.json ham
+let SR_DEGER = {};          // degerleme_gecmis.json sektorler{}
 let SR_PERIYOT = "g1";
 let SR_EVRE_FILTRE = "tumu";
 let SR_ARAMA = "";
 
 /* ============ VERİ YÜKLEME ============ */
 async function srBaslat(){
-  const [rotasyon, sektorVerisi, gunluk, isi] = await Promise.all([
+  const [rotasyon, sektorVerisi, gunluk, isi, deger] = await Promise.all([
     gncVeriCek("rotasyon_gecmis.json"),
     gncVeriCek("sektor_verisi.json"),
     gncVeriCek("rotasyon_degisim_log.json"),
     gncVeriCek("sektor_gecmis.json"),
+    gncVeriCek("degerleme_gecmis.json"),
   ]);
 
   if(!rotasyon || !rotasyon.sektorler || !rotasyon.sektorler.length){
@@ -175,6 +182,7 @@ async function srBaslat(){
 
   SR_GUNLUK = (gunluk && gunluk.kayitlar) || [];
   SR_ISI = isi;
+  SR_DEGER = (deger && deger.sektorler) || {};
 
   // Donem etiketi: rotasyon verisinin guncelleme tarihinden turet
   try{
@@ -208,6 +216,7 @@ function srCizHepsi(){
   srCizKatki();
   srCizGunluk();
   srCizIsi();
+  srCizDeger();
 }
 
 /* ============ ARAÇ ÇUBUĞU OLAYLARI ============ */
@@ -267,6 +276,13 @@ function srCizSaat(){
   // --- SVG parcalari ---
   let svg = `<svg viewBox="-160 0 920 600" style="width:100%;height:auto;max-height:640px;">`;
 
+  // Paylasilan ok uclari - evre basina TEK tanim (her sektor icin ayri degil, daha saglam)
+  svg += `<defs>`;
+  Object.keys(renkler).forEach(evre => {
+    svg += `<marker id="ok-${evre}" markerWidth="12" markerHeight="12" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${renkler[evre]}"/></marker>`;
+  });
+  svg += `</defs>`;
+
   // Ceyrek zeminleri (hafif renkli)
   svg += `<rect x="${MERKEZ}" y="0" width="${YARICAP}" height="${MERKEZ}" fill="var(--evre-genisleme)" opacity="0.06"/>`;
   svg += `<rect x="${MERKEZ}" y="${MERKEZ}" width="${YARICAP}" height="${YARICAP}" fill="var(--evre-yavaslama)" opacity="0.06"/>`;
@@ -285,8 +301,7 @@ function srCizSaat(){
     const s = liste.find(x => x.kod === et.kod);
     const renk = renkler[s.evre];
     if(s.cx_3ay_once !== null && s.cx_3ay_once !== undefined){
-      svg += `<line class="sr-trail" x1="${s.cx_3ay_once}" y1="${s.cy_3ay_once}" x2="${s.cx}" y2="${s.cy}" stroke="${renk}" stroke-width="1.3" opacity="0.55" marker-end="url(#ok-${s.kod})"/>`;
-      svg += `<defs><marker id="ok-${s.kod}" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${renk}" opacity="0.55"/></marker></defs>`;
+      svg += `<line class="sr-trail" x1="${s.cx_3ay_once}" y1="${s.cy_3ay_once}" x2="${s.cx}" y2="${s.cy}" stroke="${renk}" marker-end="url(#ok-${s.evre})"/>`;
     }
     svg += `<line class="sr-leader" x1="${et.bubble_cx}" y1="${et.bubble_cy}" x2="${et.etiket_x}" y2="${et.etiket_y}"/>`;
   });
@@ -298,7 +313,47 @@ function srCizSaat(){
   });
 
   svg += `</svg>`;
-  kap.innerHTML = svg;
+  kap.innerHTML = svg + '<div style="font-size:10.5px;color:var(--ink-faint);margin-top:6px;">Kesikli çizgi + ok: sektörün 3 ay önceki konumundan bugüne izlediği yön.</div>';
+}
+
+/* ============ DEĞERLEME KARŞILAŞTIRMASI ============ */
+function srCizDeger(){
+  const kap = document.getElementById("deger-icerik");
+  const sektorKodlari = Object.keys(SR_DEGER);
+  if(!sektorKodlari.length){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Değerleme verisi henüz yok. deger-hesapla workflow\'unun en az bir kez çalışması gerekir.</div>';
+    return;
+  }
+  let liste = sektorKodlari
+    .filter(kod => SR_DEGER[kod].sapma_yuzde !== undefined)
+    .map(kod => Object.assign({ kod }, SR_DEGER[kod]));
+
+  if(SR_EVRE_FILTRE !== "tumu") liste = liste.filter(s => SR_ROTASYON.find(r => r.kod === s.kod)?.evre === SR_EVRE_FILTRE);
+  if(SR_ARAMA.trim()){
+    const q = SR_ARAMA.trim().toLocaleLowerCase("tr-TR");
+    liste = liste.filter(s => s.kod.toLocaleLowerCase("tr-TR").includes(q));
+  }
+  if(!liste.length){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Yeterli 5 yıllık geçmişi olan eşleşen sektör yok.</div>';
+    return;
+  }
+
+  liste.sort((a,b) => a.sapma_yuzde - b.sapma_yuzde); // en ucuzdan en pahaliya
+  const maxAbs = Math.max(...liste.map(s => Math.abs(s.sapma_yuzde)), 1);
+
+  let html = "";
+  liste.forEach(s => {
+    const genislikYuzde = Math.min(50, Math.abs(s.sapma_yuzde) / maxAbs * 50);
+    const pahali = s.sapma_yuzde >= 0;
+    html += `<div class="sr-deger-satir">` +
+      `<span>${s.kod}</span>` +
+      `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div>` +
+        `<div class="sr-katki-bar ${pahali?'pahali':'ucuz'}" style="width:${genislikYuzde}%"></div></div>` +
+      `<span class="mono num" style="text-align:right;">F/K ${s.fk_guncel_medyan} · 5y ${s.fk_5yil_ortalama_medyan} · <strong class="${gncYon(-s.sapma_yuzde)}">${s.sapma_yuzde>=0?'+':''}${s.sapma_yuzde}%</strong></span>` +
+    `</div>`;
+  });
+  html += '<div class="gnc-spk-not">Negatif sapma (yeşil) = 5 yıllık ortalamasına göre ucuz, pozitif (kırmızı) = pahalı. Tek başına alım-satım sinyali değildir.</div>';
+  kap.innerHTML = html;
 }
 
 /* ============ TÜM SEKTÖRLER TABLOSU ============ */
@@ -309,17 +364,17 @@ function srCizTablo(){
 
   let html = '<table class="gnc-tablo"><thead><tr>' +
     '<th>Sektör</th><th>Evre</th>' +
-    '<th class="num' + (SR_PERIYOT==="g1"?' style="color:var(--ink)"':'') + '">Günlük</th>' +
-    '<th class="num' + (SR_PERIYOT==="h1"?' style="color:var(--ink)"':'') + '">Haftalık</th>' +
-    '<th class="num' + (SR_PERIYOT==="a1"?' style="color:var(--ink)"':'') + '">Aylık</th>' +
+    '<th class="num"' + (SR_PERIYOT==="g1"?' style="color:var(--copper-dark);font-weight:800;"':'') + '>Günlük' + (SR_PERIYOT==="g1"?' ●':'') + '</th>' +
+    '<th class="num"' + (SR_PERIYOT==="h1"?' style="color:var(--copper-dark);font-weight:800;"':'') + '>Haftalık' + (SR_PERIYOT==="h1"?' ●':'') + '</th>' +
+    '<th class="num"' + (SR_PERIYOT==="a1"?' style="color:var(--copper-dark);font-weight:800;"':'') + '>Aylık' + (SR_PERIYOT==="a1"?' ●':'') + '</th>' +
     '<th class="num">Ağırlık</th></tr></thead><tbody>';
   liste.forEach(s => {
     html += `<tr onclick="location.href='bist-gorunumu.html?sektor=${s.kod}'">` +
       `<td>${s.ad}</td>` +
       `<td>${gncEvreChip(s.evre)}</td>` +
-      `<td class="num ${gncYon(s.g1)}" style="${SR_PERIYOT==='g1'?'font-weight:700':''}">${gncYuzde(s.g1)}</td>` +
-      `<td class="num ${gncYon(s.h1)}" style="${SR_PERIYOT==='h1'?'font-weight:700':''}">${gncYuzde(s.h1)}</td>` +
-      `<td class="num ${gncYon(s.a1)}" style="${SR_PERIYOT==='a1'?'font-weight:700':''}">${gncYuzde(s.a1)}</td>` +
+      `<td class="num ${gncYon(s.g1)}" style="${SR_PERIYOT==='g1'?'font-weight:800;background:rgba(168,85,42,.06);':''}">${gncYuzde(s.g1)}</td>` +
+      `<td class="num ${gncYon(s.h1)}" style="${SR_PERIYOT==='h1'?'font-weight:800;background:rgba(168,85,42,.06);':''}">${gncYuzde(s.h1)}</td>` +
+      `<td class="num ${gncYon(s.a1)}" style="${SR_PERIYOT==='a1'?'font-weight:800;background:rgba(168,85,42,.06);':''}">${gncYuzde(s.a1)}</td>` +
       `<td class="num">${s.agirlik !== null && s.agirlik !== undefined ? s.agirlik.toFixed(1)+'%' : '—'}</td>` +
     `</tr>`;
   });
@@ -393,7 +448,7 @@ function srCizIsi(){
   const kodlar = Object.keys(SR_ISI.sektorler).filter(k => k !== "XU100" && (!filtre || filtre.includes(k)));
   if(!kodlar.length){ kap.innerHTML = '<div class="gnc-durum-kutu">Eşleşen sektör yok.</div>'; return; }
 
-  const yillar = ["2020","2021","2022","2023","2024","2025"];
+  const yillar = ["2020","2021","2022","2023","2024","2025","2026"];
   function renkSec(g){
     if(g === null || g === undefined) return { bg: "var(--surface)", tx: "var(--ink-faint)" };
     if(g >= 60) return { bg: "#124B3F", tx: "#fff" };
@@ -405,7 +460,7 @@ function srCizIsi(){
   }
 
   let html = '<table class="sr-isi-tablo"><thead><tr><th style="text-align:left;">Sektör</th>';
-  yillar.forEach(y => html += `<th>${y}</th>`);
+  yillar.forEach(y => html += `<th>${y === "2026" ? "2026 (YBB)" : y}</th>`);
   html += '</tr></thead><tbody>';
 
   kodlar.forEach(kod => {
