@@ -19,18 +19,22 @@ degiskeninden okunur (GitHub Actions secret) - borsapy bu ismi otomatik tanir.
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import borsapy as bp
+import requests
 
 KLASOR = Path(__file__).parent
 HEDEF = KLASOR / "gnc-panel" / "deflator.json"
 HEDEF_FAIZ = KLASOR / "gnc-panel" / "faiz_gecmis.json"
 
-TUFE_SERI = "TP.FG.J0"          # TUFE genel endeks (2003=100), aylik
-USD_SERI = "TP.DK.USD.A.YTL"    # ABD Dolari alis
-ALTIN_SERI = "TP.MK.CUM.YTL"    # Gram altin (dogrulanmis - degismedi)
+TUFE_SERI = "TP.FG.J0"          # TUFE genel endeks (2003=100), aylik - TCMB EVDS (kacinilmaz, Turkiye'nin kendi verisi)
+# USD_SERI ve ALTIN_SERI ARTIK KULLANILMIYOR (EVDS yerine Yahoo Finance'ten
+# hesaplaniyor - bkz. _yahoo_kimlik/_yahoo_aylik_cek). Turkiye kaynaklarina
+# guven sinirli oldugu icin, Turkiye'ye ozgu olmayan (USD/TRY, ons altin)
+# veriler artik uluslararasi/global kaynaktan geliyor.
+GRAM_ONS = 31.1034768
 
 
 def _key():
@@ -38,6 +42,57 @@ def _key():
     if not k:
         raise SystemExit("EVDS_API_KEY ortam degiskeni bulunamadi (GitHub secret).")
     return k
+
+
+_YAHOO_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+
+
+def _yahoo_kimlik():
+    """Yahoo Finance cerez+crumb al (sektor.js/kuresel.js'teki AYNI mantik,
+    Python tarafinda). Ons altin (XAUUSD=X) ve USD/TRY (TRY=X) icin kullanilir -
+    Turkiye kaynagina guven sinirli oldugu icin bu ikisi artik global/Yahoo'dan."""
+    session = requests.Session()
+    session.headers.update({"User-Agent": _YAHOO_UA})
+    try:
+        session.get("https://fc.yahoo.com/", timeout=15)
+    except Exception:
+        pass
+    crumb = None
+    try:
+        r = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", timeout=15)
+        if r.status_code == 200 and "<" not in r.text:
+            crumb = r.text.strip()
+    except Exception:
+        pass
+    return session, crumb
+
+
+def _yahoo_aylik_cek(sembol, session, crumb):
+    """Yahoo'dan uzun donem AYLIK kapanis serisi -> [{'tarih':'YYYY-MM','deger':float}] yeni->eski."""
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}"
+    params = {"range": "20y", "interval": "1mo"}
+    if crumb:
+        params["crumb"] = crumb
+    try:
+        r = session.get(url, params=params, timeout=30)
+        data = r.json()
+        result = data["chart"]["result"][0]
+        zamanlar = result["timestamp"]
+        kapanislar = result["indicators"]["quote"][0]["close"]
+    except Exception as e:
+        print(f"  {sembol}: cekilemedi ({e})")
+        return []
+
+    tekil = {}
+    for t, c in zip(zamanlar, kapanislar):
+        if c is None:
+            continue
+        ay = datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m")
+        tekil[ay] = round(float(c), 4)  # ayni aya birden fazla nokta duserse SON deger kalir
+    seri = [{"tarih": t, "deger": d} for t, d in tekil.items()]
+    seri.sort(key=lambda x: x["tarih"], reverse=True)
+    print(f"  {sembol}: {len(seri)} aylik gozlem")
+    return seri
 
 
 def _df_to_seri(df, deger_kolon_ipucu=None):
@@ -103,13 +158,6 @@ def _seri_cek(kod, baslangic, deger_ipucu=None):
         return []
 
 
-def _faiz_cek(baslangic):
-    """TP.APIFON4 (TCMB Agirlikli Ortalama Fonlama Maliyeti) icin ince sarmalayici.
-    main() artik paralel calisirken _seri_cek'i dogrudan cagiriyor; bu fonksiyon
-    geriye uyumluluk/okunabilirlik icin duruyor, tek basina kullanilmiyor."""
-    return _seri_cek("TP.APIFON4", baslangic)
-
-
 def _yuzde(son, onceki):
     if son is None or onceki in (None, 0):
         return None
@@ -151,52 +199,86 @@ def main():
     yil = datetime.now().year
     baslangic = f"{yil - 20}-01-01"  # 20 yil talep edilir; EVDS serisi o kadar eskiye gitmiyorsa zaten en eski gozlemden baslar, hata vermez
 
-    print("EVDS serileri cekiliyor (borsapy uzerinden)...")
-    gorevler = {
-        "tufe": (TUFE_SERI, None),
-        "usd": (USD_SERI, None),
-        "altin": (ALTIN_SERI, None),
-        "faiz": ("TP.APIFON4", None),
-    }
-    sonuclar = {}
-    with ThreadPoolExecutor(max_workers=4) as havuz:
-        gelecekler = {havuz.submit(_seri_cek, kod, baslangic): anahtar for anahtar, (kod, _) in gorevler.items()}
+    # TUFE ve TCMB faizi Turkiye'nin KENDI verisi - kacinilmaz sekilde EVDS'ten.
+    print("EVDS serileri cekiliyor (TÜFE, TCMB faizi - borsapy uzerinden)...")
+    evds_sonuc = {}
+    with ThreadPoolExecutor(max_workers=2) as havuz:
+        gelecekler = {
+            havuz.submit(_seri_cek, TUFE_SERI, baslangic): "tufe",
+            havuz.submit(_seri_cek, "TP.APIFON4", baslangic): "faiz",
+        }
         for gelecek in as_completed(gelecekler):
             anahtar = gelecekler[gelecek]
             try:
-                sonuclar[anahtar] = gelecek.result()
+                evds_sonuc[anahtar] = gelecek.result()
             except Exception as e:
                 print(f"  {anahtar}: hata {str(e)[:60]}")
-                sonuclar[anahtar] = []
-    tufe, usd, altin, faiz = sonuclar["tufe"], sonuclar["usd"], sonuclar["altin"], sonuclar["faiz"]
+                evds_sonuc[anahtar] = []
+    tufe, faiz = evds_sonuc["tufe"], evds_sonuc["faiz"]
+
+    # USD/TRY ve ons altin Turkiye'ye OZGU degil - global piyasa fiyati.
+    # Turkiye kaynagina guven sinirli oldugu icin Yahoo Finance'ten (uluslararasi,
+    # likit, standart) cekilir; gram altin TL kendimiz hesaplariz.
+    print("Yahoo Finance'ten USD/TRY ve ons altin cekiliyor...")
+    session, crumb = _yahoo_kimlik()
+    yahoo_sonuc = {}
+    with ThreadPoolExecutor(max_workers=2) as havuz:
+        gelecekler = {
+            havuz.submit(_yahoo_aylik_cek, "TRY=X", session, crumb): "usdtry",
+            havuz.submit(_yahoo_aylik_cek, "XAUUSD=X", session, crumb): "xau",
+        }
+        for gelecek in as_completed(gelecekler):
+            anahtar = gelecekler[gelecek]
+            try:
+                yahoo_sonuc[anahtar] = gelecek.result()
+            except Exception as e:
+                print(f"  {anahtar}: hata {str(e)[:60]}")
+                yahoo_sonuc[anahtar] = []
+    usdtry_seri, xau_seri = yahoo_sonuc["usdtry"], yahoo_sonuc["xau"]
+
+    usd = usdtry_seri  # USD/TRY serisinin kendisi zaten "usd" olarak kullanilan sey
+    usdtry_map = {s["tarih"]: s["deger"] for s in usdtry_seri}
+    xau_map = {s["tarih"]: s["deger"] for s in xau_seri}
+    ortak_aylar = sorted(set(usdtry_map) & set(xau_map), reverse=True)
+    altin = [
+        {"tarih": ay, "deger": round((xau_map[ay] / GRAM_ONS) * usdtry_map[ay], 4)}
+        for ay in ortak_aylar
+    ]
+    print(f"  Gram altin (hesaplanmis): {len(altin)} aylik gozlem")
+
+    if not tufe and not usd and not altin:
+        raise SystemExit("TUFE/USD/Altin ucunun de bos geldi (EVDS ve/veya Yahoo erisilemez olabilir). deflator.json YAZILMADI, mevcut korunuyor.")
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
-        "kaynak": "TCMB EVDS (borsapy)",
-        "not": "Aylik seriler. Reel getiri = (1+nominal)/(1+deflator)-1. Gunluk/haftalik reel getiri anlamsizdir (enflasyon aylik).",
+        "kaynak": "TÜFE: TCMB EVDS · USD/TRY ve Altın: Yahoo Finance (hesaplanmış)",
+        "not": "Aylik seriler. Reel getiri = (1+nominal)/(1+deflator)-1. Gunluk/haftalik reel getiri anlamsizdir (enflasyon aylik). Gram altin, ons altin ($) x USD/TRY / 31.1034768 formuluyle hesaplanir (TCMB'nin kendi gram altin serisi yerine).",
         "deflatorler": {
             "tufe": {"ad": "TÜFE (Enflasyon)", "seri_kod": TUFE_SERI, **_horizonlar(tufe), "seri": tufe},
-            "usd": {"ad": "USD/TRY", "seri_kod": USD_SERI, **_horizonlar(usd), "seri": usd},
-            "altin": {"ad": "Gram Altın", "seri_kod": ALTIN_SERI, **_horizonlar(altin), "seri": altin},
+            "usd": {"ad": "USD/TRY", "seri_kod": "Yahoo:TRY=X", **_horizonlar(usd), "seri": usd},
+            "altin": {"ad": "Gram Altın", "seri_kod": "Yahoo:XAUUSD=X x TRY=X (hesaplanmış)", **_horizonlar(altin), "seri": altin},
         },
     }
     HEDEF.parent.mkdir(parents=True, exist_ok=True)
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
 
-    # Faiz gecmisini AYRI dosyaya yaz (10 yillik, rotasyon haritasindaki
-    # "ortam" bandi icin kullanilacak - deflator.json'u sismemek icin ayri tutuldu)
-    faiz_cikti = {
-        "guncelleme": datetime.now().isoformat(),
-        "kaynak": "TCMB EVDS (borsapy)",
-        "not": "TCMB Ağırlıklı Ortalama Fonlama Maliyeti (TP.APIFON4) - fiili politika faizi olarak kullanılır. Aylık, yeniden eskiye sıralı.",
-        "seri": faiz,
-    }
-    HEDEF_FAIZ.write_text(json.dumps(faiz_cikti, ensure_ascii=False), encoding="utf-8")
+    # Faiz gecmisini AYRI dosyaya yaz (yalnizca gercekten veri geldiyse)
+    if faiz:
+        faiz_cikti = {
+            "guncelleme": datetime.now().isoformat(),
+            "kaynak": "TCMB EVDS (borsapy)",
+            "not": "TCMB Ağırlıklı Ortalama Fonlama Maliyeti (TP.APIFON4) - fiili politika faizi olarak kullanılır. Aylık, yeniden eskiye sıralı.",
+            "seri": faiz,
+        }
+        HEDEF_FAIZ.write_text(json.dumps(faiz_cikti, ensure_ascii=False), encoding="utf-8")
+    else:
+        print("  UYARI: Faiz serisi (TP.APIFON4) bos geldi; faiz_gecmis.json YAZILMADI, mevcut korunuyor.")
 
     ozet = {k: v.get("1y") for k, v in cikti["deflatorler"].items()}
     print(f"\nTamamlandi -> {HEDEF}")
     print(f"  1Y degisim: TÜFE={ozet['tufe']}%  USD={ozet['usd']}%  Altın={ozet['altin']}%")
-    print(f"Faiz gecmisi -> {HEDEF_FAIZ} ({len(faiz)} aylik gozlem)")
+    if faiz:
+        print(f"Faiz gecmisi -> {HEDEF_FAIZ} ({len(faiz)} aylik gozlem)")
     if not altin:
         print("  UYARI: Altin serisi bos geldi, kontrol et.")
     if not faiz:
