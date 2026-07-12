@@ -142,11 +142,11 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--line-strong);
   color: var(--ink-faint);
   font-size: 10px; font-style: italic; font-family: Georgia, serif;
-  cursor: help;
+  cursor: pointer;
   position: relative;
   margin-left: 6px;
 }
-.gnc-info:hover .gnc-tooltip { display: block; }
+.gnc-info.acik .gnc-tooltip { display: block; }
 .gnc-tooltip {
   display: none;
   position: absolute; z-index: 50;
@@ -160,6 +160,7 @@ a:hover { text-decoration: underline; }
   padding: 10px 12px;
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  cursor: default;
 }
 
 /* ---------- Evre chip'leri (Sektör Rotasyonu + Genel Bakış ortak) ---------- */
