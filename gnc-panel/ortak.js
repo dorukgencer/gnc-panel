@@ -109,3 +109,17 @@ function gncTarihKisa(tarihStr) {
   if (isNaN(d)) return tarihStr;
   return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" }).toUpperCase();
 }
+
+/** Tum sayfadaki (i) tooltip ikonlarini TIKLAMA ile ac/kapa (hover degil -
+ * sartname "tiklaninca aciliyor" diyor, mobilde de calismasi icin sart).
+ * Baska bir yere tiklaninca acik olan tooltip kapanir. */
+document.addEventListener("click", (e) => {
+  const tiklananIkon = e.target.closest(".gnc-info");
+  document.querySelectorAll(".gnc-info.acik").forEach(ikon => {
+    if (ikon !== tiklananIkon) ikon.classList.remove("acik");
+  });
+  if (tiklananIkon) {
+    tiklananIkon.classList.toggle("acik");
+    e.stopPropagation();
+  }
+});
