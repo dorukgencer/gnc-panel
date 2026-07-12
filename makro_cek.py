@@ -26,14 +26,18 @@ HEDEF = KLASOR / "gnc-panel" / "makro_gecmis.json"
 
 # FRED seri kodlari - hepsi ucretsiz, dogrulanmis:
 SERILER = {
-    "dxy":     {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (geniş)",   "birim": "endeks"},
-    "us10y":   {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
-    "tr10y":   {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%"},
-    "tufe":    {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
-    "vix":     {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
-    "nasdaq":  {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
-    "buyume":  {"kod": "TURLOLITOAASTSAM", "ad": "Türkiye Öncü Gösterge Endeksi (OECD)", "birim": "endeks"},
-    "breakeven": {"kod": "T10YIE",         "ad": "ABD 10Y Breakeven Enflasyon", "birim": "%"},
+    "dxy":        {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (geniş)",   "birim": "endeks"},
+    "us10y":      {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
+    "tr10y":      {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%"},
+    "tufe":       {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
+    "vix":        {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
+    "nasdaq":     {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
+    "buyume":     {"kod": "TURLOLITOAASTSAM", "ad": "Türkiye Öncü Gösterge Endeksi (OECD)", "birim": "endeks"},
+    "breakeven":  {"kod": "T10YIE",           "ad": "ABD 10Y Breakeven Enflasyon", "birim": "%"},
+    "fed_walcl":  {"kod": "WALCL",            "ad": "FED Bilançosu",           "birim": "milyon $"},
+    "fed_tga":    {"kod": "WTREGEN",          "ad": "Hazine Genel Hesabı (TGA)", "birim": "milyon $"},
+    "fed_rrp":    {"kod": "RRPONTSYD",        "ad": "Ters Repo (RRP)",         "birim": "milyar $ (DIKKAT: farkli birim)"},
+    "tr_rezerv":  {"kod": "TRESEGTRM052N",    "ad": "Türkiye Toplam Rezerv (altın hariç, IMF/FRED)", "birim": "belirsiz - dogrula (bkz. asagidaki UYARI)"},
 }
 
 
@@ -82,7 +86,7 @@ def main():
 
     print("FRED makro serileri cekiliyor...")
     cikti_seriler = {}
-    with ThreadPoolExecutor(max_workers=8) as havuz:
+    with ThreadPoolExecutor(max_workers=12) as havuz:
         gelecekler = {havuz.submit(fred_cek, tanim["kod"], api_key, baslangic): (anahtar, tanim) for anahtar, tanim in SERILER.items()}
         for gelecek in as_completed(gelecekler):
             anahtar, tanim = gelecekler[gelecek]
@@ -120,6 +124,37 @@ def main():
             "seri": reel_faiz_seri,
         }
         print(f"  ABD 10Y reel faiz (hesaplanmis): {len(reel_faiz_seri)} aylik gozlem")
+
+    # Fed net likidite = WALCL - WTREGEN - RRPONTSYD*1000
+    # KRITIK: WALCL ve WTREGEN milyon $ cinsinden, RRPONTSYD MILYAR $ cinsinden geliyor
+    # (FRED'in kendi belgelenmis birimleri). RRP'yi *1000 ile milyona cevirmeden
+    # toplarsak sonuc ciddi sekilde yanlis (RRP'nin etkisi 1000 kat kucuk) cikar.
+    walcl_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("fed_walcl", {}).get("seri", [])}
+    tga_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("fed_tga", {}).get("seri", [])}
+    rrp_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("fed_rrp", {}).get("seri", [])}
+    ortak_aylar_likidite = sorted(set(walcl_map) & set(tga_map) & set(rrp_map), reverse=True)
+    net_likidite_seri = []
+    for ay in ortak_aylar_likidite:
+        milyon = walcl_map[ay] - tga_map[ay] - (rrp_map[ay] * 1000)
+        net_likidite_seri.append({"tarih": ay, "deger_trilyon_usd": round(milyon / 1_000_000, 3)})
+    if net_likidite_seri:
+        cikti_seriler["fed_net_likidite"] = {
+            "ad": "FED Net Likidite (Bilanço - TGA - RRP)",
+            "seri_kod": "hesaplanmis: WALCL - WTREGEN - RRPONTSYD*1000, trilyon $",
+            "birim": "trilyon $",
+            "seri": net_likidite_seri,
+        }
+        son = net_likidite_seri[0]
+        print(f"  FED net likidite (hesaplanmis): {len(net_likidite_seri)} aylik gozlem, son deger: ${son['deger_trilyon_usd']} Tr")
+        print(f"    [KONTROL] 2026 ortasi icin gercekci aralik ~$5-7 Tr olmali. Bu sayi cok farkliysa (orn. negatif, ya da 100+) birim hatasi olabilir, bildir.")
+
+    if "tr_rezerv" in cikti_seriler and cikti_seriler["tr_rezerv"]["seri"]:
+        son_rezerv = cikti_seriler["tr_rezerv"]["seri"][0]["deger"]
+        print(f"  [UYARI] Turkiye rezervi (TRESEGTRM052N) son deger: {son_rezerv}")
+        print(f"    Birim KESIN DOGRULANAMADI (dolar mi SDR mi belirsiz). TCMB'nin kendi acikladigi")
+        print(f"    guncel rezerv (~$170-190 Milyar dolayinda) ile goz kontrolu yap: bu sayi milyon $ ise")
+        print(f"    ~170000-190000 civarinda olmali. Farkli bir mertebedeyse (orn. 120000-140000) SDR olabilir,")
+        print(f"    o zaman SDR->USD cevrimi (yaklasik x1.3-1.4) eklememiz gerekir - bana bildir.")
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
