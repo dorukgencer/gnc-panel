@@ -18,6 +18,7 @@ degiskeninden okunur (GitHub Actions secret) - borsapy bu ismi otomatik tanir.
 
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -102,24 +103,11 @@ def _seri_cek(kod, baslangic, deger_ipucu=None):
         return []
 
 
-def _faiz_cek():
-    """TCMB politika faizi (1 hafta repo) - borsapy'nin ozel TCMB sinifi ile,
-    EVDS seri kodu tahmin etmeye gerek yok."""
-    try:
-        tcmb = bp.TCMB()
-        df = tcmb.history("policy", period="10y")
-        seri = _df_to_seri(df, "borrowing" if df is not None and "borrowing" in getattr(df, "columns", []) else None)
-        # Aylik degil gunluk/degisken frekansli gelebilir - ay bazinda SON degeri tut
-        aylik = {}
-        for s in seri:
-            aylik[s["tarih"]] = s["deger"]
-        aylik_liste = [{"tarih": t, "deger": d} for t, d in aylik.items()]
-        aylik_liste.sort(key=lambda x: x["tarih"], reverse=True)
-        print(f"  TCMB politika faizi: {len(aylik_liste)} aylik gozlem")
-        return aylik_liste
-    except Exception as e:
-        print(f"  TCMB politika faizi: cekilemedi ({e})")
-        return []
+def _faiz_cek(baslangic):
+    """TP.APIFON4 (TCMB Agirlikli Ortalama Fonlama Maliyeti) icin ince sarmalayici.
+    main() artik paralel calisirken _seri_cek'i dogrudan cagiriyor; bu fonksiyon
+    geriye uyumluluk/okunabilirlik icin duruyor, tek basina kullanilmiyor."""
+    return _seri_cek("TP.APIFON4", baslangic)
 
 
 def _yuzde(son, onceki):
@@ -161,22 +149,35 @@ def _horizonlar(seri):
 def main():
     bp.set_evds_key(_key())
     yil = datetime.now().year
-    baslangic = f"{yil - 10}-01-01"  # deflator icin 2 yil yeterliydi ama faiz/tarihsel analiz icin 10 yil cekiyoruz
+    baslangic = f"{yil - 20}-01-01"  # 20 yil talep edilir; EVDS serisi o kadar eskiye gitmiyorsa zaten en eski gozlemden baslar, hata vermez
 
     print("EVDS serileri cekiliyor (borsapy uzerinden)...")
-    tufe = _seri_cek(TUFE_SERI, baslangic)
-    usd = _seri_cek(USD_SERI, baslangic)
-    altin = _seri_cek(ALTIN_SERI, baslangic)
-    faiz = _faiz_cek()
+    gorevler = {
+        "tufe": (TUFE_SERI, None),
+        "usd": (USD_SERI, None),
+        "altin": (ALTIN_SERI, None),
+        "faiz": ("TP.APIFON4", None),
+    }
+    sonuclar = {}
+    with ThreadPoolExecutor(max_workers=4) as havuz:
+        gelecekler = {havuz.submit(_seri_cek, kod, baslangic): anahtar for anahtar, (kod, _) in gorevler.items()}
+        for gelecek in as_completed(gelecekler):
+            anahtar = gelecekler[gelecek]
+            try:
+                sonuclar[anahtar] = gelecek.result()
+            except Exception as e:
+                print(f"  {anahtar}: hata {str(e)[:60]}")
+                sonuclar[anahtar] = []
+    tufe, usd, altin, faiz = sonuclar["tufe"], sonuclar["usd"], sonuclar["altin"], sonuclar["faiz"]
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
         "kaynak": "TCMB EVDS (borsapy)",
         "not": "Aylik seriler. Reel getiri = (1+nominal)/(1+deflator)-1. Gunluk/haftalik reel getiri anlamsizdir (enflasyon aylik).",
         "deflatorler": {
-            "tufe": {"ad": "TÜFE (Enflasyon)", "seri_kod": TUFE_SERI, **_horizonlar(tufe), "seri": tufe[:24]},
-            "usd": {"ad": "USD/TRY", "seri_kod": USD_SERI, **_horizonlar(usd), "seri": usd[:24]},
-            "altin": {"ad": "Gram Altın", "seri_kod": ALTIN_SERI, **_horizonlar(altin), "seri": altin[:24]},
+            "tufe": {"ad": "TÜFE (Enflasyon)", "seri_kod": TUFE_SERI, **_horizonlar(tufe), "seri": tufe},
+            "usd": {"ad": "USD/TRY", "seri_kod": USD_SERI, **_horizonlar(usd), "seri": usd},
+            "altin": {"ad": "Gram Altın", "seri_kod": ALTIN_SERI, **_horizonlar(altin), "seri": altin},
         },
     }
     HEDEF.parent.mkdir(parents=True, exist_ok=True)
@@ -186,8 +187,8 @@ def main():
     # "ortam" bandi icin kullanilacak - deflator.json'u sismemek icin ayri tutuldu)
     faiz_cikti = {
         "guncelleme": datetime.now().isoformat(),
-        "kaynak": "TCMB (borsapy)",
-        "not": "TCMB politika faizi (1 hafta repo), aylik son deger. Yeniden eskiye siralidir.",
+        "kaynak": "TCMB EVDS (borsapy)",
+        "not": "TCMB Ağırlıklı Ortalama Fonlama Maliyeti (TP.APIFON4) - fiili politika faizi olarak kullanılır. Aylık, yeniden eskiye sıralı.",
         "seri": faiz,
     }
     HEDEF_FAIZ.write_text(json.dumps(faiz_cikti, ensure_ascii=False), encoding="utf-8")
@@ -199,7 +200,7 @@ def main():
     if not altin:
         print("  UYARI: Altin serisi bos geldi, kontrol et.")
     if not faiz:
-        print("  UYARI: Faiz serisi bos geldi, kontrol et (bp.TCMB().history('policy') donen kolonlari logla).")
+        print("  UYARI: Faiz serisi (TP.APIFON4) bos geldi, seri kodu degismis olabilir.")
 
 
 if __name__ == "__main__":
