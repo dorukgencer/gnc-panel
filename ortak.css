@@ -1,0 +1,219 @@
+/* ============================================================
+   GNC Insight — Ortak Tasarım Sistemi (Tasarım 1 v4)
+   Tüm panel sayfaları bu dosyayı <link> ile çeker. Renk/font/
+   sidebar/layout burada TEK yerde tanımlı — değişiklik gerektiğinde
+   sadece bu dosya güncellenir, tüm sayfalar otomatik yansır.
+   ============================================================ */
+
+:root {
+  /* Zemin ve yüzeyler (kağıt tonlu, Sektör Rotasyonu şartnamesiyle birebir) */
+  --paper: #EEF1EC;
+  --surface: #F8FAF6;
+  --surface-raised: #FFFFFF;
+  --ink: #141A19;
+  --ink-soft: #565F5A;
+  --ink-faint: #8D958E;
+  --line: #CFD6CC;
+  --line-strong: #B7C0B2;
+
+  /* Vurgu renkleri */
+  --copper: #A8552A;
+  --copper-dark: #823F1C;
+  --pine: #1D6555;
+  --pine-dark: #124B3F;
+  --ochre: #8C6C28;
+  --brick: #9B3A2C;
+
+  /* Anlamsal renkler */
+  --up: #124B3F;
+  --down: #9B3A2C;
+
+  /* Rotasyon evresi renkleri (Sektör Rotasyonu şartnamesiyle birebir) */
+  --evre-genisleme: #124B3F;
+  --evre-toparlanma: #823F1C;
+  --evre-yavaslama: #8C6C28;
+  --evre-daralma: #9B3A2C;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, .baslik {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.mono, .sayi, table td.num, .veri {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+a { color: var(--copper); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- Genel iskelet: sidebar + içerik ---------- */
+.gnc-shell { display: flex; min-height: 100vh; }
+
+.gnc-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 24px 0;
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  overflow-y: auto;
+}
+.gnc-logo {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 20px;
+  padding: 0 24px 20px;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.gnc-logo span { color: var(--copper); }
+.gnc-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+.gnc-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .12s;
+}
+.gnc-nav-item:hover { background: rgba(0,0,0,0.03); text-decoration: none; }
+.gnc-nav-item.active { background: var(--surface-raised); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.gnc-nav-item .ikon { width: 16px; text-align: center; opacity: .75; }
+
+.gnc-main { margin-left: 240px; flex: 1; min-width: 0; }
+.gnc-topbar {
+  height: 56px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+}
+.gnc-topbar .baslik-satiri { display: flex; align-items: baseline; gap: 12px; }
+.gnc-topbar h1 { font-size: 18px; }
+.gnc-donem {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.gnc-content { padding: 26px 28px 60px; max-width: 1400px; }
+
+@media (max-width: 980px) {
+  .gnc-sidebar { display: none; }
+  .gnc-main { margin-left: 0; }
+}
+
+/* ---------- Genel kart/panel ---------- */
+.gnc-panel-kart {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.gnc-panel-baslik {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.gnc-panel-baslik h2 { font-size: 15px; }
+.gnc-panel-baslik .alt-etiket { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-faint); }
+
+/* ---------- Bilgi (i) tooltip ikonu ---------- */
+.gnc-info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-faint);
+  font-size: 10px; font-style: italic; font-family: Georgia, serif;
+  cursor: help;
+  position: relative;
+  margin-left: 6px;
+}
+.gnc-info:hover .gnc-tooltip { display: block; }
+.gnc-tooltip {
+  display: none;
+  position: absolute; z-index: 50;
+  top: 22px; left: 0;
+  width: 240px;
+  background: var(--ink);
+  color: var(--surface);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* ---------- Evre chip'leri (Sektör Rotasyonu + Genel Bakış ortak) ---------- */
+.evre-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  color: #fff;
+}
+.evre-chip.genisleme { background: var(--evre-genisleme); }
+.evre-chip.toparlanma { background: var(--evre-toparlanma); }
+.evre-chip.yavaslama { background: var(--evre-yavaslama); }
+.evre-chip.daralma { background: var(--evre-daralma); }
+
+/* ---------- Yön (pozitif/negatif) renklendirme ---------- */
+.yon-pozitif { color: var(--up); }
+.yon-negatif { color: var(--down); }
+
+/* ---------- Durum/boş kutu ---------- */
+.gnc-durum-kutu {
+  padding: 24px; text-align: center;
+  color: var(--ink-faint); font-size: 13px;
+  background: var(--surface-raised);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+
+/* ---------- SPK notu (her analitik panelin altında kullanılabilir) ---------- */
+.gnc-spk-not {
+  font-size: 10.5px; color: var(--ink-faint);
+  margin-top: 10px; line-height: 1.6;
+}
+
+/* ---------- Basit tablo ---------- */
+table.gnc-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.gnc-tablo thead th {
+  text-align: left; font-weight: 600;
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ink-faint);
+  padding: 0 10px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+table.gnc-tablo thead th.num { text-align: right; }
+table.gnc-tablo tbody td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); }
+table.gnc-tablo tbody tr:last-child td { border-bottom: none; }
+table.gnc-tablo tbody td.num { text-align: right; }
+table.gnc-tablo tbody tr:hover { background: rgba(0,0,0,0.02); cursor: pointer; }
