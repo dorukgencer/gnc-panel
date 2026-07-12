@@ -26,10 +26,12 @@ HEDEF = KLASOR / "gnc-panel" / "makro_gecmis.json"
 
 # FRED seri kodlari - hepsi ucretsiz, dogrulanmis:
 SERILER = {
-    "dxy":   {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (geniş)",   "birim": "endeks"},
-    "us10y": {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
-    "tr10y": {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%"},
-    "tufe":  {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
+    "dxy":    {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (geniş)",   "birim": "endeks"},
+    "us10y":  {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
+    "tr10y":  {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%"},
+    "tufe":   {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
+    "vix":    {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
+    "nasdaq": {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
 }
 
 
@@ -78,7 +80,7 @@ def main():
 
     print("FRED makro serileri cekiliyor...")
     cikti_seriler = {}
-    with ThreadPoolExecutor(max_workers=4) as havuz:
+    with ThreadPoolExecutor(max_workers=6) as havuz:
         gelecekler = {havuz.submit(fred_cek, tanim["kod"], api_key, baslangic): (anahtar, tanim) for anahtar, tanim in SERILER.items()}
         for gelecek in as_completed(gelecekler):
             anahtar, tanim = gelecekler[gelecek]
@@ -96,8 +98,12 @@ def main():
 
     bos_olanlar = [k for k, v in cikti_seriler.items() if not v["seri"]]
     if len(bos_olanlar) == len(SERILER):
-        print("Hicbir seri gelmedi; dosya yazilmadi (mevcut korunuyor).")
-        return
+        # TOPLAM basarisizlik: sessizce return etmek yerine gercek hata firlat.
+        # Boylece GitHub Actions bu calismayi "basarisiz" isaretler ve (varsayilan
+        # ayarlar acikken) sana otomatik e-posta gider. Kismi basarisizlikta
+        # (bazi seriler geldi) boyle yapmiyoruz - o normal, alarm yorgunlugu
+        # yaratmasin diye sessiz UYARI olarak kaliyor (asagida).
+        raise SystemExit("HICBIR seri gelmedi (FRED tamamen erisilemez oldu ya da API key gecersiz). Dosya yazilmadi, mevcut korunuyor.")
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
