@@ -1,2685 +1,420 @@
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="dark">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genel Bakış — GNC Insight</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="ortak.css" rel="stylesheet">
 <style>
-  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-  html, body { overflow-x: hidden; max-width: 100%; }
-  * { -webkit-tap-highlight-color: transparent; }
-  input, select, textarea, button { font-size: 16px; }
-</style>
-<title>Veri Paneli — GNC Insight</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-<style>
-  :root {
-    --gnc-accent: #d4af37;
-    --gnc-accent-rgb: 212, 175, 55;
-    --gnc-accent-dark: #b8942a;
-    --gnc-success: #22c55e;
-    --gnc-success-rgb: 34, 197, 94;
-    --gnc-warning: #f59e0b;
-    --gnc-danger: #ef4444;
-    --gnc-danger-rgb: 239, 68, 68;
-    --sidebar-w: 240px;
-    --topbar-h: 64px;
-  }
-  [data-bs-theme="dark"] {
-    --bs-body-bg: #000;
-    --bs-body-color: #c8c8cc;
-    --bs-secondary-bg: #0a0a0a;
-    --bs-tertiary-bg: #050505;
-    --bs-border-color: rgba(255, 255, 255, 0.08);
-    --bs-emphasis-color: #fff;
-    --gnc-card-bg: #0a0a0a;
-    --gnc-card-bg-elevated: #131313;
-    --gnc-text-faded: #b8b8bc;
-    --gnc-text-dim: #888892;
-    --gnc-input-bg: rgba(255, 255, 255, 0.03);
-    --gnc-btn-text: #000;
-    --sidebar-bg: #050505;
-    --sidebar-hover: rgba(255, 255, 255, 0.04);
-  }
-  [data-bs-theme="light"] {
-    --bs-body-bg: #ffffff;
-    --bs-body-color: #555;
-    --bs-secondary-bg: #f8f9fa;
-    --bs-tertiary-bg: #f1f3f5;
-    --bs-border-color: rgba(0, 0, 0, 0.08);
-    --bs-emphasis-color: #1a1a1a;
-    --gnc-accent: #b8942a;
-    --gnc-accent-rgb: 184, 148, 42;
-    --gnc-accent-dark: #9a7a1f;
-    --gnc-card-bg: #f8f9fa;
-    --gnc-card-bg-elevated: #ffffff;
-    --gnc-text-faded: #666;
-    --gnc-text-dim: #999;
-    --gnc-input-bg: rgba(0, 0, 0, 0.02);
-    --gnc-btn-text: #fff;
-    --sidebar-bg: #f1f3f5;
-    --sidebar-hover: rgba(0, 0, 0, 0.04);
-  }
+  /* --- Ortam Okuması bandı (tasarım mockup'ıyla birebir) --- */
+  .ob-band { background: var(--surface-raised); border: 1px solid var(--line); padding: 24px 26px; margin-bottom: 22px; }
+  .ob-top { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .ob-eyebrow { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+  .ob-baslik { font-size: 25px; color: var(--copper-dark); line-height: 1.2; }
+  .ob-ozet { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; max-width: 520px; line-height: 1.6; }
+  .ob-skor { text-align: right; }
+  .ob-skor .num { font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 600; line-height: 1; }
+  .ob-skor .lbl { font-size: 10px; color: var(--ink-faint); margin-top: 4px; }
+  .ob-cetvel { margin-top: 22px; position: relative; }
+  .ob-cetvel-track { height: 2px; background: var(--line-strong); position: relative; }
+  .ob-cetvel-fill { position: absolute; left: 0; top: 0; height: 2px; background: var(--copper-dark); }
+  .ob-cetvel-isaret { position: absolute; top: -4px; width: 2px; height: 10px; background: var(--ink); }
+  .ob-cetvel-uc { display: flex; justify-content: space-between; margin-top: 8px; }
+  .ob-cetvel-uc span { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); }
+  .ob-katmanlar { display: flex; gap: 0; margin-top: 20px; border-top: 1px solid var(--line); }
+  .ob-katman { flex: 1; padding: 12px 16px 0 0; border-right: 1px solid var(--line); }
+  .ob-katman:last-child { border-right: none; }
+  .ob-katman:not(:first-child) { padding-left: 16px; }
+  .ob-katman .llabel { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+  .ob-katman .lval { font-family: 'Fraunces', serif; font-size: 15.5px; font-weight: 600; margin-top: 3px; }
+  .ob-katman .ldesc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
 
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    background: var(--bs-body-bg);
-    margin: 0;
-    overflow-x: hidden;
-  }
-  .bi { line-height: 1; vertical-align: -0.125em; }
+  /* --- Sektör Rotasyonu özet şeridi --- */
+  .rot-serit { display: flex; align-items: center; gap: 20px; background: var(--surface-raised); border: 1px solid var(--line); padding: 14px 22px; margin-bottom: 22px; }
+  .rot-serit svg { flex-shrink: 0; }
+  .rot-serit .metin { flex: 1; }
+  .rot-serit .baslik { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .rot-serit .not { font-size: 12px; color: var(--ink-soft); }
+  .rot-serit .git-btn { flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--copper-dark); border: 1px solid var(--copper-dark); padding: 8px 14px; white-space: nowrap; }
+  .rot-serit .git-btn:hover { background: var(--copper-dark); color: #fff; text-decoration: none; }
 
-  /* SIDEBAR */
-  .sidebar {
-    position: fixed; top: 0; left: 0;
-    width: var(--sidebar-w); height: 100vh;
-    background: var(--sidebar-bg);
-    border-right: 1px solid var(--bs-border-color);
-    display: flex; flex-direction: column;
-    z-index: 1000; transition: transform 0.3s ease;
-  }
-  .sidebar-header { padding: 22px 20px; border-bottom: 1px solid var(--bs-border-color); }
-  .sidebar-logo {
-    font-size: 14px; font-weight: 700;
-    color: var(--bs-emphasis-color);
-    letter-spacing: 3px; text-decoration: none;
-  }
-  .sidebar-logo .accent { color: var(--gnc-accent); }
-  .sidebar-logo-tag {
-    font-size: 10px; color: var(--gnc-text-dim);
-    text-transform: uppercase; letter-spacing: 2px;
-    font-weight: 700; margin-top: 4px; display: block;
-  }
-  .sidebar-nav { flex: 1; padding: 18px 12px; overflow-y: auto; }
-  .nav-section-title {
-    font-size: 10px; color: var(--gnc-text-dim);
-    text-transform: uppercase; letter-spacing: 2px;
-    font-weight: 700; padding: 12px 12px 8px; margin: 0;
-  }
-  .nav-link-gnc {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 12px; color: var(--bs-body-color);
-    text-decoration: none; border-radius: 6px;
-    font-size: 13.5px; font-weight: 500; margin-bottom: 2px;
-    cursor: pointer; border: none; background: none; width: 100%; text-align: left;
-  }
-  .nav-link-gnc i {
-    font-size: 17px; width: 20px;
-    color: var(--gnc-text-dim);
-    display: flex; align-items: center; justify-content: center; line-height: 1;
-  }
-  .nav-link-gnc:hover { background: var(--sidebar-hover); color: var(--bs-emphasis-color); }
-  .nav-link-gnc:hover i { color: var(--gnc-accent); }
-  .nav-link-gnc.active { background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); font-weight: 700; }
-  .nav-link-gnc.active i { color: var(--gnc-accent); }
-  .sidebar-footer { padding: 14px 12px; border-top: 1px solid var(--bs-border-color); }
-  .membership-info {
-    background: var(--gnc-card-bg-elevated);
-    border: 1px solid var(--bs-border-color);
-    border-radius: 6px; padding: 12px 14px; font-size: 12px;
-  }
-  .membership-tier {
-    display: flex; align-items: center; gap: 6px;
-    color: var(--gnc-accent); font-weight: 700; font-size: 11px;
-    letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;
-  }
-  .membership-tier .bi { font-size: 12px; }
-  .membership-days { color: var(--bs-emphasis-color); font-size: 12px; font-weight: 700; }
-  .membership-days span { color: var(--gnc-text-dim); font-weight: 300; }
+  /* --- 4 sütun: TEK BLOK, ic cizgilerle bolunmus (tasarim mockup'iyla birebir) --- */
+  .pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); margin-bottom: 22px; }
+  .pillar { padding: 20px 24px; border-right: 1px solid var(--line); }
+  .pillar:nth-child(2n) { border-right: none; }
+  .pillar:nth-child(1), .pillar:nth-child(2) { border-bottom: 1px solid var(--line); }
+  .pillar-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .pillar-title { font-family: 'Fraunces', serif; font-size: 14.5px; font-weight: 600; }
+  .pillar-link { font-size: 10.5px; color: var(--copper-dark); text-decoration: none; }
+  .pillar-note { font-size: 12px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 14px; }
+  @media (max-width: 1100px) { .pillars { grid-template-columns: 1fr; } .pillar { border-right: none; border-bottom: 1px solid var(--line); } }
 
-  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; }
-  .sidebar-overlay.show { display: block; }
+  .ledger { width: 100%; border-collapse: collapse; }
+  .ledger tr td { padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 12px; }
+  .ledger tr:last-child td { border-bottom: none; }
+  .ledger td.k { color: var(--ink-soft); }
+  .ledger td.v { font-family: 'IBM Plex Mono', monospace; text-align: right; font-weight: 500; }
+  .ledger td.v.up { color: var(--pine-dark); }
+  .ledger td.v.down { color: var(--brick); }
 
-  .main { margin-left: var(--sidebar-w); min-height: 100vh; }
-
-  /* TOPBAR */
-  .topbar {
-    height: var(--topbar-h);
-    background: rgba(0, 0, 0, 0.85);
-    border-bottom: 1px solid var(--bs-border-color);
-    display: flex; align-items: center; padding: 0 28px;
-    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(20px);
-  }
-  [data-bs-theme="light"] .topbar { background: rgba(255, 255, 255, 0.85); }
-  .topbar-title { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.5px; }
-  .topbar-toggle {
-    background: none; border: 1px solid var(--bs-border-color);
-    color: var(--bs-body-color); width: 38px; height: 38px;
-    border-radius: 6px; display: none; align-items: center;
-    justify-content: center; margin-right: 16px; cursor: pointer; font-size: 18px; line-height: 1;
-  }
-  .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .topbar-icon-btn {
-    background: none; border: 1px solid var(--bs-border-color);
-    color: var(--bs-body-color); width: 38px; height: 38px;
-    border-radius: 6px; display: flex; align-items: center;
-    justify-content: center; cursor: pointer; font-size: 16px; line-height: 1;
-  }
-  .topbar-icon-btn:hover { color: var(--gnc-accent); border-color: var(--gnc-accent); }
-  .user-pill {
-    background: var(--gnc-input-bg); border: 1px solid var(--bs-border-color);
-    color: var(--bs-emphasis-color); padding: 7px 6px 7px 14px;
-    border-radius: 100px; font-size: 12.5px; font-weight: 700;
-    display: flex; align-items: center; gap: 10px; text-decoration: none;
-  }
-  .user-avatar {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: var(--gnc-accent); color: var(--gnc-btn-text);
-    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
-  }
-  .theme-toggle {
-    width: 40px; height: 22px; border-radius: 13px;
-    border: 1px solid var(--bs-border-color);
-    background: var(--bs-secondary-bg); cursor: pointer; position: relative; padding: 0;
-  }
-  .toggle-thumb {
-    position: absolute; top: 2px; left: 2px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--gnc-accent);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  [data-bs-theme="light"] .toggle-thumb { transform: translateX(18px); }
-
-  /* CONTENT */
-  .content { padding: 28px; max-width: 1400px; margin: 0 auto; }
-  .section-head {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 14px; gap: 10px; flex-wrap: wrap;
-  }
-  .section-title {
-    font-size: 12px; color: var(--bs-emphasis-color); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.5px; margin: 0;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .section-title i { color: var(--gnc-accent); font-size: 13px; line-height: 1; }
-  .status-update {
-    font-size: 10.5px; color: var(--gnc-text-dim); font-weight: 700;
-    letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;
-  }
-  .status-update::before {
-    content: ''; width: 6px; height: 6px; border-radius: 50%;
-    background: var(--gnc-success); box-shadow: 0 0 0 3px rgba(var(--gnc-success-rgb), 0.15);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-  .page-intro {
-    font-size: 12px; color: var(--gnc-text-faded); line-height: 1.6;
-    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
-    border-left: 3px solid var(--gnc-accent); border-radius: 10px;
-    padding: 13px 16px; margin-bottom: 24px;
-  }
-  .page-intro b { color: var(--bs-emphasis-color); }
-
-  /* Ozet serit */
-  .ozet-strip {
-    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
-    border-radius: 12px; padding: 18px 22px; margin-bottom: 26px;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
-  }
-  .ozet-block { border-right: 1px solid var(--bs-border-color); padding-right: 16px; }
-  .ozet-block:last-child { border-right: none; }
-  .ozet-block .et { font-size: 10px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
-  .ozet-block .dg { font-size: 20px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: -0.3px; margin-top: 5px; }
-  .ozet-block .alt { font-size: 11px; color: var(--gnc-text-faded); margin-top: 2px; font-weight: 300; }
-
-  /* Sektor kutulari */
-  .kutu-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
-  .sektor-kutu {
-    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
-    border-radius: 12px; padding: 16px; position: relative; overflow: hidden;
-    transition: transform 0.12s, border-color 0.12s;
-  }
-  .sektor-kutu:hover { transform: translateY(-2px); border-color: rgba(var(--gnc-accent-rgb), 0.4); }
-  .sektor-kutu .ust-cizgi { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-  .sektor-kutu .kod { font-size: 15px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.4px; }
-  .sektor-kutu .ad { font-size: 11px; color: var(--gnc-text-dim); margin: 3px 0 14px; min-height: 28px; line-height: 1.35; }
-  .sk-satir { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--bs-border-color); }
-  .sk-satir:first-of-type { border-top: none; }
-  .sk-satir .lbl { font-size: 10.5px; color: var(--gnc-text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-  .sk-satir .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .up { color: var(--gnc-success); } .down { color: var(--gnc-danger); } .flat { color: var(--gnc-text-dim); }
-
-  /* Hisse liste + finansal */
-  .hl-arama { display: flex; align-items: center; gap: 10px; background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
-  .hl-arama i { color: var(--gnc-text-dim); }
-  .hl-arama input { flex: 1; background: none; border: none; outline: none; color: var(--bs-body-color); font-size: 16px; font-family: inherit; }
-  .hl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-  .hl-sektor { margin-bottom: 22px; }
-  .hl-sektor-bas { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--bs-emphasis-color); margin: 0 2px 10px; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--bs-border-color); }
-  .hl-sektor-bas::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--gnc-accent); }
-  .hl-sektor-bas span { font-size: 10px; color: var(--gnc-text-dim); font-weight: 700; letter-spacing: 0; margin-left: auto; }
-  .hl-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 9px; padding: 12px 14px; cursor: pointer; transition: border-color .12s, transform .12s; }
-  .hl-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.45); transform: translateY(-1px); }
-  .hl-kart .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); }
-  .hl-kart .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hd-metrik-serit { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
-  .hd-mkutu { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; }
-  .hd-mkutu .k { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 5px; }
-  .hd-mkutu .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
-  @media (max-width: 860px){ .hd-metrik-serit { grid-template-columns: 1fr 1fr 1fr; } }
-  @media (max-width: 480px){ .hd-metrik-serit { grid-template-columns: 1fr 1fr; } }
-
-  /* Hisse detay sol menu */
-  .hd-layout { display: grid; grid-template-columns: 210px 1fr; gap: 18px; align-items: start; }
-  .hd-submenu { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 78px; }
-  .hd-sub-link { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 9px; background: transparent; border: 1px solid transparent; color: var(--gnc-text-faded); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; font-family: inherit; transition: background .12s, color .12s, border-color .12s; }
-  .hd-sub-link:hover { background: var(--gnc-card-bg); color: var(--bs-emphasis-color); }
-  .hd-sub-link.active { background: var(--gnc-card-bg); border-color: rgba(var(--gnc-accent-rgb),.4); color: var(--gnc-accent); }
-  .hd-sub-link i { font-size: 15px; }
-  .hd-content { min-width: 0; }
-  .hd-baslik-ic { font-size: 16px; font-weight: 800; color: var(--bs-emphasis-color); margin-bottom: 14px; display: flex; align-items: baseline; gap: 8px; }
-  .hd-baslik-ic span { font-size: 11px; font-weight: 600; color: var(--gnc-text-dim); }
-  @media (max-width: 820px){
-    .hd-layout { grid-template-columns: 1fr; }
-    .hd-submenu { flex-direction: row; overflow-x: auto; position: static; padding-bottom: 4px; }
-    .hd-sub-link { white-space: nowrap; }
-    .hd-sub-link span { font-size: 12px; }
-  }
-
-  /* Sektor bar hover tam ad */
-  .sekt-bar-satir { position: relative; }
-  .sekt-bar-satir::after {
-    content: attr(data-ad); position: absolute; left: 0; bottom: 130%; z-index: 40;
-    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 10px; border-radius: 7px;
-    font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s;
-    box-shadow: 0 4px 12px rgba(0,0,0,.25);
-  }
-  .sekt-bar-satir:hover::after { opacity: 1; }
-
-  .fin-arac { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-  .fin-donem-arac { display: flex; gap: 6px; flex-wrap: wrap; }
-  .fin-arac { justify-content: space-between; }
-  .fin-periyot { margin-right: auto; }
-  .fin-grup { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-  .fin-grup-bas { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; }
-  .fin-grup-bas:hover { background: var(--gnc-card-bg-elevated); }
-  .fin-grup-ad { font-size: 14px; font-weight: 800; letter-spacing: .3px; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 9px; }
-  .fin-grup-ad .nokta { width: 8px; height: 8px; border-radius: 2px; background: var(--gnc-accent); }
-  .fin-grup-ad b { font-size: 10px; font-weight: 700; color: var(--gnc-text-dim); }
-  .fin-grup-bas i { color: var(--gnc-text-dim); font-size: 13px; transition: transform .18s; }
-  .fin-grup.acik .fin-grup-bas i { transform: rotate(180deg); color: var(--gnc-accent); }
-  .fin-grup-govde { display: none; }
-  .fin-grup.acik .fin-grup-govde { display: block; }
-  .fin-grup .fin-tablo-sar { border: none; border-top: 1px solid var(--bs-border-color); border-radius: 0; overflow-x: auto; }
-  .fin-tablo-sar { overflow-x: auto; background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; }
-  .fin-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  .fin-tablo th, .fin-tablo td { padding: 10px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--bs-border-color); font-variant-numeric: tabular-nums; }
-  .fin-tablo th { font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--gnc-text-dim); position: sticky; top: 0; background: var(--gnc-card-bg-elevated); }
-  .fin-tablo td.kalem, .fin-tablo th.kalem { text-align: left; font-weight: 600; color: var(--bs-emphasis-color); position: sticky; left: 0; background: var(--gnc-card-bg); min-width: 200px; }
-  .fin-tablo tr:hover td { background: var(--gnc-card-bg-elevated); }
-  .fin-tablo td { color: var(--gnc-text-faded); }
-  .fin-grup { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-accent); padding: 14px 14px 6px; }
-  .hd-not { font-size: 11.5px; color: var(--gnc-text-dim); margin-top: 12px; line-height: 1.6; }
-
-  /* Ana Sayfa */
-  .topbar-saat { font-size: 13px; font-weight: 700; color: var(--gnc-text-faded); font-variant-numeric: tabular-nums; letter-spacing: 0.5px; margin-right: 4px; }
-  @media (max-width: 640px){ .topbar-saat { display: none; } }
-  .as-ust { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .as-orta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .as-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 14px; padding: 18px 20px; }
-  .as-kart-baslik { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
-  .as-piyasa-durum { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-  .as-piyasa.acik .as-piyasa-durum { color: var(--gnc-success); }
-  .as-piyasa.kapali .as-piyasa-durum { color: var(--gnc-danger); }
-  .as-piyasa.yarim .as-piyasa-durum { color: var(--gnc-accent); }
-  .as-piyasa-not { font-size: 12px; color: var(--gnc-text-dim); margin-top: 6px; }
-  .as-saat-buyuk { font-size: 30px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
-  .kripto-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-  .kripto-kart { background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; }
-  .kripto-kart .sembol { font-size: 12px; font-weight: 700; color: var(--gnc-text-dim); }
-  .kripto-kart .fiyat { font-size: 16px; font-weight: 700; color: var(--bs-emphasis-color); margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
-  .kripto-kart .deg { font-size: 12px; font-weight: 700; }
-  .as-ozet-satir { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--bs-border-color); }
-  .as-ozet-satir:last-child { border-bottom: none; }
-  .as-ozet-satir .et { font-size: 12.5px; color: var(--gnc-text-faded); }
-  .as-ozet-satir .dg { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .as-veri-satir { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 12px; }
-  .as-veri-satir .kaynak { color: var(--gnc-text-faded); }
-  .as-veri-satir .zaman { color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
-  .as-veri-satir .canli { color: var(--gnc-success); font-weight: 700; }
-  @media (max-width: 820px){ .as-ust, .as-orta { grid-template-columns: 1fr; } }
-
-  .sektor-kutu { cursor: pointer; }
-  .sektor-kutu .tikla { position: absolute; top: 12px; right: 12px; font-size: 12px; color: var(--gnc-text-dim); opacity: 0; transition: opacity .12s; }
-  .sektor-kutu:hover .tikla { opacity: 1; color: var(--gnc-accent); }
-  .geri-btn { background: none; border: 1px solid var(--bs-border-color); color: var(--bs-body-color); width: 30px; height: 30px; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; vertical-align: middle; }
-  .geri-btn:hover { border-color: var(--gnc-accent); color: var(--gnc-accent); }
-  .hisse-liste { display: flex; flex-direction: column; gap: 7px; }
-  .hisse-baslik, .hisse-satir { display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr 0.8fr 1fr 1fr 22px; gap: 10px; align-items: center; }
-  .hisse-baslik { padding: 0 16px 8px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); }
-  .hisse-baslik span:not(:first-child) { text-align: right; }
-  .hisse-satir { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: border-color .12s; }
-  .hisse-satir:hover { border-color: rgba(var(--gnc-accent-rgb), 0.45); }
-  .h-ad .kod { font-size: 14px; font-weight: 700; color: var(--bs-emphasis-color); letter-spacing: 0.3px; }
-  .h-ad .ad { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 2px; }
-  .h-cell { text-align: right; }
-  .h-cell .et { display: none; }
-  .h-cell .dg { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .h-cell .dg.fiyat { font-size: 13.5px; color: var(--bs-emphasis-color); }
-  .h-cell .dg.kucuk { font-size: 12px; font-weight: 500; color: var(--gnc-text-faded); }
-  .h-ok { text-align: center; color: var(--gnc-text-dim); font-size: 12px; }
-  .hisse-satir:hover .h-ok { color: var(--gnc-accent); }
-  @media (max-width: 820px){
-    .hisse-baslik { display: none; }
-    .hisse-satir { grid-template-columns: 1fr 1fr 1fr; gap: 12px 10px; padding: 14px 16px; }
-    .hisse-satir .h-ad { grid-column: 1 / -1; }
-    .h-cell { text-align: left; }
-    .h-cell .et { display: block; font-size: 9px; color: var(--gnc-text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 2px; }
-    .h-cell .dg { font-size: 14px; }
-    .h-ok { display: none; }
-  }
-
-  /* Turkiye takvimi */
-  .tr-liste { display: flex; flex-direction: column; gap: 7px; }
-  .tr-gun { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); margin: 14px 4px 4px; }
-  .tr-row { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; overflow: hidden; }
-  .tr-satir { display: grid; grid-template-columns: 64px 1fr auto auto 20px; gap: 12px; align-items: center; padding: 11px 16px; cursor: pointer; }
-  .tr-satir:hover { background: var(--gnc-card-bg-elevated); }
-  .tr-row .tr-satir.gelecek { opacity: 0.72; }
-  .tr-saat { font-size: 12px; font-weight: 700; color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
-  .tr-olay { font-size: 13px; font-weight: 600; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 8px; }
-  .tr-onem { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .tr-onem.high { background: var(--gnc-danger); } .tr-onem.medium { background: var(--gnc-accent); } .tr-onem.low { background: var(--gnc-text-dim); }
-  .tr-deg { text-align: right; min-width: 70px; }
-  .tr-deg .k { font-size: 8.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--gnc-text-dim); }
-  .tr-deg .v { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
-  .tr-deg .v.bekliyor { color: var(--gnc-accent); font-size: 11px; }
-  .tr-caret { color: var(--gnc-text-dim); font-size: 12px; text-align: center; transition: transform .18s; }
-  .tr-row.acik .tr-caret { transform: rotate(180deg); color: var(--gnc-accent); }
-  .tr-detay { display: none; padding: 4px 16px 16px; border-top: 1px solid var(--bs-border-color); }
-  .tr-row.acik .tr-detay { display: block; }
-  .tr-blok { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
-  .tr-kutu { background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); border-radius: 9px; padding: 12px; text-align: center; }
-  .tr-kutu .e { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 5px; }
-  .tr-kutu .d { font-size: 16px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
-  .tr-kutu.ust { border-color: rgba(var(--gnc-success-rgb),.4); background: rgba(var(--gnc-success-rgb),.08); }
-  .tr-kutu.alt { border-color: rgba(var(--gnc-danger-rgb),.4); background: rgba(var(--gnc-danger-rgb),.08); }
-  .tr-kutu.bekliyor .d { color: var(--gnc-accent); font-size: 12px; }
-  .tr-rozet-satir { margin-top: 12px; }
-  .tr-rozet { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 6px; }
-  .tr-rozet.ust { color: var(--gnc-success); background: rgba(var(--gnc-success-rgb),.12); }
-  .tr-rozet.alt { color: var(--gnc-danger); background: rgba(var(--gnc-danger-rgb),.12); }
-  .tr-rozet.esit { color: var(--gnc-text-dim); background: var(--gnc-card-bg-elevated); }
-  .tr-not { font-size: 12px; line-height: 1.55; color: var(--gnc-text-faded); margin-top: 12px; }
-  .tr-gecmis-grafik { margin-top: 14px; background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); border-radius: 9px; padding: 12px 14px; }
-  .tr-gecmis-grafik .baslik { font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 8px; }
-  @media (max-width: 700px){ .tr-satir { grid-template-columns: 48px 1fr auto 18px; } .tr-satir .tr-deg:nth-of-type(3){ display:none; } .tr-deg { text-align: right; min-width: 56px; } }
-
-  /* Sektor filtre araci */
-  .sektor-arac { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
-  .arac-satir { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .arac-satir:last-of-type { margin-bottom: 0; }
-  .arac-lbl { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gnc-text-dim); margin-right: 4px; }
-  .chip { font-size: 12px; font-weight: 700; padding: 7px 13px; border-radius: 100px; border: 1px solid var(--bs-border-color);
-    background: var(--gnc-card-bg-elevated); color: var(--gnc-text-faded); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
-  .chip:hover { border-color: rgba(var(--gnc-accent-rgb), 0.4); color: var(--bs-emphasis-color); }
-  .chip.active { background: rgba(var(--gnc-accent-rgb), 0.12); color: var(--gnc-accent); border-color: rgba(var(--gnc-accent-rgb), 0.35); }
-  .filtre-temizle { border: none; background: none; color: var(--gnc-text-dim); margin-left: auto; }
-  .filtre-temizle:hover { color: var(--gnc-danger); }
-  .arac-not { font-size: 11px; color: var(--gnc-text-faded); line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bs-border-color); }
-  .arac-not b { color: var(--bs-emphasis-color); }
-  .sk-satir.vurgu { margin: 0 -6px; padding: 7px 6px; background: rgba(var(--gnc-accent-rgb), 0.06); border-radius: 6px; }
-  .sk-satir.vurgu .lbl { color: var(--gnc-accent); }
-
-  /* Takvim */
-  .tk-liste { display: flex; flex-direction: column; gap: 8px; }
-  .tk-row {
-    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color);
-    border-radius: 10px; overflow: hidden; transition: border-color 0.12s;
-  }
-  .tk-row.acik { border-color: rgba(var(--gnc-accent-rgb), 0.4); }
-  .tk-ana {
-    display: grid; grid-template-columns: 1.5fr 78px 78px 82px 128px 122px 22px;
-    gap: 14px; align-items: center; padding: 15px 18px; cursor: pointer;
-  }
-  .tk-ana:hover { background: var(--gnc-card-bg-elevated); }
-  .tk-isim { font-size: 14.5px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; align-items: center; gap: 9px; }
-  .tk-yuksek { font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
-    color: var(--gnc-accent); background: rgba(var(--gnc-accent-rgb), 0.12); padding: 2px 7px; border-radius: 5px; }
-  .tk-seri { font-size: 9.5px; color: var(--gnc-text-dim); margin-top: 3px; letter-spacing: 0.3px; }
-  .tk-col { text-align: right; min-width: 62px; }
-  .tk-col .k { font-size: 9.5px; color: var(--gnc-text-dim); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 4px; }
-  .tk-col .v { font-size: 15.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bs-emphasis-color); }
-  .tk-col .v.small { font-size: 13.5px; font-weight: 500; color: var(--gnc-text-faded); }
-  .tk-surpriz { text-align: center; }
-  .tk-badge {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700;
-    padding: 5px 10px; border-radius: 100px; white-space: nowrap;
-  }
-  .tk-badge.ust { background: rgba(var(--gnc-success-rgb), 0.12); color: var(--gnc-success); border: 1px solid rgba(var(--gnc-success-rgb), 0.3); }
-  .tk-badge.alt { background: rgba(var(--gnc-danger-rgb), 0.12); color: var(--gnc-danger); border: 1px solid rgba(var(--gnc-danger-rgb), 0.3); }
-  .tk-badge.tam { background: var(--gnc-card-bg-elevated); color: var(--gnc-text-dim); border: 1px solid var(--bs-border-color); }
-  .tk-badge.bekle { background: rgba(var(--gnc-accent-rgb), 0.1); color: var(--gnc-accent); border: 1px solid rgba(var(--gnc-accent-rgb), 0.25); }
-  .tk-tarih { font-size: 10px; color: var(--gnc-text-dim); font-weight: 700; white-space: nowrap; text-align: right; overflow: hidden; text-overflow: ellipsis; }
-  .tk-bekblok { display: flex; gap: 8px; margin-bottom: 12px; }
-  .tk-bekkutu { flex: 1; border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 8px 10px; text-align: center; }
-  .tk-bekkutu .k { font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); margin-bottom: 4px; }
-  .tk-bekkutu .v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .tk-bekkutu.acik-yes { border-color: rgba(var(--gnc-success-rgb),0.4); background: rgba(var(--gnc-success-rgb),0.08); }
-  .tk-bekkutu.acik-no { border-color: rgba(var(--gnc-danger-rgb),0.4); background: rgba(var(--gnc-danger-rgb),0.08); }
-  .tk-fred-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--gnc-accent);
-    text-decoration: none; margin-top: 12px; padding: 7px 12px; border: 1px solid rgba(var(--gnc-accent-rgb),0.3); border-radius: 8px; }
-  .tk-fred-btn:hover { background: rgba(var(--gnc-accent-rgb),0.08); }
-  .tk-tarih.yakin { color: var(--gnc-accent); }
-  .tk-caret { color: var(--gnc-text-dim); font-size: 14px; transition: transform 0.2s; text-align: center; }
-  .tk-row.acik .tk-caret { transform: rotate(180deg); }
-  .manuel { font-size: 8px; color: var(--gnc-text-dim); font-weight: 700; }
-
-  /* Detay panel */
-  .tk-detay { display: none; padding: 0 16px 16px; border-top: 1px solid var(--bs-border-color); }
-  .tk-row.acik .tk-detay { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; padding-top: 16px; }
-  .tk-gecmis .baslik, .tk-yorum .baslik {
-    font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-    color: var(--gnc-text-dim); margin-bottom: 10px;
-  }
-  .spark { display: flex; align-items: flex-end; gap: 3px; height: 96px; position: relative; }
-  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; position: relative; cursor: pointer; }
-  .spark-bar:hover { filter: brightness(1.35); }
-  .spark-bar::after, .spark-bek::after {
-    content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 7px;
-    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px;
-    font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s; z-index: 30;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  }
-  .spark-bar:hover::after, .spark-bek:hover::after { opacity: 1; }
-  .spark-bek { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed var(--gnc-text-dim); z-index: 5; }
-  .spark-bek::after { left: 8px; transform: none; }
-  .spark-legend { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 10px; display: flex; align-items: center; gap: 7px; line-height: 1.4; }
-  .lg-cizgi { display: inline-block; width: 18px; border-top: 2px dashed var(--gnc-text-dim); flex-shrink: 0; }
-  .spark-bar.up { background: rgba(var(--gnc-success-rgb), 0.75); }
-  .spark-bar.down { background: rgba(var(--gnc-danger-rgb), 0.75); }
-  .spark-alt { display: flex; gap: 3px; margin-top: 8px; }
-  .spark-alt span { flex: 1; font-size: 10px; color: var(--gnc-text-dim); text-align: center; }
-  .tk-yorum-metin { font-size: 12.5px; line-height: 1.6; color: var(--gnc-text-faded); }
-  .tk-yorum-metin b { color: var(--bs-emphasis-color); font-weight: 700; }
-  .tk-ai-not { font-size: 10.5px; color: var(--gnc-text-dim); margin-top: 10px; font-style: italic; }
-
-  .durum-kutu {
-    text-align: center; padding: 60px 20px; color: var(--gnc-text-dim); font-size: 13px;
-    background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 12px;
-  }
-  .durum-kutu b { color: var(--bs-emphasis-color); }
-  .btn-gnc {
-    font-size: 12.5px; font-weight: 700; padding: 9px 16px; border-radius: 6px;
-    border: 1px solid var(--bs-border-color); background: var(--gnc-card-bg-elevated);
-    color: var(--bs-emphasis-color); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-top: 14px;
-  }
-  .btn-gnc:hover { border-color: var(--gnc-accent); color: var(--gnc-accent); }
-  .hidden { display: none; }
-
-  .page-footer { margin-top: 40px; padding: 20px 0 0; border-top: 1px solid var(--bs-border-color); }
-  .footer-disclaimer { font-size: 11px; color: var(--gnc-text-dim); line-height: 1.7; margin: 0; max-width: 820px; }
-  .footer-disclaimer strong { color: var(--gnc-text-faded); font-weight: 700; }
-
-  /* MOBILE */
-  @media (max-width: 992px) {
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .main { margin-left: 0; }
-    .topbar-toggle { display: flex; }
-    .content { padding: 22px; }
-    .ozet-strip { grid-template-columns: 1fr 1fr; gap: 14px; }
-    .ozet-block { border-right: none; padding-right: 0; }
-    .tk-ana { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .tk-surpriz { text-align: left; }
-    .tk-tarih { grid-column: 1 / -1; }
-    .tk-caret { position: absolute; top: 12px; right: 14px; }
-    .tk-row { position: relative; }
-    .tk-row.acik .tk-detay { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px) {
-    .topbar { padding: 0 16px; height: 56px; }
-    .content { padding: 14px; }
-    .ozet-strip { grid-template-columns: 1fr; padding: 16px; }
-    .ozet-block { border-bottom: 1px solid var(--bs-border-color); border-right: none; padding: 0 0 12px; margin-bottom: 12px; }
-    .ozet-block:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
-    .kutu-izgara { grid-template-columns: 1fr 1fr; gap: 10px; }
-  }
-  /* Ana sayfa grafikler */
-  .as-sekt-arac { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-  /* Kompakt sektor bar */
-  .sekt-bar-satir { display: grid; grid-template-columns: 78px 1fr 52px; gap: 10px; align-items: center; padding: 2px 0; }
-  .sekt-bar-ad { font-size: 11px; font-weight: 700; color: var(--bs-emphasis-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sekt-bar-yol { position: relative; height: 14px; display: flex; align-items: center; }
-  .sekt-bar-mid { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--bs-border-color); }
-  .sekt-bar { position: absolute; height: 10px; border-radius: 3px; top: 2px; transition: width .4s cubic-bezier(.2,.7,.3,1); }
-  .sekt-bar.pos { background: rgba(var(--gnc-success-rgb), 0.8); left: 50%; }
-  .sekt-bar.neg { background: rgba(var(--gnc-danger-rgb), 0.8); right: 50%; }
-  .sekt-bar-deg { font-size: 11px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-  @media (max-width: 640px){ .sekt-bar-satir { grid-template-columns: 64px 1fr 48px; gap: 8px; } }
-
-  /* Info tooltip (nasil okunur) */
-  .grafik-info { position: relative; display: inline-flex; color: var(--gnc-text-dim); cursor: help; font-size: 13px; margin-left: 6px; }
-  .grafik-info:hover { color: var(--gnc-accent); }
-  .grafik-info::after {
-    content: attr(data-tip); position: absolute; top: 130%; right: 0; z-index: 60;
-    width: 260px; background: var(--bs-emphasis-color); color: var(--gnc-card-bg);
-    padding: 10px 12px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.5;
-    white-space: normal; opacity: 0; pointer-events: none; transition: opacity .12s; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-  }
-  .grafik-info:hover::after { opacity: 1; }
-
-  /* Grafik zaman olcegi */
-  .grafik-olcek { display: flex; gap: 6px; margin: 10px 0 4px; flex-wrap: wrap; }
-
-  /* Etkilesimli cizgi grafik */
-  .cg-wrap { position: relative; }
-  .cg-wrap svg { display: block; width: 100%; }
-  .cg-guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--gnc-text-dim); opacity: 0; pointer-events: none; }
-  .cg-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--gnc-accent); border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
-  .cg-dotx { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--gnc-card-bg); transform: translate(-50%,-50%); opacity: 0; pointer-events: none; }
-  .cg-tip { position: absolute; z-index: 40; background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px; font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transform: translate(-50%, -130%); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-  .cg-wrap.aktif .cg-guide, .cg-wrap.aktif .cg-dot, .cg-wrap.aktif .cg-dotx, .cg-wrap.aktif .cg-tip { opacity: 1; }
-
-  .as-ethbtc-yorum { font-size: 12.5px; line-height: 1.5; color: var(--gnc-text-faded); }
-  .as-ethbtc-yorum b { color: var(--bs-emphasis-color); }
-  .ethbtc-ust { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-  .ethbtc-deger { font-size: 24px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
-  .ethbtc-deg { font-size: 13px; font-weight: 700; }
-  /* Veri durumu satirlari */
-  .vd-satir { display: flex; align-items: center; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid var(--bs-border-color); }
-  .vd-satir:last-child { border-bottom: none; }
-  .vd-sol { display: flex; align-items: center; gap: 9px; font-size: 12.5px; font-weight: 600; color: var(--bs-emphasis-color); }
-  .vd-nokta { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .vd-nokta.ok { background: var(--gnc-success); box-shadow: 0 0 0 3px rgba(var(--gnc-success-rgb),0.15); }
-  .vd-nokta.yok { background: var(--gnc-text-dim); }
-  .vd-zaman { font-size: 11.5px; color: var(--gnc-text-dim); font-variant-numeric: tabular-nums; }
-
-  /* On-Chain */
-  .oc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .oc-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 14px; padding: 18px 20px; }
-  .oc-ust { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-  .oc-isim { font-size: 13.5px; font-weight: 700; color: var(--bs-emphasis-color); }
-  .oc-deger { font-size: 24px; font-weight: 800; color: var(--gnc-accent); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
-  .oc-grafik { margin: 6px 0 12px; }
-  .oc-grafik svg { width: 100%; height: 90px; display: block; }
-  .oc-cizgi { fill: none; stroke: var(--gnc-accent); stroke-width: 2; }
-  .oc-alan { fill: rgba(var(--gnc-accent-rgb), 0.10); stroke: none; }
-  .oc-nokta { fill: var(--gnc-accent); }
-  .oc-eksen { font-size: 9px; fill: var(--gnc-text-dim); }
-  .oc-yorum { font-size: 12px; line-height: 1.55; color: var(--gnc-text-faded); margin-bottom: 12px; }
-  .oc-link { font-size: 11.5px; font-weight: 700; color: var(--gnc-accent); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
-  .oc-link:hover { text-decoration: underline; }
-  .oc-embed { position: relative; width: 100%; height: 340px; border-radius: 10px; overflow: hidden; background: #fff; margin-bottom: 10px; border: 1px solid var(--bs-border-color); }
-  .oc-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-  .oc-derin { margin-top: 20px; }
-  .oc-derin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-  .oc-derin-kart { background: var(--gnc-card-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 14px 16px; display: block; text-decoration: none; transition: border-color .12s, transform .12s; }
-  .oc-derin-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.4); transform: translateY(-1px); }
-  .oc-derin-kart .baslik { font-size: 13px; font-weight: 700; color: var(--bs-emphasis-color); display: flex; justify-content: space-between; align-items: center; }
-  .oc-derin-kart .aciklama { font-size: 11px; color: var(--gnc-text-dim); margin-top: 3px; }
-  @media (max-width: 860px){ .oc-grid { grid-template-columns: 1fr; } }
-
-  /* Dashboard grid */
-  .dash-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
-  .dash-sag { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  .dash-sag .as-kart { flex: 1; display: flex; flex-direction: column; }
-  .dash-sag .dash-ethbtc { flex: 1.4; }
-  @media (max-width: 900px){ .dash-grid { grid-template-columns: 1fr; } }
-
-  /* Piyasa genisligi */
-  .pg-ust { display: flex; align-items: baseline; gap: 14px; margin: 6px 0 14px; }
-  .pg-buyuk { font-size: 30px; font-weight: 800; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
-  .pg-buyuk small { font-size: 14px; font-weight: 600; color: var(--gnc-text-dim); letter-spacing: 0; }
-  .pg-bar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin-bottom: 6px; background: var(--gnc-card-bg-elevated); }
-  .pg-bar .pos { background: rgba(var(--gnc-success-rgb), .8); }
-  .pg-bar .neg { background: rgba(var(--gnc-danger-rgb), .8); }
-  .pg-bar span { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; transition: width .5s cubic-bezier(.2,.7,.3,1); }
-  .pg-etiket { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 16px; }
-  .pg-etiket .y { color: var(--gnc-success); } .pg-etiket .d { color: var(--gnc-danger); }
-  .pg-satir { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--bs-border-color); }
-  .pg-satir .et { font-size: 11px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--gnc-text-dim); }
-  .pg-satir .dg { font-size: 13px; font-weight: 700; }
-
-  /* PNG indirme butonu */
-  .as-kart, .oc-kart { position: relative; }
-  .blok-indir { position: absolute; top: 12px; right: 12px; z-index: 5; width: 30px; height: 30px; border-radius: 8px;
-    background: var(--gnc-card-bg-elevated); border: 1px solid var(--bs-border-color); color: var(--gnc-text-dim);
-    cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, color .15s; font-size: 13px; }
-  .as-kart:hover .blok-indir, .oc-kart:hover .blok-indir { opacity: 1; }
-  .blok-indir:hover { color: var(--gnc-accent); border-color: rgba(var(--gnc-accent-rgb),.5); }
-
-  /* Dikey sektor listesi (yatay barli satirlar) */
-  .skt-liste { display: flex; flex-direction: column; gap: 3px; }
-  .skt-row { display: grid; grid-template-columns: 74px 1fr 56px; gap: 10px; align-items: center; padding: 3px 0; position: relative; }
-  .skt-kod { font-size: 11px; font-weight: 700; color: var(--bs-emphasis-color); white-space: nowrap; }
-  .skt-track { position: relative; height: 14px; }
-  .skt-mid { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--bs-border-color); }
-  .skt-bar { position: absolute; height: 10px; top: 2px; border-radius: 3px; transition: width .4s cubic-bezier(.2,.7,.3,1); }
-  .skt-bar.pos { left: 50%; background: rgba(var(--gnc-success-rgb), 0.8); }
-  .skt-bar.neg { right: 50%; background: rgba(var(--gnc-danger-rgb), 0.8); }
-  .skt-deg { font-size: 11px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-  .skt-row::after { content: attr(data-ad); position: absolute; left: 74px; bottom: 120%; z-index: 40;
-    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 10px; border-radius: 7px;
-    font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
-  .skt-row:hover::after { opacity: 1; }
-  .skt-row:hover .skt-bar { filter: brightness(1.2); }
-  @media (max-width: 640px){ .skt-row { grid-template-columns: 60px 1fr 48px; gap: 8px; } }
-  .sekt-vbar-kap { display: flex; align-items: stretch; gap: 4px; overflow-x: auto; padding: 6px 2px 2px; }
-  .sekt-vbar-col { flex: 1 0 26px; min-width: 26px; display: flex; flex-direction: column; align-items: center; cursor: default; position: relative; }
-  .sekt-vbar-alan { position: relative; width: 100%; height: 150px; display: flex; flex-direction: column; }
-  .sekt-vbar-ust, .sekt-vbar-alt { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
-  .sekt-vbar-alt { align-items: flex-start; }
-  .sekt-vbar-mid { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--bs-border-color); }
-  .sekt-vbar { width: 68%; border-radius: 3px 3px 0 0; transition: height .4s cubic-bezier(.2,.7,.3,1); }
-  .sekt-vbar.pos { background: rgba(var(--gnc-success-rgb), 0.8); }
-  .sekt-vbar.neg { background: rgba(var(--gnc-danger-rgb), 0.8); border-radius: 0 0 3px 3px; }
-  .sekt-vbar-kod { font-size: 8.5px; font-weight: 700; color: var(--gnc-text-dim); margin-top: 6px; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; letter-spacing: .3px; }
-  .sekt-vbar-col::after { content: attr(data-ad) " · " attr(data-deg); position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
-    background: var(--bs-emphasis-color); color: var(--gnc-card-bg); padding: 5px 9px; border-radius: 7px; font-size: 11px; font-weight: 700;
-    white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s; z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
-  .sekt-vbar-col:hover::after { opacity: 1; }
-  .sekt-vbar-col:hover .sekt-vbar { filter: brightness(1.25); }
-
-  /* Bolum etiketi (eyebrow) */
-  .as-eyebrow { display: flex; align-items: baseline; gap: 10px; margin: 4px 2px 12px; }
-  .as-eyebrow span { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--bs-emphasis-color); }
-  .as-eyebrow small { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gnc-text-dim); }
-  .as-eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--bs-border-color); }
-
-  /* ==================== MOBİL UYUM ==================== */
-  @media (max-width: 860px){
-    .content { padding: 18px 16px 40px; }
-    .section-head { flex-wrap: wrap; gap: 6px; }
-    .section-title { font-size: 18px; }
-    .as-ust, .as-orta { grid-template-columns: 1fr; gap: 12px; }
-    .as-kart { padding: 16px; border-radius: 12px; }
-    .as-saat-buyuk { font-size: 26px; }
-    .as-piyasa-durum { font-size: 22px; }
-  }
-  @media (max-width: 640px){
-    .content { padding: 14px 12px 40px; }
-    .page-intro { font-size: 12px; padding: 12px 14px; }
-    .section-title { font-size: 16px; }
-
-    /* Ekonomik takvim: satirlari dikey yigina cevir */
-    .tk-ana { grid-template-columns: 1fr 1fr; gap: 8px 10px; padding: 14px; position: relative; }
-    .tk-isim { grid-column: 1 / -1; font-size: 14px; margin-bottom: 2px; }
-    .tk-col { text-align: left; min-width: 0; }
-    .tk-col .v { font-size: 15px; }
-    .tk-surpriz { grid-column: 1 / -1; text-align: left; margin-top: 2px; }
-    .tk-tarih { grid-column: 1 / -1; text-align: left; }
-    .tk-caret { position: absolute; top: 14px; right: 14px; }
-    .tk-row.acik .tk-detay { grid-template-columns: 1fr !important; gap: 16px; }
-
-    /* TR gostergeleri */
-    #tr-icerik .tk-ana { grid-template-columns: 1fr 1fr !important; }
-
-    /* Sektor kutulari tek/iki kolon */
-    .kutu-izgara { grid-template-columns: 1fr 1fr !important; gap: 8px; }
-    .sektor-kutu { padding: 12px; }
-    .ozet-strip { grid-template-columns: 1fr 1fr !important; }
-
-    /* Filtre araci */
-    .sektor-arac { padding: 12px; }
-    .chip { font-size: 11px; padding: 6px 11px; }
-
-    /* Hisse tam liste */
-    .hl-grid { grid-template-columns: 1fr 1fr; }
-
-    /* Finansal tablo: yatay kaydirma zaten var, ilk kolon daralt */
-    .fin-tablo td.kalem, .fin-tablo th.kalem { min-width: 150px; font-size: 11.5px; }
-    .fin-tablo th, .fin-tablo td { padding: 9px 11px; font-size: 11.5px; }
-
-    /* Grafik biraz kisalt */
-    .spark { height: 80px; }
-  }
-  /* ==================== CANLANDIRMA ==================== */
-  @keyframes gncFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes gncNabiz { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.82); } }
-  @keyframes gncSweep { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  @media (prefers-reduced-motion: no-preference){
-    .content > section:not(.hidden) > * { animation: gncFadeUp .42s cubic-bezier(.2,.7,.3,1) both; }
-    .content > section:not(.hidden) > *:nth-child(2) { animation-delay: .04s; }
-    .content > section:not(.hidden) > *:nth-child(3) { animation-delay: .08s; }
-    .content > section:not(.hidden) > *:nth-child(4) { animation-delay: .12s; }
-    .content > section:not(.hidden) > *:nth-child(5) { animation-delay: .16s; }
-    .sektor-kutu, .hisse-satir, .tk-row, .tr-satir, .kripto-kart, .hl-kart, .as-ozet-satir { animation: gncFadeUp .38s ease both; }
-  }
-
-  /* Canli nabiz noktasi (acik piyasa / canli veri) */
-  .as-piyasa.acik .as-kart-baslik::after,
-  .as-piyasa.yarim .as-kart-baslik::after {
-    content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-    background: var(--gnc-success); margin-left: 7px; animation: gncNabiz 1.6s ease-in-out infinite;
-    box-shadow: 0 0 0 3px rgba(var(--gnc-success-rgb), 0.18);
-  }
-  .as-piyasa.yarim .as-kart-baslik::after { background: var(--gnc-accent); box-shadow: 0 0 0 3px rgba(var(--gnc-accent-rgb), 0.18); }
-  .status-update .canli, .as-veri-satir .canli { position: relative; }
-
-  /* Piyasa durum kartina renk vurgusu (sol seritten) */
-  .as-piyasa { border-left: 3px solid var(--bs-border-color); }
-  .as-piyasa.acik { border-left-color: var(--gnc-success); }
-  .as-piyasa.kapali { border-left-color: var(--gnc-danger); }
-  .as-piyasa.yarim { border-left-color: var(--gnc-accent); }
-
-  /* Kripto kartlari yon rengine gore canlansin */
-  .kripto-kart { border-left: 3px solid var(--bs-border-color); transition: transform .12s, border-color .12s; }
-  .kripto-kart:hover { transform: translateY(-2px); }
-  .kripto-kart.up { border-left-color: var(--gnc-success); }
-  .kripto-kart.down { border-left-color: var(--gnc-danger); }
-
-  /* Eyebrow'a renkli kare vurgu */
-  .as-eyebrow span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--gnc-accent); margin-right: 8px; vertical-align: middle; }
-
-  /* Kart hover canlanmasi */
-  .as-kart { transition: border-color .14s, transform .14s; }
-  .as-kart:hover { border-color: rgba(var(--gnc-accent-rgb), 0.28); }
-
-  /* Ozet strip vurgu blogu renk seridi */
-  .ozet-blok { position: relative; }
-
-  /* Yenile butonu donsun */
-  #refreshBtn.donuyor i { animation: gncDon .7s linear; }
-  @keyframes gncDon { to { transform: rotate(360deg); } }
-
+  /* --- Alt satır: takvim + öne çıkanlar --- */
+  .lower-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 0; border: 1px solid var(--line); }
+  .lower-col { padding: 20px 22px; }
+  .lower-col + .lower-col { border-left: 1px solid var(--line); }
+  @media (max-width: 900px) { .lower-row { grid-template-columns: 1fr; } .lower-col + .lower-col { border-left: none; border-top: 1px solid var(--line); } }
+  .cal-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .cal-item:last-child { border-bottom: none; }
+  .cal-date { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-faint); width: 48px; flex-shrink: 0; padding-top: 1px; }
+  .cal-title { font-size: 12px; }
+  .cal-tag { font-size: 10px; color: var(--ink-faint); }
+  .note-item { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .note-item:last-child { border-bottom: none; }
+  .note-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; height: fit-content; margin-top: 2px; }
+  .note-tag.bist { background: var(--pine-soft, #CDDCD3); color: var(--pine-dark); }
+  .note-tag.kripto { background: var(--copper-soft, #EAD9C9); color: var(--copper-dark); }
+  .note-tag.makro { background: var(--ochre-soft, #E4DAC1); color: var(--ochre); }
+  .note-body .nt { font-size: 12.5px; font-weight: 500; }
+  .note-body .nd { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
+  .section-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; }
+  .section-title a { font-size: 10.5px; color: var(--copper-dark); text-decoration: none; font-weight: 400; }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <a class="sidebar-logo" href="#">
-      GNC <span class="accent">INSIGHT</span>
-      <span class="sidebar-logo-tag">Veri Paneli</span>
-    </a>
-  </div>
-  <nav class="sidebar-nav">
-    <p class="nav-section-title">Piyasa</p>
-    <button class="nav-link-gnc active" data-view="anasayfa"><i class="bi bi-house-door-fill"></i><span>Ana Sayfa</span></button>
-    <button class="nav-link-gnc" data-view="sektorler"><i class="bi bi-grid-3x3-gap-fill"></i><span>BIST Sektörler</span></button>
-    <button class="nav-link-gnc" data-view="hisseliste"><i class="bi bi-bar-chart-line-fill"></i><span>Hisseler</span></button>
-    <button class="nav-link-gnc" data-view="reelgetiri"><i class="bi bi-arrow-left-right"></i><span>Reel Getiri Karşılaştır</span></button>
-    <button class="nav-link-gnc" data-view="takvim"><i class="bi bi-calendar-event"></i><span>Ekonomik Takvim (ABD)</span></button>
-    <button class="nav-link-gnc" data-view="turkiye"><i class="bi bi-flag-fill"></i><span>Türkiye Takvimi</span></button>
-    <button class="nav-link-gnc" data-view="onchain"><i class="bi bi-diagram-3-fill"></i><span>On-Chain</span></button>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="membership-info">
-      <div class="membership-tier"><i class="bi bi-shield-check"></i>Pro Panel</div>
-      <div class="membership-days">Canlı veri <span>· gecikmeli</span></div>
+<div class="gnc-shell">
+  <aside class="gnc-sidebar" id="sidebar"></aside>
+
+  <div class="gnc-main">
+    <div class="gnc-topbar">
+      <div class="baslik-satiri"><h1>Genel Bakış</h1></div>
+      <span class="gnc-donem" id="donem-etiketi">İncelenen Dönem</span>
     </div>
-  </div>
-</aside>
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<!-- MAIN -->
-<div class="main">
-  <header class="topbar">
-    <button class="topbar-toggle" id="sidebarToggle" aria-label="Menü"><i class="bi bi-list"></i></button>
-    <span class="topbar-title" id="topbarTitle">Ana Sayfa</span>
-    <div class="topbar-actions">
-      <span class="topbar-saat" id="topbarSaat">--:--:--</span>
-      <button class="topbar-icon-btn" id="refreshBtn" aria-label="Yenile"><i class="bi bi-arrow-clockwise"></i></button>
-      <button class="theme-toggle" id="themeToggle" aria-label="Tema değiştir"><div class="toggle-thumb"></div></button>
-      <a href="#" class="user-pill"><span class="user-name">Doruk</span><span class="user-avatar">D</span></a>
+    <div class="gnc-content">
+
+      <!-- ORTAM OKUMASI BANDI -->
+      <div class="ob-band">
+        <div class="ob-top">
+          <div>
+            <div class="ob-eyebrow">Bu Haftanın Ortam Okuması</div>
+            <div class="ob-baslik font-display" id="ob-baslik-metin">Ortam okunuyor…</div>
+            <div class="ob-ozet" id="ob-ozet-metin"></div>
+          </div>
+          <div class="ob-skor" id="ob-skor-alan"></div>
+        </div>
+        <div id="ob-cetvel-alan"></div>
+        <div class="ob-katmanlar" id="ob-katmanlar"></div>
+      </div>
+
+      <!-- SEKTÖR ROTASYONU ÖZET ŞERİDİ -->
+      <div class="rot-serit" id="rot-serit">
+        <div class="gnc-durum-kutu" style="flex:1;">Yükleniyor…</div>
+      </div>
+
+      <!-- 4 SÜTUN (tek blok, tasarımla birebir) -->
+      <div class="pillars">
+        <div class="pillar">
+          <div class="pillar-head"><span class="pillar-title font-display">Küresel Likidite</span><a class="pillar-link" href="makro-ortam.html">Detay →</a></div>
+          <div class="pillar-note" id="kuresel-not">Dolar, ABD reel faizi ve FED'in net likiditesi — risk iştahının küresel arka planı.</div>
+          <div id="kuresel-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-head"><span class="pillar-title font-display">Türkiye Makro</span><a class="pillar-link" href="makro-ortam.html">Detay →</a></div>
+          <div class="pillar-note">TCMB faizi, enflasyon ve kur — yerel ortamın temel göstergeleri.</div>
+          <div id="turkiye-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-head"><span class="pillar-title font-display">Kripto Ortamı</span><a class="pillar-link" href="kripto-ortam.html">Detay →</a></div>
+          <div class="pillar-note">BTC fiyatı, dominans ve ETF akışları — kripto risk iştahının nabzı.</div>
+          <div id="kripto-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-head"><span class="pillar-title font-display">BIST Görünümü</span><a class="pillar-link" href="bist-gorunumu.html">Detay →</a></div>
+          <div class="pillar-note">XU100 seviyesi ve teknik konumu — yerel piyasanın anlık durumu.</div>
+          <div id="bist-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        </div>
+      </div>
+
+      <!-- ALT SATIR: TAKVİM + ÖNE ÇIKANLAR -->
+      <div class="lower-row">
+        <div class="lower-col">
+          <div class="section-title font-display">Makro Takvim <a href="takvim.html">Tümü →</a></div>
+          <div id="takvim-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        </div>
+        <div class="lower-col">
+          <div class="section-title font-display">Bu Haftanın Öne Çıkanları <a href="raporlar.html">Tüm notlar →</a></div>
+          <div id="one-cikan-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        </div>
+      </div>
+
     </div>
-  </header>
-
-  <div class="content">
-
-    <!-- ============ ANA SAYFA ============ -->
-    <section id="view-anasayfa">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-house-door-fill"></i> Ana Sayfa</h2>
-        <span class="status-update" id="as-tarih"></span>
-      </div>
-
-      <div class="as-ust">
-        <div class="as-kart as-piyasa" id="as-piyasa">
-          <div class="as-kart-baslik">BIST Durumu</div>
-          <div class="as-piyasa-durum" id="as-piyasa-durum">—</div>
-          <div class="as-piyasa-not" id="as-piyasa-not"></div>
-        </div>
-        <div class="as-kart as-saat">
-          <div class="as-kart-baslik">Türkiye Saati</div>
-          <div class="as-saat-buyuk" id="as-saat">--:--:--</div>
-          <div class="as-piyasa-not" id="as-saat-tarih"></div>
-        </div>
-      </div>
-
-      <div class="dash-grid">
-        <div class="as-kart dash-sektor">
-          <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Sektör Rotasyonu')" title="PNG indir"><i class="bi bi-download"></i></button>
-          <div class="as-kart-baslik"><i class="bi bi-grid-3x3-gap"></i> Sektör Rotasyonu
-            <span class="grafik-info" data-tip="Paranın hangi sektöre aktığını gösterir. Yukarı yeşil çubuklar güçlü, aşağı kırmızılar zayıf sektörler. Tarama aracıdır, sinyal değildir."><i class="bi bi-info-circle"></i></span>
-          </div>
-          <div class="as-sekt-arac">
-            <button class="chip donem2 active" data-d="g1">Günlük</button>
-            <button class="chip donem2" data-d="h1">Haftalık</button>
-            <button class="chip donem2" data-d="a1">Aylık</button>
-            <small id="as-sekt-guncelleme"></small>
-          </div>
-          <div id="as-sektor-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
-        </div>
-
-        <div class="dash-sag">
-          <div class="as-kart dash-ethbtc">
-            <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · ETH/BTC')" title="PNG indir"><i class="bi bi-download"></i></button>
-            <div class="as-kart-baslik"><i class="bi bi-arrow-left-right"></i> ETH/BTC · Para Rotasyonu
-              <span class="grafik-info" data-tip="ETH/BTC yükseliyorsa para altcoinlere kayıyor (risk iştahı). Düşüyorsa BTC'ye kaçış (temkin). Kripto rotasyonunu okumanın pratik yolu."><i class="bi bi-info-circle"></i></span>
-            </div>
-            <div class="grafik-olcek" id="ethbtc-olcek">
-              <button class="chip olcek active" data-n="30">Ay</button>
-              <button class="chip olcek" data-n="90">3 Ay</button>
-              <button class="chip olcek" data-n="365">Yıl</button>
-              <button class="chip olcek" data-n="9999">Tüm</button>
-            </div>
-            <div id="as-ethbtc"><div class="durum-kutu">Yükleniyor…</div></div>
-          </div>
-
-          <div class="as-kart dash-genislik">
-            <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Piyasa Genişliği')" title="PNG indir"><i class="bi bi-download"></i></button>
-            <div class="as-kart-baslik"><i class="bi bi-pie-chart"></i> Piyasa Genişliği
-              <span class="grafik-info" data-tip="Kaç sektörün artıda/ekside olduğunu gösterir. Geniş katılımlı yükseliş sağlıklı risk iştahına işaret eder; dar katılım zayıflık sinyalidir."><i class="bi bi-info-circle"></i></span>
-            </div>
-            <div id="as-genislik"><div class="durum-kutu">Yükleniyor…</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="as-kart">
-        <div class="as-kart-baslik"><i class="bi bi-clock-history"></i> Sistem · Veri Durumu</div>
-        <div id="as-veri-durum"><div class="durum-kutu">Yükleniyor…</div></div>
-      </div>
-    </section>
-
-    <!-- ============ ON-CHAIN ============ -->
-    <section id="view-onchain" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-diagram-3-fill"></i> On-Chain (Bitcoin)</h2>
-        <span class="status-update" id="oc-guncelleme"></span>
-      </div>
-      <div class="page-intro">
-        Bitcoin ağ (on-chain) verileri; grafikler <b>Checkonchain'den</b> canlı gömülüdür. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
-      </div>
-      <div id="oc-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
-    </section>
-
-    <!-- ============ TÜRKİYE TAKVİMİ ============ -->
-    <section id="view-turkiye" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-flag-fill"></i> Türkiye Ekonomik Takvimi</h2>
-        <span class="status-update" id="tr-guncelleme"></span>
-      </div>
-      <div class="page-intro">
-        Türkiye makro ekonomik takvimi (kaynak: doviz.com). Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
-      </div>
-      <div id="tr-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
-    </section>
-
-    <!-- ============ BIST SEKTÖRLER ============ -->
-    <section id="view-sektorler" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-grid-3x3-gap-fill"></i> BIST Sektörler</h2>
-        <span class="status-update" id="sektor-guncelleme">Yükleniyor</span>
-      </div>
-      <div class="page-intro">
-        <b>Resmi BIST sektör endeksleri.</b> Her kutu ilgili sektörün tamamını kapsar; günlük, haftalık ve aylık değişimi gösterir. Veri Yahoo Finance üzerinden en az 15 dk gecikmelidir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
-      </div>
-      <div id="sektor-ozet"></div>
-
-      <div class="sektor-arac" id="sektor-arac" style="display:none;">
-        <div class="arac-satir">
-          <span class="arac-lbl">Sırala</span>
-          <button class="chip donem-chip active" data-donem="g1">Günlük</button>
-          <button class="chip donem-chip" data-donem="h1">Haftalık</button>
-          <button class="chip donem-chip" data-donem="a1">Aylık</button>
-          <button class="chip" id="yonChip"><i class="bi bi-sort-down"></i> Yüksek→Düşük</button>
-        </div>
-        <div class="arac-satir">
-          <span class="arac-lbl">Filtre</span>
-          <button class="chip filtre-chip" data-f="yukselen">Yükselenler</button>
-          <button class="chip filtre-chip" data-f="dusen">Düşenler</button>
-          <button class="chip filtre-chip" data-f="guclu">Güçlü momentum</button>
-          <button class="chip filtre-chip" data-f="zayif">Zayıf momentum</button>
-          <button class="chip filtre-chip" data-f="yukselise">Yükselişe geçen</button>
-          <button class="chip filtre-chip" data-f="kaybeden">Gücünü kaybeden</button>
-          <button class="chip filtre-temizle" id="filtreTemizle">Temizle</button>
-        </div>
-        <div class="arac-not" id="aracNot"></div>
-      </div>
-
-      <div id="sektor-icerik">
-        <div class="durum-kutu">Sektör verileri çekiliyor…</div>
-      </div>
-
-      <div class="as-eyebrow" style="margin-top:24px;"><span>Sektör Rotasyonu</span><small>tüm sektörler</small></div>
-      <div class="as-kart">
-        <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Sektör Rotasyonu')" title="PNG indir"><i class="bi bi-download"></i></button>
-        <div class="as-sekt-arac">
-          <button class="chip donem2 active" data-d="g1">Günlük</button>
-          <button class="chip donem2" data-d="h1">Haftalık</button>
-          <button class="chip donem2" data-d="a1">Aylık</button>
-        </div>
-        <div id="sekt-sayfa-grafik"><div class="durum-kutu">Yükleniyor…</div></div>
-      </div>
-
-      <div class="as-eyebrow" style="margin-top:24px;"><span>Sektör Isı Haritası</span><small>hangi sektöre ne zaman para girdi</small></div>
-      <div class="as-kart">
-        <button class="blok-indir" onclick="blokIndir(this,'GNC Insight · Sektör Isı Haritası')" title="PNG indir"><i class="bi bi-download"></i></button>
-        <div class="as-kart-baslik" style="margin-bottom:2px;">
-          <span class="grafik-info" data-tip="Her hücre, o dönemde sektörün XU100'e göre yüzde puan farkını gösterir (yeşil: XU100'den güçlü, kırmızı: zayıf). Üstteki turuncu şerit TCMB politika faizini gösterir; ortamı sektör performansıyla birlikte okumanı sağlar. Bir hücreye tıklayınca o sektörün hisselerine gidersin. Bu bir tarama aracıdır, alım-satım sinyali değildir."><i class="bi bi-info-circle"></i></span>
-        </div>
-        <div class="as-sekt-arac">
-          <button class="chip isimod active" data-m="yillik" onclick="isiModSec('yillik')">Yıllık</button>
-          <button class="chip isimod" data-m="ceyreklik" onclick="isiModSec('ceyreklik')">Çeyreklik</button>
-        </div>
-        <div id="isi-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
-      </div>
-    </section>
-
-    <!-- ============ HİSSELER (TAM LİSTE) ============ -->
-    <section id="view-hisseliste" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-bar-chart-line-fill"></i> Hisseler</h2>
-        <span class="status-update" id="hl-adet"></span>
-      </div>
-      <div class="hl-arama">
-        <i class="bi bi-search"></i>
-        <input type="text" id="hl-input" placeholder="Hisse kodu veya adı ara (örn: AKBNK, Tüpraş)…" oninput="hisseListeFiltre()">
-      </div>
-      <div id="hl-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
-    </section>
-
-    <!-- ============ REEL GETİRİ KARŞILAŞTIR ============ -->
-    <section id="view-reelgetiri" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-arrow-left-right"></i> Reel Getiri Karşılaştır</h2>
-        <span class="status-update">en fazla 4 varlık</span>
-      </div>
-      <div class="page-intro">
-        İstediğin hisseleri ve/veya BIST endekslerini (sektör, XU100) ekleyip aynı grafikte, aynı baza göre reel getirilerini kıyasla. "X ne kadar kazandırdı, Y ne kadar" sorusuna cevap.
-      </div>
-      <div id="rgk-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
-    </section>
-
-    <!-- ============ HİSSE FİNANSAL DETAY ============ -->
-    <section id="view-hissedetay" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><button class="geri-btn" onclick="hisseDetayGeri()"><i class="bi bi-arrow-left"></i></button> <span id="hd-baslik">Hisse</span></h2>
-        <span class="status-update" id="hd-guncelleme"></span>
-      </div>
-      <div id="hd-metrik"></div>
-      <div class="hd-layout">
-        <div class="hd-submenu" id="hd-submenu"></div>
-        <div class="hd-content" id="hd-icerik"><div class="durum-kutu">Yükleniyor…</div></div>
-      </div>
-    </section>
-
-    <!-- ============ SEKTÖR HİSSELERİ ============ -->
-    <section id="view-hisseler" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><button class="geri-btn" onclick="hisseGeri()"><i class="bi bi-arrow-left"></i></button> <span id="hisse-baslik">Sektör</span></h2>
-        <span class="status-update" id="hisse-adet"></span>
-      </div>
-      <div class="page-intro" id="hisse-intro">
-        Bu sektördeki hisseler. Hisseye tıklayınca finansalları (bilanço, temel oranlar) ayrı sayfada gösterilecek; o modül yakında eklenecek. Liste şimdilik BIST 100 üyeleridir.
-      </div>
-      <div id="hisse-icerik"></div>
-    </section>
-
-    <!-- ============ EKONOMİK TAKVİM ============ -->
-    <section id="view-takvim" class="hidden">
-      <div class="section-head">
-        <h2 class="section-title"><i class="bi bi-calendar-event"></i> Ekonomik Takvim</h2>
-        <span class="status-update">FRED · canlı</span>
-      </div>
-      <div class="page-intro">
-        En çok izlenen ABD makro verileri. <b>Son açıklanan</b> ve <b>önceki</b> değerler FRED'den canlı gelir; <b>beklenti</b> elle girilir (ücretsiz kaynakta yok). Rozet, verinin beklentinin üstünde mi altında mı geldiğini gösterir. Bir satıra <b>tıkla</b>: altında geçmiş değerler ve o verinin nasıl yorumlanacağı açılır.
-      </div>
-      <div class="tk-liste" id="takvim-icerik">
-        <div class="durum-kutu">Veriler çekiliyor…</div>
-      </div>
-    </section>
-
-    <footer class="page-footer">
-      <p class="footer-disclaimer"><strong>Yasal uyarı:</strong> Bu panel yalnızca eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir. Veriler gecikmeli olabilir; işlem kararlarından önce resmi kaynaklarla teyit ediniz.</p>
-    </footer>
-
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="ortak.js"></script>
 <script>
-/* =======================================================================
-   DÜZENLENEBİLİR: Ekonomik takvimde takip edilen veriler.
-   - seri: FRED seri kodu (son açıklanan + önceki buradan canlı gelir)
-   - mod:  'pct'  -> aylık % değişim (fiyat endeksleri: CPI, PCE...)
-           'diff' -> iki dönem farkı (istihdam: NFP = bu ay - geçen ay)
-           'level'-> değerin kendisi (oran/seviye: işsizlik, faiz, güven)
-   - birim: 'yuzde' | 'bin' (bin kişi) | 'puan'
-   - beklenti: piyasa konsensüsü (MANUEL, boş bırakılabilir: null)
-   - sonraki: bir sonraki açıklama tarihi (MANUEL, ISO; boş: "")
-   ======================================================================= */
-const TAKVIM = [
-  { isim:"Enflasyon (CPI, yıllık)", seri:"CPIAUCSL", mod:"yoy", birim:"yuzde", beklenti:2.9, sonraki:"2026-07-14T15:30:00+03:00", yuksek:true,
-    yorum:"Yıllık tüketici enflasyonu (son 12 ay); enflasyonun en yakından izlenen manşet göstergesi. <b>Beklentinin üstünde</b> gelmesi enflasyon baskısının sürdüğünü ve faiz indirimlerinin gecikebileceğini düşündürür. <b>Altında</b> gelmesi enflasyonun soğuduğuna işaret eder ve genelde risk iştahını destekler." },
-  { isim:"Çekirdek CPI (yıllık)", seri:"CPILFESL", mod:"yoy", birim:"yuzde", beklenti:2.9, sonraki:"2026-07-14T15:30:00+03:00", yuksek:false,
-    yorum:"Gıda ve enerji hariç yıllık tüketici enflasyonu; kalıcı (yapışkan) enflasyon eğilimini gösterir. Fed bu veriye manşet CPI'dan daha çok bakar. <b>Üstünde</b> gelmesi enflasyonun inatçı olduğunu, <b>altında</b> gelmesi soğuma sinyalini güçlendirir." },
-  { isim:"Çekirdek PCE (yıllık)", seri:"PCEPILFE", mod:"yoy", birim:"yuzde", beklenti:2.8, sonraki:"2026-07-31T15:30:00+03:00", yuksek:true,
-    yorum:"Fed'in enflasyon hedefinde (%2) baz aldığı asıl gösterge (gıda-enerji hariç, yıllık). Faiz kararlarını en çok etkileyen enflasyon verisidir. <b>Üstünde</b> gelmesi sıkı para politikası ihtimalini artırır, <b>altında</b> gelmesi indirim beklentisini güçlendirir." },
-  { isim:"Tarım Dışı İstihdam (NFP)", seri:"PAYEMS", mod:"diff", birim:"bin", beklenti:165, sonraki:"2026-08-07T15:30:00+03:00", yuksek:true,
-    yorum:"Tarım dışı istihdamdaki aylık artış (bin kişi); ekonominin gücünü gösteren en önemli işgücü verisi. <b>Çok üstünde</b> gelmesi güçlü ekonomi ama sıkı Fed; <b>çok altında</b> gelmesi yavaşlama endişesi anlamına gelebilir. Piyasa 'ne çok sıcak ne çok soğuk' dengesini sever." },
-  { isim:"İşsizlik Oranı", seri:"UNRATE", mod:"level", birim:"yuzde", beklenti:4.2, sonraki:"2026-08-07T15:30:00+03:00", yuksek:false,
-    yorum:"İşgücündeki işsiz oranı. Yükselmesi işgücü piyasasının soğuduğunu, düşmesi güçlü kaldığını gösterir. <b>Beklentinin üstünde</b> (daha yüksek işsizlik) gelmesi büyüme endişesi, <b>altında</b> gelmesi güçlü istihdam sinyalidir." },
-  { isim:"Fed Politika Faizi", seri:"FEDFUNDS", mod:"level", birim:"yuzde", beklenti:null, sonraki:"", yuksek:true,
-    yorum:"Fed'in belirlediği politika faizi; tüm piyasaların çıpası. Yükselmesi parasal sıkılaşma, düşmesi gevşeme demektir. Faiz beklentileri hisse, tahvil ve kur için ana yön belirleyicidir." },
-  { isim:"Perakende Satışlar (aylık)", seri:"RSAFS", mod:"pct", birim:"yuzde", beklenti:0.4, sonraki:"2026-07-16T15:30:00+03:00", yuksek:false,
-    yorum:"Hane halkı harcamalarının aylık değişimi; iç talebin ve tüketici gücünün göstergesi. <b>Üstünde</b> gelmesi güçlü tüketim ve ekonomi, <b>altında</b> gelmesi talebin zayıfladığına işaret eder." },
-  { isim:"GSYİH Büyüme (çeyreklik)", seri:"A191RL1Q225SBEA", mod:"level", birim:"yuzde", beklenti:2.0, sonraki:"2026-07-30T15:30:00+03:00", yuksek:false,
-    yorum:"Ekonominin çeyreklik yıllıklandırılmış büyüme oranı; genel ekonomik sağlığın ana göstergesi. <b>Üstünde</b> büyüme güç, <b>altında</b> gelmesi yavaşlama veya resesyon endişesi anlamına gelir." },
-  { isim:"İşsizlik Başvuruları (haftalık)", seri:"ICSA", mod:"level", birim:"bin", beklenti:230, sonraki:"2026-07-09T15:30:00+03:00", yuksek:false,
-    yorum:"Haftalık ilk işsizlik maaşı başvuruları; işgücü piyasasının en taze verisi. Yükselmesi işten çıkarmaların arttığını (zayıflık), düşmesi piyasanın güçlü kaldığını gösterir. <b>Beklentinin üstünde</b> gelmesi olumsuz okunur." },
-  { isim:"Michigan Tüketici Güveni", seri:"UMCSENT", mod:"level", birim:"puan", beklenti:52.0, sonraki:"2026-07-24T17:00:00+03:00", yuksek:false,
-    yorum:"Tüketicilerin ekonomiye ve kendi mali durumlarına güveni. Yükselmesi harcama iştahının güçlü, düşmesi tüketicinin temkinli olduğunu gösterir. <b>Üstünde</b> gelmesi olumlu okunur." },
-];
+gncSidebarOlustur("genel-bakis", "sidebar");
 
-function fmtYuzde(x){
-  if(x === null || x === undefined || isNaN(x)) return "—";
-  return (x > 0 ? "+" : "") + Number(x).toFixed(2).replace(".", ",") + "%";
-}
-function fmtDeger(x, birim){
-  if(x === null || x === undefined || isNaN(x)) return "—";
-  if(birim === "bin"){ return (x > 0 ? "+" : "") + Math.round(x).toLocaleString("tr-TR") + " B"; }
-  if(birim === "puan"){ return Number(x).toFixed(1).replace(".", ","); }
-  return Number(x).toFixed(1).replace(".", ",") + "%";
-}
-function yon(x){ return x > 0 ? "up" : x < 0 ? "down" : "flat"; }
-function ustRenk(x){
-  if(x === null || x === undefined || isNaN(x)) return "var(--bs-border-color)";
-  const yog = Math.min(Math.abs(x)/5, 1) * 0.6 + 0.15;
-  return x >= 0 ? "rgba(var(--gnc-success-rgb)," + yog + ")" : "rgba(var(--gnc-danger-rgb)," + yog + ")";
+async function anaSayfaBaslat(){
+  const [rotasyon, sektorVerisi, makro, faiz, deflator, kriptoGlobal, etf, xu100Ma, takvim, oneCikan] = await Promise.all([
+    gncVeriCek("rotasyon_gecmis.json"),
+    gncVeriCek("sektor_verisi.json"),
+    gncVeriCek("makro_gecmis.json"),
+    gncVeriCek("faiz_gecmis.json"),
+    gncVeriCek("deflator.json"),
+    gncVeriCek("kripto_global.json"),
+    gncVeriCek("kripto_etf.json"),
+    gncVeriCek("xu100_ma_mesafe.json"),
+    gncVeriCek("turkiye_takvim.json"),
+    gncVeriCek("one_cikanlar.json"),
+  ]);
+
+  gaBistBaslikGuncelle(sektorVerisi);
+  gaOrtamOkumasi(faiz, deflator, rotasyon, xu100Ma);
+  gaRotSerit(rotasyon);
+  gaKuresel(makro);
+  gaTurkiye(faiz, deflator, makro);
+  gaKripto(kriptoGlobal, etf);
+  gaBist(sektorVerisi, xu100Ma);
+  gaTakvim(takvim);
+  gaOneCikan(oneCikan);
 }
 
-/* ---- BIST SEKTÖRLER ---- */
-const DONEM_ETIKET = { g1:"Günlük", h1:"Haftalık", a1:"Aylık" };
-let SEKTOR_LISTE = [];
-let siralaDonem = "g1", siralaYon = "desc";
-const aktifFiltreler = new Set();
-
-const FILTRELER = {
-  yukselen:  (s) => s[siralaDonem] > 0,
-  dusen:     (s) => s[siralaDonem] < 0,
-  guclu:     (s) => s.g1 > 0 && s.h1 > 0 && s.a1 > 0,
-  zayif:     (s) => s.g1 < 0 && s.h1 < 0 && s.a1 < 0,
-  yukselise: (s) => s.g1 > 0 && s.h1 > 0 && s.a1 < 0,
-  kaybeden:  (s) => s.g1 < 0 && s.h1 < 0 && s.a1 > 0,
-};
-const FILTRE_ACIKLAMA = {
-  yukselen:  "seçili dönemde artıda olanlar",
-  dusen:     "seçili dönemde ekside olanlar",
-  guclu:     "günlük, haftalık ve aylık üçü de artıda (güçlü trend)",
-  zayif:     "üçü de ekside (zayıf trend)",
-  yukselise: "aylık hâlâ geride ama günlük+haftalık artıda; erken rotasyon adayı olabilir",
-  kaybeden:  "aylık artıda ama günlük+haftalık ekside; gücünü kaybediyor olabilir",
-};
-
-async function sektorCek(){
-  const kap = document.getElementById("sektor-icerik");
-  kap.innerHTML = '<div class="durum-kutu">Sektör verileri çekiliyor…</div>';
-  document.getElementById("sektor-ozet").innerHTML = "";
-  document.getElementById("sektor-arac").style.display = "none";
+function gaSonDeger(seri){
+  return (seri && seri.length) ? seri[0].deger : null;
+}
+/* Ledger satiri - tasarimdaki <table class="ledger"> yapisiyla birebir.
+   yon: "up" | "down" | null - editoryal renklendirme (illa pozitif/negatif degil,
+   "bu deger iyi haber mi kotu haber mi" anlaminda kullanilir, tasarimin kendi mantigi). */
+function gaLedgerSatir(etiket, deger, yon){
+  const yonSinif = yon ? " " + yon : "";
+  return `<tr><td class="k">${etiket}</td><td class="v${yonSinif}">${deger}</td></tr>`;
+}
+function gaLedgerTablo(satirlarHtml){
+  return `<table class="ledger">${satirlarHtml}</table>`;
+}
+function gaDonemEtiket(guncellemeStr){
   try{
-    const res = await fetch('/.netlify/functions/veri?dosya=sektor_verisi.json&t=' + Date.now());
-    if(!res.ok) throw new Error();
-    sektorCiz(await res.json());
-  }catch(e){
-    document.getElementById("sektor-guncelleme").textContent = "veri henüz yok";
-    kap.innerHTML = '<div class="durum-kutu">Sektör verisi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>sektor_verisi.json</b> oluşur ve burada görünür.<br><button class="btn-gnc" onclick="sektorCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+    const d = new Date(guncellemeStr);
+    return d.toLocaleDateString("tr-TR", {day:"numeric", month:"long", year:"numeric"});
+  }catch(e){ return "—"; }
+}
+function gaBistBaslikGuncelle(sektorVerisi){
+  if(sektorVerisi && sektorVerisi.guncelleme){
+    document.getElementById("donem-etiketi").textContent = "Güncelleme: " + gaDonemEtiket(sektorVerisi.guncelleme);
   }
 }
 
-function sektorCiz(veri){
-  const g = new Date(veri.guncelleme);
-  SEKTOR_LISTE = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null);
-  const xu = veri.endeksler.find(e => e.kod === "XU100");
-  document.getElementById("sektor-guncelleme").textContent =
-    g.toLocaleString("tr-TR") + " · " + SEKTOR_LISTE.length + " sektör";
+/* ============ ORTAM OKUMASI BANDI ============
+   ONEMLI: Nihai 0-100 kompozit skor formulu henuz GNC ile netlesmedi.
+   Bu yuzden skor/cetvel alani, formul netlesene kadar acikca "hesaplaniyor"
+   der - sahte/dogrulanmamis bir sayi GOSTERMEYIZ. Ama 3 katmanin KENDISI
+   zaten elimizdeki gercek verilerden (reel faiz yonu, sektor genisligi,
+   200 gun mesafesi) turetilebilir - o kisim gercek veridir, placeholder degil. */
+function gaOrtamOkumasi(faiz, deflator, rotasyon, xu100Ma){
+  const baslikEl = document.getElementById("ob-baslik-metin");
+  const ozetEl = document.getElementById("ob-ozet-metin");
+  const skorEl = document.getElementById("ob-skor-alan");
+  const cetvelEl = document.getElementById("ob-cetvel-alan");
+  const katmanlarEl = document.getElementById("ob-katmanlar");
 
-  const gunluk = [...SEKTOR_LISTE].sort((a,b) => b.g1 - a.g1);
-  const enIyi = gunluk[0], enKotu = gunluk[gunluk.length-1];
-  const yukselen = SEKTOR_LISTE.filter(s=>s.g1>0).length, dusen = SEKTOR_LISTE.filter(s=>s.g1<0).length;
-  document.getElementById("sektor-ozet").innerHTML =
-    '<div class="ozet-strip">' +
-    ozetBlock("XU100 (Günlük)", xu ? fmtYuzde(xu.g1) : "—", xu && xu.son_deger!=null ? xu.son_deger.toLocaleString("tr-TR") : "—", xu?yon(xu.g1):"") +
-    ozetBlock("Öne çıkan", enIyi ? enIyi.kod : "—", enIyi ? enIyi.ad + " · " + fmtYuzde(enIyi.g1) : "", "up") +
-    ozetBlock("Baskılanan", enKotu ? enKotu.kod : "—", enKotu ? enKotu.ad + " · " + fmtYuzde(enKotu.g1) : "", "down") +
-    ozetBlock("Yükselen / Düşen", yukselen + " / " + dusen, "Günlük bazda", "flat") +
-    '</div>';
+  // --- Katman 1: Likidite (reel faiz yonu: TCMB faizi - TUFE yillik) ---
+  let likiditeDurum = "—", likiditeNot = "Veri henüz yeterli değil.";
+  const faizSon = faiz && faiz.seri ? gaSonDeger(faiz.seri) : null;
+  const faiz3AyOnce = faiz && faiz.seri && faiz.seri.length > 3 ? faiz.seri[3].deger : null;
+  if(faizSon !== null && faiz3AyOnce !== null){
+    const yon = faizSon - faiz3AyOnce;
+    likiditeDurum = yon < -0.5 ? "Gevşiyor" : yon > 0.5 ? "Sıkılaşıyor" : "Yatay";
+    likiditeNot = `TCMB faizi 3 ayda ${yon>=0?'+':''}${yon.toFixed(1)} puan değişti (şu an %${faizSon.toFixed(1)}).`;
+  }
 
-  document.getElementById("sektor-arac").style.display = "block";
-  sektorRender();
+  // --- Katman 2: Risk İştahı (sektörlerin kaçta kaçı genişleme evresinde) ---
+  let riskDurum = "—", riskNot = "Rotasyon verisi henüz yok.";
+  if(rotasyon && rotasyon.sektorler && rotasyon.sektorler.length){
+    const toplam = rotasyon.sektorler.length;
+    const genisleyen = rotasyon.sektorler.filter(s => s.evre === "genisleme").length;
+    const oran = Math.round(genisleyen/toplam*100);
+    riskDurum = oran >= 50 ? "Yüksek" : oran >= 25 ? "Orta" : "Düşük";
+    riskNot = `Sektörlerin %${oran}'ı genişleme evresinde (${genisleyen}/${toplam}).`;
+  }
+
+  // --- Katman 3: Değerleme (XU100'un 200 günlük ortalamaya mesafesi) ---
+  let degerlemeDurum = "—", degerlemeNot = "Veri henüz yok.";
+  if(xu100Ma && xu100Ma.mesafe_yuzde !== null && xu100Ma.mesafe_yuzde !== undefined){
+    const m = xu100Ma.mesafe_yuzde;
+    degerlemeDurum = m > 10 ? "Gerilmiş" : m > 0 ? "Ilımlı Üstünde" : m > -10 ? "Ilımlı Altında" : "Gerilmiş (aşağı)";
+    degerlemeNot = `XU100, 200 günlük ortalamasının %${Math.abs(m).toFixed(1)} ${m>=0?'üzerinde':'altında'}.`;
+  }
+
+  baslikEl.textContent = "Ortam Katmanları (kısmi okuma)";
+  ozetEl.textContent = "Bileşik ortam skoru formülü henüz kesinleşmedi; aşağıdaki üç katman, o formülün girdisi olacak ham göstergelerin güncel, gerçek okumasıdır.";
+  skorEl.innerHTML = `<div class="num" style="color:var(--ink-faint);font-size:20px;">—</div><div class="lbl">SKOR HESAPLANIYOR</div>`;
+  cetvelEl.innerHTML = "";
+
+  katmanlarEl.innerHTML =
+    `<div class="ob-katman"><div class="llabel">Likidite</div><div class="lval font-display">${likiditeDurum}</div><div class="ldesc">${likiditeNot}</div></div>` +
+    `<div class="ob-katman"><div class="llabel">Risk İştahı</div><div class="lval font-display">${riskDurum}</div><div class="ldesc">${riskNot}</div></div>` +
+    `<div class="ob-katman"><div class="llabel">Değerleme</div><div class="lval font-display">${degerlemeDurum}</div><div class="ldesc">${degerlemeNot}</div></div>`;
 }
 
-function sektorRender(){
-  // filtre (birden fazla secilirse birlesim/OR) + siralama
-  let liste = SEKTOR_LISTE.filter(s =>
-    aktifFiltreler.size === 0 || [...aktifFiltreler].some(f => FILTRELER[f](s))
+/* ---- SEKTÖR ROTASYONU ÖZET ŞERİDİ ---- */
+function gaRotSerit(rotasyon){
+  const kap = document.getElementById("rot-serit");
+  if(!rotasyon || !rotasyon.sektorler || !rotasyon.sektorler.length){
+    kap.innerHTML = '<div class="gnc-durum-kutu" style="flex:1;">Sektör rotasyonu verisi henüz yok.</div>';
+    return;
+  }
+  const sektorler = rotasyon.sektorler;
+  const sayac = {};
+  sektorler.forEach(s => sayac[s.evre] = (sayac[s.evre]||0) + 1);
+  const baskinEvre = Object.keys(sayac).sort((a,b) => sayac[b]-sayac[a])[0];
+
+  const guclu = sektorler.filter(s => s.evre === "genisleme").sort((a,b) => b.x_goreli_guc_13hf - a.x_goreli_guc_13hf).slice(0,2).map(s=>s.ad);
+  const zayif = sektorler.filter(s => s.evre === "daralma").sort((a,b) => a.x_goreli_guc_13hf - b.x_goreli_guc_13hf).slice(0,2).map(s=>s.ad);
+  let not = "";
+  if(guclu.length) not += guclu.join(" ve ") + " öne çıkıyor";
+  if(guclu.length && zayif.length) not += " · ";
+  if(zayif.length) not += zayif.join(" ve ") + " daralma bölgesinde";
+
+  const renkler = { genisleme: "var(--evre-genisleme)", toparlanma: "var(--evre-toparlanma)", yavaslama: "var(--evre-yavaslama)", daralma: "var(--evre-daralma)" };
+  let svg = `<svg class="rs-chart" width="76" height="76" viewBox="0 0 76 76">`;
+  svg += `<rect x="38" y="0" width="38" height="38" fill="var(--evre-genisleme)" opacity="0.08"/>`;
+  svg += `<rect x="38" y="38" width="38" height="38" fill="var(--evre-yavaslama)" opacity="0.08"/>`;
+  svg += `<rect x="0" y="38" width="38" height="38" fill="var(--evre-daralma)" opacity="0.08"/>`;
+  svg += `<rect x="0" y="0" width="38" height="38" fill="var(--evre-toparlanma)" opacity="0.08"/>`;
+  svg += `<circle cx="38" cy="38" r="34" fill="none" stroke="var(--line-strong)" stroke-width="1"/>`;
+  svg += `<line x1="38" y1="4" x2="38" y2="72" stroke="var(--line)" stroke-width="1"/><line x1="4" y1="38" x2="72" y2="38" stroke="var(--line)" stroke-width="1"/>`;
+  sektorler.forEach(s => {
+    const mx = 38 + (s.cx - 300) / 260 * 34;
+    const my = 38 + (s.cy - 300) / 260 * 34;
+    svg += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="3" fill="${renkler[s.evre]}" opacity="0.9"/>`;
+  });
+  svg += `</svg>`;
+
+  kap.innerHTML = svg +
+    `<div class="rs-body">` +
+      `<div class="rs-eyebrow">Sektör Rotasyonu</div>` +
+      `<div class="rs-title font-display">Şu an: ${GNC_EVRE_AD[baskinEvre]} Evresi</div>` +
+      `<div class="rs-sub">${not || "Sektörler dengeli dağılmış durumda."}</div>` +
+    `</div>` +
+    `<a class="git-btn" href="sektor-rotasyonu.html">Detaylı Görünüm →</a>`;
+}
+
+/* ---- KÜRESEL LİKİDİTE ---- */
+function gaKuresel(makro){
+  const kap = document.getElementById("kuresel-icerik");
+  if(!makro || !makro.seriler){ kap.innerHTML = '<div class="gnc-durum-kutu">Makro veri henüz yok.</div>'; return; }
+  const s = makro.seriler;
+  const dxy = gaSonDeger(s.dxy?.seri);
+  const fedLikidite = s.fed_net_likidite ? s.fed_net_likidite.seri[0] : null;
+  const reelFaiz = gaSonDeger(s.us_reel_faiz?.seri);
+  const vix = gaSonDeger(s.vix?.seri);
+  kap.innerHTML = gaLedgerTablo(
+    gaLedgerSatir("DXY (Dolar Endeksi)", dxy!==null ? dxy.toFixed(1) : "—") +
+    gaLedgerSatir("FED net likidite", fedLikidite ? "$" + fedLikidite.deger_trilyon_usd.toFixed(2) + " Tr" : "—", "up") +
+    gaLedgerSatir("ABD 10Y reel faiz", reelFaiz!==null ? reelFaiz.toFixed(2) + "%" : "—") +
+    gaLedgerSatir("VIX", vix!==null ? vix.toFixed(1) : "—")
   );
-  liste.sort((a,b) => siralaYon === "desc" ? b[siralaDonem] - a[siralaDonem] : a[siralaDonem] - b[siralaDonem]);
-
-  // not metni
-  const donemAd = DONEM_ETIKET[siralaDonem];
-  const yonAd = siralaYon === "desc" ? "yüksekten düşüğe" : "düşükten yükseğe";
-  let not = "<b>" + donemAd + "</b> getiriye göre " + yonAd + " sıralı · " + liste.length + " sektör";
-  if(aktifFiltreler.size){
-    not += ". Filtre: " + [...aktifFiltreler].map(f => FILTRE_ACIKLAMA[f]).join("; ") + ".";
-  }
-  not += "<br><span style='color:var(--gnc-text-dim)'>Bu bir tarama aracıdır, alım-satım sinyali değildir. Sektörleri kendi kriterlerine göre süzmene yardımcı olur.</span>";
-  document.getElementById("aracNot").innerHTML = not;
-
-  const kap = document.getElementById("sektor-icerik");
-  if(!liste.length){
-    kap.innerHTML = '<div class="durum-kutu">Bu filtreye uyan sektör yok. Farklı bir filtre dene veya <b>Temizle</b>ye bas.</div>';
-    return;
-  }
-  kap.innerHTML =
-    '<div class="kutu-izgara">' + liste.map(s =>
-      '<div class="sektor-kutu" onclick="sektorHisseAc(\'' + s.kod + '\',\'' + s.ad + '\')">' +
-        '<div class="ust-cizgi" style="background:' + ustRenk(s[siralaDonem]) + '"></div>' +
-        '<span class="tikla"><i class="bi bi-box-arrow-in-right"></i></span>' +
-        '<div class="kod">' + s.kod + '</div>' +
-        '<div class="ad">' + s.ad + '</div>' +
-        ["g1","h1","a1"].map(d =>
-          '<div class="sk-satir' + (d===siralaDonem?' vurgu':'') + '"><span class="lbl">' + DONEM_ETIKET[d] + '</span>' +
-          '<span class="val ' + yon(s[d]) + '">' + fmtYuzde(s[d]) + '</span></div>').join("") +
-      '</div>').join("") + '</div>';
 }
 
-/* filtre kontrolleri */
-document.querySelectorAll(".donem-chip").forEach(c => c.addEventListener("click", () => {
-  document.querySelectorAll(".donem-chip").forEach(x => x.classList.remove("active"));
-  c.classList.add("active");
-  siralaDonem = c.dataset.donem;
-  sektorRender();
-}));
-document.getElementById("yonChip").addEventListener("click", () => {
-  siralaYon = siralaYon === "desc" ? "asc" : "desc";
-  document.getElementById("yonChip").innerHTML = siralaYon === "desc"
-    ? '<i class="bi bi-sort-down"></i> Yüksek→Düşük'
-    : '<i class="bi bi-sort-up"></i> Düşük→Yüksek';
-  sektorRender();
-});
-document.querySelectorAll(".filtre-chip").forEach(c => c.addEventListener("click", () => {
-  const f = c.dataset.f;
-  if(aktifFiltreler.has(f)){ aktifFiltreler.delete(f); c.classList.remove("active"); }
-  else { aktifFiltreler.add(f); c.classList.add("active"); }
-  sektorRender();
-}));
-document.getElementById("filtreTemizle").addEventListener("click", () => {
-  aktifFiltreler.clear();
-  document.querySelectorAll(".filtre-chip").forEach(x => x.classList.remove("active"));
-  sektorRender();
-});
-function ozetBlock(et, dg, alt, y){
-  return '<div class="ozet-block"><div class="et">' + et + '</div>' +
-         '<div class="dg ' + y + '" style="color:' + (y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)") + '">' + dg + '</div>' +
-         '<div class="alt">' + alt + '</div></div>';
+/* ---- TÜRKİYE MAKRO ---- */
+function gaTurkiye(faiz, deflator, makro){
+  const kap = document.getElementById("turkiye-icerik");
+  const faizSon = faiz && faiz.seri ? gaSonDeger(faiz.seri) : null;
+  const tufeYillik = makro && makro.seriler && makro.seriler.tufe ? gaSonDeger(makro.seriler.tufe.seri) : null;
+  const usdtry = deflator && deflator.deflatorler && deflator.deflatorler.usd ? deflator.deflatorler.usd.son : null;
+  const rezerv = makro && makro.seriler && makro.seriler.tr_rezerv ? gaSonDeger(makro.seriler.tr_rezerv.seri) : null;
+  kap.innerHTML = gaLedgerTablo(
+    gaLedgerSatir("TCMB politika faizi", faizSon!==null ? faizSon.toFixed(2) + "%" : "—") +
+    gaLedgerSatir("TÜFE (yıllık)", tufeYillik!==null ? tufeYillik.toFixed(1) + "%" : "—") +
+    gaLedgerSatir("USD/TRY (dönem sonu)", usdtry!==null ? usdtry.toFixed(2) : "—") +
+    gaLedgerSatir("TCMB rezervi", rezerv!==null ? gncSayiKisalt(rezerv*1e6) + "$ (doğrulanıyor)" : "—")
+  );
 }
 
-/* ---- SEKTÖR HİSSELERİ ---- */
-let HISSE_MAP = null, HISSE_VERI = null;
-
-async function hisseMapYukle(){
-  if(HISSE_MAP) return HISSE_MAP;
+/* ---- KRİPTO ORTAMI ---- */
+async function gaKripto(kriptoGlobal, etf){
+  const kap = document.getElementById("kripto-icerik");
+  let btcFiyat = null, btcDegisim = null;
   try{
-    const res = await fetch('/.netlify/functions/veri?dosya=sektor_hisseler.json&t=' + Date.now());
-    const data = await res.json();
-    HISSE_MAP = data.hisseler || {};
-  }catch(e){ HISSE_MAP = {}; }
-  return HISSE_MAP;
-}
-async function hisseVeriYukle(){
-  if(HISSE_VERI) return HISSE_VERI;
-  try{
-    const res = await fetch('/.netlify/functions/veri?dosya=sektor_hisse_veri.json&t=' + Date.now());
-    const data = await res.json();
-    HISSE_VERI = data.hisseler || {};
-  }catch(e){ HISSE_VERI = {}; }
-  return HISSE_VERI;
-}
-function buyukFmt(x){
-  if(x === null || x === undefined || isNaN(x)) return "—";
-  if(x >= 1e12) return (x/1e12).toFixed(2).replace(".",",") + " T";
-  if(x >= 1e9)  return (x/1e9).toFixed(2).replace(".",",") + " Mr";
-  if(x >= 1e6)  return (x/1e6).toFixed(1).replace(".",",") + " Mn";
-  return Math.round(x).toLocaleString("tr-TR");
-}
-function fiyatFmt(x){
-  if(x === null || x === undefined || isNaN(x)) return "—";
-  return x.toLocaleString("tr-TR", {minimumFractionDigits:2, maximumFractionDigits:2});
-}
+    const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+    const d = await r.json();
+    btcFiyat = parseFloat(d.lastPrice);
+    btcDegisim = parseFloat(d.priceChangePercent);
+  }catch(e){}
 
-async function sektorHisseAc(kod, ad){
-  document.getElementById("view-sektorler").classList.add("hidden");
-  document.getElementById("view-takvim").classList.add("hidden");
-  document.getElementById("view-hisseler").classList.remove("hidden");
-  document.getElementById("topbarTitle").textContent = kod + " · Hisseler";
-  document.getElementById("hisse-baslik").textContent = kod + " · " + ad;
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const dominans = kriptoGlobal ? kriptoGlobal.btc_dominans_yuzde : null;
+  const toplamPD = kriptoGlobal ? kriptoGlobal.toplam_piyasa_degeri_trilyon_usd : null;
 
-  const kap = document.getElementById("hisse-icerik");
-  kap.innerHTML = '<div class="durum-kutu">Hisseler yükleniyor…</div>';
-  const [map, veri] = await Promise.all([hisseMapYukle(), hisseVeriYukle()]);
-  let hisseler = (map[kod] || []).map(h => Object.assign({}, h, veri[h.kod] || {}));
-  document.getElementById("hisse-adet").textContent = hisseler.length + " hisse";
-
-  if(!hisseler.length){
-    kap.innerHTML = '<div class="durum-kutu">Bu sektörün listesi henüz eklenmedi.<br>Şu an liste BIST 100 üyeleriyle sınırlı; tam liste sonra genişletilecek.</div>';
-    return;
-  }
-  // piyasa degerine gore buyukten kucuge sirala (veri yoksa sona)
-  hisseler.sort((a,b) => (b.pd||-1) - (a.pd||-1));
-
-  kap.innerHTML =
-    '<div class="hisse-baslik"><span>Hisse</span><span>Fiyat</span><span>Günlük</span><span>Haftalık</span><span>Aylık</span><span>Piyasa Değeri</span><span>Hacim</span><span></span></div>' +
-    '<div class="hisse-liste">' + hisseler.map(h =>
-      '<div class="hisse-satir" onclick="hisseDetay(\'' + h.kod + '\',\'' + (h.ad||"").replace(/'/g,"") + '\')">' +
-        '<div class="h-ad"><div class="kod">' + h.kod + '</div><div class="ad">' + (h.ad||"") + '</div></div>' +
-        '<div class="h-cell"><span class="et">Fiyat</span><span class="dg fiyat">' + fiyatFmt(h.fiyat) + '</span></div>' +
-        '<div class="h-cell"><span class="et">Günlük</span><span class="dg ' + yon(h.g1) + '">' + fmtYuzde(h.g1) + '</span></div>' +
-        '<div class="h-cell"><span class="et">Haftalık</span><span class="dg ' + yon(h.h1) + '">' + fmtYuzde(h.h1) + '</span></div>' +
-        '<div class="h-cell"><span class="et">Aylık</span><span class="dg ' + yon(h.a1) + '">' + fmtYuzde(h.a1) + '</span></div>' +
-        '<div class="h-cell"><span class="et">Piyasa Değeri</span><span class="dg kucuk">' + buyukFmt(h.pd) + '</span></div>' +
-        '<div class="h-cell"><span class="et">Hacim</span><span class="dg kucuk">' + buyukFmt(h.hacim) + '</span></div>' +
-        '<div class="h-ok"><i class="bi bi-chevron-right"></i></div>' +
-      '</div>').join("") + '</div>' +
-    '<div class="arac-not" style="margin-top:16px;border:none;padding:0;">Fiyat ve getiriler İş Yatırım kaynaklıdır. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
-}
-
-let ONCEKI_VIEW = "hisseliste";
-let HD_KOD = "", HD_AD = "", HD_SUB = "reel";
-function hisseDetay(kod, ad){
-  HD_KOD = kod; HD_AD = ad || ""; HD_SUB = "reel";
-  RG_HAM = null;
-  ONCEKI_VIEW = document.getElementById("view-hisseler").classList.contains("hidden") ? "hisseliste" : "sektorhisse";
-  ["view-hisseler","view-hisseliste","view-sektorler","view-takvim","view-turkiye","view-anasayfa","view-onchain"].forEach(v => document.getElementById(v).classList.add("hidden"));
-  document.getElementById("view-hissedetay").classList.remove("hidden");
-  document.getElementById("topbarTitle").textContent = kod + " · Hisse";
-  document.getElementById("hd-baslik").textContent = kod + (ad ? " · " + ad : "");
-  document.getElementById("hd-guncelleme").textContent = "";
-  document.getElementById("hd-metrik").innerHTML = "";
-  document.getElementById("hd-icerik").innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
-  hdSubmenuCiz();
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  metrikSeridiYukle(kod);
-  reelGetiriYukle(kod);
-  finansalYukle(kod);
-}
-function hdSubmenuCiz(){
-  const menu = [["reel","Reel Getiri","bi-percent"],["bilanco","Bilanço","bi-file-earmark-text"],["gelir","Gelir Tablosu","bi-graph-up-arrow"],["nakit","Nakit Akım","bi-cash-stack"],["grafikler","Grafikler & Raporlar","bi-bar-chart-line"]];
-  document.getElementById("hd-submenu").innerHTML = menu.map(m =>
-    '<button class="hd-sub-link' + (m[0]===HD_SUB?' active':'') + '" onclick="hdSub(\'' + m[0] + '\')"><i class="bi ' + m[2] + '"></i><span>' + m[1] + '</span></button>').join("");
-}
-function hdSub(sub){ HD_SUB = sub; hdSubmenuCiz(); hdRender(); }
-async function metrikSeridiYukle(kod){
-  const veri = await hisseVeriYukle();
-  const h = (veri && veri[kod]) || null;
-  if(!h){ return; }
-  const kutu = (et, deger, sinif) =>
-    '<div class="hd-mkutu"><div class="k">' + et + '</div><div class="v ' + (sinif||"") + '">' + deger + '</div></div>';
-  document.getElementById("hd-metrik").innerHTML = '<div class="hd-metrik-serit">' +
-    kutu("Fiyat", fiyatFmt(h.fiyat)) +
-    kutu("Günlük", fmtYuzde(h.g1), yon(h.g1)) +
-    kutu("Haftalık", fmtYuzde(h.h1), yon(h.h1)) +
-    kutu("Aylık", fmtYuzde(h.a1), yon(h.a1)) +
-    kutu("Piyasa Değeri", buyukFmt(h.pd)) +
-    kutu("Hacim", buyukFmt(h.hacim)) +
-  '</div>';
-}
-async function finansalYukle(kod){
-  const kap = document.getElementById("hd-icerik");
-  kap.innerHTML = '<div class="durum-kutu">Finansallar yükleniyor…</div>';
-  try{
-    const res = await fetch('/.netlify/functions/veri?dosya=finansal/' + kod + '.json&t=' + Date.now());
-    if(!res.ok) throw new Error();
-    const fin = await res.json();
-    try { document.getElementById("hd-guncelleme").textContent = new Date(fin.guncelleme).toLocaleDateString("tr-TR") + " · İş Yatırım"; } catch(e){}
-    finansalCiz(fin);
-  }catch(e){
-    FIN_VERI = { kalemler: [], donemler: [] };
-    hdRender();
-  }
-}
-function finBuyuk(x){
-  if(x === null || x === undefined) return "—";
-  const a = Math.abs(x); const isaret = x < 0 ? "-" : "";
-  if(a >= 1e9) return isaret + (a/1e9).toLocaleString("tr-TR",{maximumFractionDigits:2}) + " Mr";
-  if(a >= 1e6) return isaret + (a/1e6).toLocaleString("tr-TR",{maximumFractionDigits:1}) + " Mn";
-  return x.toLocaleString("tr-TR",{maximumFractionDigits:0});
-}
-let FIN_VERI = null, FIN_DONEM = 6, FIN_KAPALI = {}, FIN_PERIYOT = "hepsi";
-function finGrup(ad){
-  const s = (ad||"").toLocaleLowerCase("tr");
-  if(/nakit ak|faaliyetlerinden|faaliyetlerine|serbest nakit|dönem başı nakit|dönem sonu nakit|nakit benzer.*(değişim|artış|azalış)/.test(s)) return "nakit";
-  if(/hasıl|satış gel|satışların maliyet|brüt|faaliyet kâr|faaliyet zarar|favök|favok|esas faaliyet|finansman gel|finansman gid|vergi (gel|gid|önces)|sürdürülen faaliyet|durdurulan faaliyet|net dönem|dönem kâr|dönem zarar|hisse başına|amortisman|itfa|faiz gel|faiz gid|ana ortaklık|sürdürülen/.test(s)) return "gelir";
-  return "bilanco";
-}
-function finansalCiz(fin){
-  FIN_VERI = fin;
-  hdRender();
-}
-function hdRender(){
-  if(HD_SUB === "grafikler"){ hdGrafikler(); return; }
-  if(HD_SUB === "reel"){ reelGetiriCiz(); return; }
-  finTablo(HD_SUB);
-}
-
-/* ---- REEL GETİRİ ---- */
-let RG_HAM = null, RG_BAZ = "tufe", RG_OLCEK = 90;
-const RG_BAZ_AD = { tufe: "TÜFE'ye göre", usd: "USD/TRY'ye göre", altin: "Gram Altına göre" };
-const RG_OLCEK_AD = [[21,"1 Ay"],[90,"3 Ay"],[180,"6 Ay"],[365,"1 Yıl"],[9999,"Tüm"]];
-
-async function reelGetiriYukle(kod){
-  try{
-    const [gecmisRes, deflRes] = await Promise.all([
-      fetch('/.netlify/functions/veri?dosya=hisse_gecmis/' + kod + '.json&t=' + Date.now()),
-      fetch('/.netlify/functions/veri?dosya=deflator.json&t=' + Date.now())
-    ]);
-    if(!gecmisRes.ok) throw new Error("gecmis-yok");
-    if(!deflRes.ok) throw new Error("deflator-yok");
-    const gecmis = await gecmisRes.json();
-    const defl = await deflRes.json();
-    RG_HAM = { gunluk: (gecmis.seri || []), deflator: defl.deflatorler || {} };
-    if(HD_SUB === "reel") reelGetiriCiz();
-  }catch(e){
-    RG_HAM = { hata: true };
-    if(HD_SUB === "reel") reelGetiriCiz();
-  }
-}
-function rgTarihEtiket(tarihStr, uzunMu){
-  const d = new Date(tarihStr);
-  if(isNaN(d)) return tarihStr;
-  return d.toLocaleDateString("tr-TR", uzunMu ? {day:"numeric",month:"short",year:"2-digit"} : {day:"numeric",month:"short"});
-}
-// Aylik TUFE/USD/Altin noktalarini (ay ortasina sabitlenmis) GUNLUK deger uretecek
-// sekilde dogrusal enterpolasyonla birlestirir. TUFE gibi seriler yalnizca ayda bir
-// aciklandigi icin gunler arasi degisimi "duz cizgi" ile TAHMIN eder - ekonomi
-// analizinde standart bir yontemdir, resmi TUFE rakamlarinin kendisini degistirmez.
-function rgEnterpolasyon(seriDesc){
-  const noktalar = (seriDesc || [])
-    .map(s => ({ d: new Date(s.tarih + "-15").getTime(), v: s.deger }))
-    .filter(p => !isNaN(p.d))
-    .sort((a,b) => a.d - b.d);
-  if(!noktalar.length) return { fn: () => null, sonTarih: null };
-  const fn = (tarihStr) => {
-    const t = new Date(tarihStr).getTime();
-    if(t <= noktalar[0].d) return noktalar[0].v;
-    if(t >= noktalar[noktalar.length-1].d) return noktalar[noktalar.length-1].v;
-    for(let i=0;i<noktalar.length-1;i++){
-      if(t >= noktalar[i].d && t <= noktalar[i+1].d){
-        const oran = (t - noktalar[i].d) / (noktalar[i+1].d - noktalar[i].d);
-        return noktalar[i].v + (noktalar[i+1].v - noktalar[i].v) * oran;
-      }
-    }
-    return noktalar[noktalar.length-1].v;
-  };
-  return { fn, sonTarih: new Date(noktalar[noktalar.length-1].d) };
-}
-function rgSeriHesapla(baz, olcekGun){
-  const gunluk = (RG_HAM && RG_HAM.gunluk) || [];
-  const deflGrup = (RG_HAM && RG_HAM.deflator && RG_HAM.deflator[baz]) || {};
-  if(gunluk.length < 2 || !(deflGrup.seri || []).length) return { hata: "veri-yok" };
-
-  const { fn: deflFn, sonTarih } = rgEnterpolasyon(deflGrup.seri);
-  if(!sonTarih) return { hata: "veri-yok" };
-  // Enflasyon verisinin guvenle temsil ettigi son tarihin ~20 gun otesine kadar
-  // enterpolasyona izin ver; bunun disinda "duz veri" uretip yaniltmak yerine kes.
-  const guvenSiniri = new Date(sonTarih); guvenSiniri.setDate(guvenSiniri.getDate() + 20);
-
-  const talepEdilen = olcekGun === 9999 ? gunluk : gunluk.slice(-olcekGun);
-  const dilim = talepEdilen.filter(s => new Date(s.tarih) <= guvenSiniri);
-  if(dilim.length < 2){
-    // Secilen pencerenin TAMAMI enflasyon verisinin kapsadigi tarihin otesindeyse
-    // ("daha kisa dene" yanlis yonlendirme olur) - kullanicidan DAHA UZUN bir
-    // pencere denemesini iste, cunku eksik olan veri gecmiste degil, en guncelde.
-    return { hata: "kisa-pencere", sonTarih };
+  let etfHaftalik = null;
+  if(etf && etf.gunluk && etf.gunluk.length >= 7){
+    const son7 = etf.gunluk.slice(-7);
+    etfHaftalik = son7.reduce((t,g) => t + g.akis, 0);
   }
 
-  const kesildiMi = talepEdilen.length > 0 && dilim.length > 0 &&
-    talepEdilen[talepEdilen.length-1].tarih !== dilim[dilim.length-1].tarih;
+  kap.innerHTML = gaLedgerTablo(
+    gaLedgerSatir("BTC / USD", btcFiyat!==null ? "$" + Math.round(btcFiyat).toLocaleString("en-US") : "—", btcDegisim!==null ? (btcDegisim>=0?"up":"down") : null) +
+    gaLedgerSatir("BTC dominans", dominans!==null ? dominans.toFixed(1) + "%" : "—") +
+    gaLedgerSatir("Haftalık ETF net giriş", etfHaftalik!==null ? (etfHaftalik>=0?"+ $":"− $") + Math.abs(Math.round(etfHaftalik)).toLocaleString("tr-TR") + "M" : "—", etfHaftalik!==null ? (etfHaftalik>=0?"up":"down") : null) +
+    gaLedgerSatir("Toplam piyasa değeri", toplamPD!==null ? "$" + toplamPD.toFixed(2) + " Tr" : "—")
+  );
+}
 
-  const ilkFiyat = dilim[0].kapanis;
-  const ilkDeflator = deflFn(dilim[0].tarih);
-  const uzun = olcekGun >= 365 || olcekGun === 9999;
-  const nominalSeri = [], reelSeri = [];
-  for(const s of dilim){
-    const nominalEndeks = (s.kapanis / ilkFiyat) * 100;
-    const deflatorEndeks = (deflFn(s.tarih) / ilkDeflator) * 100;
-    const reelEndeks = (nominalEndeks / deflatorEndeks) * 100;
-    const t = rgTarihEtiket(s.tarih, uzun);
-    nominalSeri.push({ t, v: nominalEndeks });
-    reelSeri.push({ t, v: reelEndeks });
+/* ---- BIST GÖRÜNÜMÜ ---- */
+function gaBist(sektorVerisi, xu100Ma){
+  const kap = document.getElementById("bist-icerik");
+  let seviye = null, haftalik = null;
+  if(sektorVerisi && sektorVerisi.endeksler){
+    const xu = sektorVerisi.endeksler.find(e => e.kod === "XU100");
+    if(xu){ seviye = xu.son_deger; haftalik = xu.h1; }
   }
-  return { nominalSeri, reelSeri, kesildiMi, sonTarih };
-}
-function rgBazSec(b){ RG_BAZ = b; reelGetiriCiz(); }
-function rgOlcekSec(n){ RG_OLCEK = n; reelGetiriCiz(); }
-function reelGetiriCiz(){
-  const kap = document.getElementById("hd-icerik");
-  if(!RG_HAM){ kap.innerHTML = '<div class="durum-kutu">Reel getiri hesaplanıyor…</div>'; return; }
-  if(RG_HAM.hata){
-    kap.innerHTML = '<div class="durum-kutu">Bu hisse için fiyat geçmişi henüz oluşmadı.<br>Fiyat geçmişi her gün otomatik güncellenir, birkaç gün içinde burada görünür.</div>';
-    return;
-  }
-  const sonuc = rgSeriHesapla(RG_BAZ, RG_OLCEK);
-  const bazChip = Object.keys(RG_BAZ_AD).map(b =>
-    '<button class="chip' + (b === RG_BAZ ? ' active' : '') + '" onclick="rgBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
-  const olcekChip = RG_OLCEK_AD.map(o =>
-    '<button class="chip olcek' + (o[0] === RG_OLCEK ? ' active' : '') + '" onclick="rgOlcekSec(' + o[0] + ')">' + o[1] + '</button>').join("");
-  const ustCubuklar = '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
-    '<div class="grafik-olcek">' + olcekChip + '</div>';
-
-  if(sonuc.hata === "kisa-pencere"){
-    const ay = sonuc.sonTarih.toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
-    kap.innerHTML =
-      '<div class="as-kart">' +
-        '<div class="as-kart-baslik"><i class="bi bi-percent"></i> 100 TL yatırsaydın ne olurdu?</div>' +
-        ustCubuklar +
-        '<div class="durum-kutu">Enflasyon/kur/altın verisi en son <b>' + ay + '</b> dönemine kadar açıklanmış. Seçtiğin dönem bu tarihten sonrasını kapsadığı için hesaplanamıyor.<br>Daha <b>uzun</b> bir dönem (6 Ay, 1 Yıl, Tüm) dene.</div>' +
-      '</div>';
-    return;
-  }
-  if(sonuc.hata === "veri-yok"){
-    kap.innerHTML =
-      '<div class="as-kart">' +
-        '<div class="as-kart-baslik"><i class="bi bi-percent"></i> 100 TL yatırsaydın ne olurdu?</div>' +
-        ustCubuklar +
-        '<div class="durum-kutu">Bu hesap için gereken veri henüz yok.</div>' +
-      '</div>';
-    return;
-  }
-  const { nominalSeri, reelSeri, kesildiMi, sonTarih } = sonuc;
-  const nomTL = nominalSeri[nominalSeri.length-1].v;
-  const reelTL = reelSeri[reelSeri.length-1].v;
-  const paraFmt = (v) => Math.round(v).toLocaleString("tr-TR");
-
-  const uyari = kesildiMi
-    ? '<div style="font-size:11px;color:var(--gnc-warning);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;margin-bottom:12px;">' +
-      '<i class="bi bi-exclamation-triangle"></i> Enflasyon/kur/altın verisi ' + sonTarih.toLocaleDateString("tr-TR",{month:"long",year:"numeric"}) +
-      ' dönemine kadar açıklanmış; grafik bu tarihte kesiliyor, seçtiğin dönemin tamamını kapsamıyor olabilir.</div>'
-    : '';
-
-  kap.innerHTML =
-    '<div class="as-kart">' +
-      '<div class="as-kart-baslik"><i class="bi bi-percent"></i> 100 TL yatırsaydın ne olurdu?' +
-        '<span class="grafik-info" data-tip="Bu dönemin başında hisseye 100 TL yatırdığını varsayarsak, bugün nominalde (ham) ve seçtiğin baza göre reel (enflasyon/kur/altın arındırılmış) olarak elinde ne olurdu. Grafiğin üzerinde gezinerek herhangi bir günün değerini görebilirsin."><i class="bi bi-info-circle"></i></span>' +
-      '</div>' +
-      ustCubuklar +
-      uyari +
-      '<div class="ethbtc-ust">' +
-        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Nominal (ham)</div>' +
-        '<div class="ethbtc-deger ' + yon(nomTL-100) + '" style="font-size:22px;">' + paraFmt(nomTL) + ' TL</div></div>' +
-        '<div><div style="font-size:9px;color:var(--gnc-text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Reel (' + RG_BAZ_AD[RG_BAZ].replace("'ye göre","").replace("'na göre","") + ')</div>' +
-        '<div class="ethbtc-deger ' + yon(reelTL-100) + '" style="font-size:22px;">' + paraFmt(reelTL) + ' TL</div></div>' +
-      '</div>' +
-      cizgiGrafik(nominalSeri, { seri2: reelSeri, birim: "tl", fmt: (v)=>Math.round(v)+' TL', etiket1: "Nominal", etiket2: "Reel", yukseklik: 168 }) +
-      '<div style="display:flex;gap:14px;margin-top:8px;font-size:10.5px;color:var(--gnc-text-dim);">' +
-        '<span><span style="display:inline-block;width:10px;height:2px;background:var(--gnc-accent);margin-right:5px;vertical-align:middle;"></span>Nominal</span>' +
-        '<span><span style="display:inline-block;width:10px;height:2px;background:var(--bs-emphasis-color);margin-right:5px;vertical-align:middle;border-top:2px dashed var(--bs-emphasis-color);"></span>Reel</span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="hd-not">100 TL, dönemin ilk gününe yatırılmış kabul edilir. Enflasyon/kur/altın verisi ayda bir açıklandığı için günler arası değişim düz bir tahmin çizgisiyle gösterilir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
-}
-/* ---- REEL GETİRİ KARŞILAŞTIR (çoklu varlık) ---- */
-let DEFLATOR_HAM = null;
-async function deflatorGetir(){
-  if(DEFLATOR_HAM) return DEFLATOR_HAM;
-  const res = await fetch('/.netlify/functions/veri?dosya=deflator.json&t=' + Date.now());
-  if(!res.ok) throw new Error("deflator-yok");
-  const veri = await res.json();
-  DEFLATOR_HAM = veri.deflatorler || {};
-  return DEFLATOR_HAM;
-}
-let SEKTOR_GECMIS_HAM = null;
-async function sektorGecmisGetir(){
-  if(SEKTOR_GECMIS_HAM) return SEKTOR_GECMIS_HAM;
-  const res = await fetch('/.netlify/functions/veri?dosya=sektor_gecmis.json&t=' + Date.now());
-  if(!res.ok) throw new Error("gecmis-yok");
-  const veri = await res.json();
-  SEKTOR_GECMIS_HAM = veri.sektorler || {};
-  return SEKTOR_GECMIS_HAM;
-}
-function rgAyKisaEtiket(ym){
-  const [y, a] = ym.split("-");
-  return TR_AY_KISA_RGK[parseInt(a,10)-1] + " " + y.slice(2);
-}
-const TR_AY_KISA_RGK = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
-
-let RGK_SECILI = [], RGK_HAM = {}, RGK_BAZ = "tufe", RGK_OLCEK = 12, RGK_ISLENIYOR = false;
-const RGK_RENK = ["var(--gnc-accent)", "var(--gnc-success)", "var(--gnc-danger)", "var(--gnc-warning, #f59e0b)"];
-const RGK_OLCEK_AD = [[6,"6 Ay"],[12,"1 Yıl"],[36,"3 Yıl"],[9999,"Tüm"]];
-
-async function rgkBaslat(){
-  await hisseMapYukle();
-  rgkCiz();
-}
-function rgkAra(sorgu){
-  sorgu = (sorgu || "").trim().toLocaleUpperCase("tr");
-  if(!sorgu) return [];
-  const sonuc = [];
-  if("XU100".includes(sorgu) || "BIST 100".toLocaleUpperCase("tr").includes(sorgu)){
-    sonuc.push({ kod:"XU100", ad:"BIST 100", tip:"endeks" });
-  }
-  Object.keys(SEKTOR_AD).forEach(kod => {
-    if(sonuc.length >= 8) return;
-    if(kod.includes(sorgu) || SEKTOR_AD[kod].toLocaleUpperCase("tr").includes(sorgu)){
-      sonuc.push({ kod, ad: SEKTOR_AD[kod], tip:"endeks" });
-    }
-  });
-  if(HL_MAP){
-    for(const sk of Object.keys(HL_MAP)){
-      if(sonuc.length >= 8) break;
-      for(const h of HL_MAP[sk]){
-        if(sonuc.length >= 8) break;
-        if(h.kod.includes(sorgu) || (h.ad||"").toLocaleUpperCase("tr").includes(sorgu)){
-          if(!sonuc.some(x => x.kod === h.kod)) sonuc.push({ kod:h.kod, ad:h.ad, tip:"hisse" });
-        }
-      }
-    }
-  }
-  return sonuc.slice(0,8);
-}
-function rgkAramaCiz(sorgu){
-  const kap = document.getElementById("rgk-sonuclar");
-  if(!kap) return;
-  const sonuclar = rgkAra(sorgu);
-  if(!sonuclar.length){ kap.innerHTML = ""; return; }
-  kap.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">' +
-    sonuclar.map(s => '<button class="chip" onclick="rgkEkle(\'' + s.kod + '\',\'' + s.ad.replace(/'/g,"") + '\',\'' + s.tip + '\')">' + s.kod + ' <span style="opacity:.6;font-weight:400;">· ' + s.ad + '</span></button>').join("") +
-  '</div>';
-}
-async function rgkEkle(kod, ad, tip){
-  if(RGK_SECILI.some(s => s.kod === kod)) return;
-  if(RGK_SECILI.length >= 4){ alert("En fazla 4 varlık karşılaştırabilirsin. Önce birini çıkar."); return; }
-  RGK_SECILI.push({ kod, ad, tip });
-  document.getElementById("rgk-arama").value = "";
-  document.getElementById("rgk-sonuclar").innerHTML = "";
-  try{
-    if(tip === "hisse"){
-      const res = await fetch('/.netlify/functions/veri?dosya=hisse_gecmis/' + kod + '.json&t=' + Date.now());
-      if(!res.ok) throw new Error();
-      const veri = await res.json();
-      RGK_HAM[kod] = { tip:"hisse", gunluk: veri.seri || [] };
-    } else {
-      const sektorler = await sektorGecmisGetir();
-      const s = sektorler[kod];
-      if(!s || !s.aylik) throw new Error();
-      RGK_HAM[kod] = { tip:"endeks", aylik: s.aylik };
-    }
-  }catch(e){
-    RGK_HAM[kod] = { hata:true };
-  }
-  rgkCiz();
-}
-function rgkCikar(kod){
-  RGK_SECILI = RGK_SECILI.filter(s => s.kod !== kod);
-  rgkCiz();
-}
-function rgkBazSec(b){ RGK_BAZ = b; rgkCiz(); }
-function rgkOlcekSec(n){ RGK_OLCEK = n; rgkCiz(); }
-function rgkAylikSonKapanis(gunlukSeri){
-  const ay = {};
-  for(const s of gunlukSeri){ ay[s.tarih.slice(0,7)] = s.kapanis; }
-  return Object.keys(ay).sort().map(ym => ({ ay: ym, deger: ay[ym] }));
-}
-function rgkSeriHazirla(kod){
-  const ham = RGK_HAM[kod];
-  if(!ham || ham.hata) return null;
-  if(ham.tip === "hisse") return rgkAylikSonKapanis(ham.gunluk);
-  return rrgEndeksle(ham.aylik).map(x => ({ ay: x.ay, deger: x.deger }));
-}
-async function rgkHesapla(){
-  let deflator;
-  try{ deflator = await deflatorGetir(); }catch(e){ return { hata: "veri-yok", seriler: [] }; }
-  const deflGrup = deflator[RGK_BAZ] || {};
-  const { fn: deflFn, sonTarih } = rgEnterpolasyon(deflGrup.seri);
-  if(!sonTarih) return { hata: "veri-yok", seriler: [] };
-
-  const seriler = [];
-  for(const s of RGK_SECILI){
-    const aylikDeger = rgkSeriHazirla(s.kod);
-    if(!aylikDeger || aylikDeger.length < 2){ seriler.push(Object.assign({}, s, { hata:true })); continue; }
-    let dilim = RGK_OLCEK === 9999 ? aylikDeger : aylikDeger.slice(-RGK_OLCEK);
-    const guvenSiniri = new Date(sonTarih); guvenSiniri.setDate(guvenSiniri.getDate() + 20);
-    dilim = dilim.filter(d => new Date(d.ay + "-15") <= guvenSiniri);
-    if(dilim.length < 2){ seriler.push(Object.assign({}, s, { hata:true, kisaPencere:true })); continue; }
-    const ilkDeger = dilim[0].deger;
-    const ilkDeflator = deflFn(dilim[0].ay);
-    const reelSeri = dilim.map(d => {
-      const nominalEndeks = (d.deger / ilkDeger) * 100;
-      const deflatorEndeks = (deflFn(d.ay) / ilkDeflator) * 100;
-      return { t: rgAyKisaEtiket(d.ay), v: (nominalEndeks / deflatorEndeks) * 100 };
-    });
-    seriler.push(Object.assign({}, s, { reelSeri }));
-  }
-  const gecerli = seriler.filter(s => s.reelSeri);
-  if(gecerli.length){
-    const minUzunluk = Math.min(...gecerli.map(s => s.reelSeri.length));
-    gecerli.forEach(s => { s.reelSeri = s.reelSeri.slice(-minUzunluk); });
-  }
-  return { seriler, sonTarih };
-}
-async function rgkCiz(){
-  const kap = document.getElementById("rgk-icerik");
-  if(!kap) return;
-  if(RGK_ISLENIYOR) return;
-  RGK_ISLENIYOR = true;
-
-  const bazChip = Object.keys(RG_BAZ_AD).map(b =>
-    '<button class="chip' + (b===RGK_BAZ?' active':'') + '" onclick="rgkBazSec(\'' + b + '\')">' + RG_BAZ_AD[b] + '</button>').join("");
-  const olcekChip = RGK_OLCEK_AD.map(o =>
-    '<button class="chip olcek' + (o[0]===RGK_OLCEK?' active':'') + '" onclick="rgkOlcekSec(' + o[0] + ')">' + o[1] + '</button>').join("");
-  const secilenler = RGK_SECILI.map((s,idx) =>
-    '<span class="chip active" style="border-color:' + RGK_RENK[idx%RGK_RENK.length] + ';color:' + RGK_RENK[idx%RGK_RENK.length] + ';background:transparent;">' +
-      s.kod + ' <i class="bi bi-x" style="cursor:pointer;margin-left:4px;" onclick="rgkCikar(\'' + s.kod + '\')"></i>' +
-    '</span>').join("");
-
-  let govde = '<div class="as-kart">' +
-    '<div style="margin-bottom:10px;">' +
-      '<input type="text" id="rgk-arama" placeholder="Hisse veya endeks ara (örn: THYAO, XBANK, XU100)…" oninput="rgkAramaCiz(this.value)" style="width:100%;background:var(--gnc-input-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:9px 12px;color:var(--bs-emphasis-color);font-size:13px;">' +
-    '</div>' +
-    '<div id="rgk-sonuclar"></div>' +
-    (secilenler ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">' + secilenler + '</div>' : '<div class="durum-kutu">Karşılaştırmak için yukarıdan en az bir hisse veya endeks ekle.</div>');
-
-  if(RGK_SECILI.length){
-    govde += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + bazChip + '</div>' +
-      '<div class="grafik-olcek">' + olcekChip + '</div>';
-    let sonuc;
-    try{ sonuc = await rgkHesapla(); }catch(e){ sonuc = { hata:"veri-yok", seriler: [] }; }
-    if(sonuc.hata){
-      govde += '<div class="durum-kutu">Bu karşılaştırma için veri henüz yok.</div>';
-    } else {
-      const gecerli = sonuc.seriler.filter(s => s.reelSeri);
-      const hatali = sonuc.seriler.filter(s => !s.reelSeri);
-      if(gecerli.length < 1){
-        govde += '<div class="durum-kutu">Seçilen varlıklar için yeterli örtüşen veri yok. Daha kısa/uzun bir dönem dene.</div>';
-      } else {
-        const ana = gecerli[0];
-        const ekstraSeriler = gecerli.slice(1).map((s,idx) => ({ seri: s.reelSeri, renk: RGK_RENK[(idx+1)%RGK_RENK.length], kesikli: false, etiket: s.kod }));
-        govde += cizgiGrafik(ana.reelSeri, { ekstraSeriler, birim:"tl", fmt:(v)=>Math.round(v)+' TL', etiket1: ana.kod, yukseklik:180 });
-        govde += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;">' +
-          gecerli.map((s,idx) => {
-            const son = s.reelSeri[s.reelSeri.length-1].v;
-            const renk = RGK_RENK[idx%RGK_RENK.length];
-            return '<span style="color:' + renk + ';font-weight:700;"><span style="display:inline-block;width:10px;height:2px;background:' + renk + ';margin-right:5px;vertical-align:middle;"></span>' +
-              s.kod + ': 100 TL → ' + Math.round(son) + ' TL</span>';
-          }).join("") +
-        '</div>';
-        if(hatali.length){
-          govde += '<div class="durum-kutu" style="margin-top:12px;">' + hatali.map(h => h.kod + (h.kisaPencere?' için bu dönemde yeterli veri yok':' için veri yüklenemedi')).join(", ") + '.</div>';
-        }
-      }
-    }
-  }
-  govde += '</div>' +
-    '<div class="hd-not">Her varlık, dönemin ilk ayına 100 TL yatırılmış kabul edilerek seçilen baza göre reel olarak endekslenir. Geçmiş getiri gelecek getirinin garantisi değildir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
-
-  kap.innerHTML = govde;
-  RGK_ISLENIYOR = false;
-}
-function finTablo(grup){
-  const kap = document.getElementById("hd-icerik");
-  const fin = FIN_VERI;
-  const adlar = { bilanco:"Bilanço", gelir:"Gelir Tablosu", nakit:"Nakit Akım" };
-  if(!fin || !(fin.kalemler||[]).length){ kap.innerHTML = '<div class="durum-kutu">Bu hissenin finansalları henüz yok.</div>'; return; }
-  const ceyrek = (x) => (String(x).split("/")[1] || "");
-  const donemler = (fin.donemler || []).filter(x => FIN_PERIYOT === "hepsi" ? true : ceyrek(x) === FIN_PERIYOT);
-  const d = donemler.slice(0, FIN_DONEM);
-  const kalemler = fin.kalemler.filter(kl => finGrup(kl.ad) === grup);
-
-  const periyotlar = [["hepsi","Tümü"],["3","3 Aylık"],["6","6 Aylık"],["9","9 Aylık"],["12","Yıllık"]];
-  let html = '<div class="hd-baslik-ic">' + adlar[grup] + ' <span>' + kalemler.length + ' kalem</span></div>' +
-    '<div class="fin-arac">' +
-    '<div class="fin-donem-arac fin-periyot">' + periyotlar.map(p =>
-      '<button class="chip finper' + (p[0]===FIN_PERIYOT?' active':'') + '" data-p="' + p[0] + '">' + p[1] + '</button>').join("") + '</div>' +
-    '<div class="fin-donem-arac">' + [4,6,8,99].map(n =>
-      '<button class="chip findonem' + (n===FIN_DONEM?' active':'') + '" data-n="' + n + '">' + (n===99?"Tümü":"Son "+n) + '</button>').join("") + '</div></div>';
-
-  if(!kalemler.length || !d.length){ html += '<div class="durum-kutu">Bu tabloda veri bulunamadı.</div>'; }
-  else {
-    html += '<div class="fin-tablo-sar"><table class="fin-tablo"><thead><tr><th class="kalem">Kalem (TL)</th>' +
-      d.map(x => '<th>' + x + '</th>').join("") + '</tr></thead><tbody>' +
-      kalemler.map(kl => '<tr><td class="kalem">' + kl.ad + '</td>' +
-        d.map(x => '<td>' + finBuyuk(kl.degerler[x]) + '</td>').join("") + '</tr>').join("") +
-      '</tbody></table></div>';
-  }
-  html += '<div class="hd-not">İş Yatırım kaynaklı, TL bazında. Dönemler kümülatiftir: 3 = ilk çeyrek, 6 = 6 aylık, 9 = 9 aylık, 12 = yıllık.</div>';
-  kap.innerHTML = html;
-  document.querySelectorAll(".finper").forEach(b => b.addEventListener("click", () => { FIN_PERIYOT = b.dataset.p; finTablo(grup); }));
-  document.querySelectorAll(".findonem").forEach(b => b.addEventListener("click", () => { FIN_DONEM = parseInt(b.dataset.n); finTablo(grup); }));
-}
-function finKalemBul(re){ return (FIN_VERI && FIN_VERI.kalemler || []).find(k => re.test((k.ad||"").toLocaleLowerCase("tr"))); }
-function finKalemSeri(kalem){
-  if(!kalem) return [];
-  const d = (FIN_VERI.donemler || []).slice().reverse(); // kronolojik
-  return d.map(p => ({ t: p, v: (kalem.degerler[p] != null ? kalem.degerler[p] : null) })).filter(x => x.v != null);
-}
-function hdGrafikCard(baslik, kalem, aciklama){
-  const seri = finKalemSeri(kalem);
-  if(seri.length < 2) return "";
-  const son = seri[seri.length-1].v;
-  return '<div class="oc-kart">' +
-    '<button class="blok-indir" onclick="blokIndir(this,\'' + HD_KOD + ' · ' + baslik.replace(/'/g,"") + '\')" title="PNG indir"><i class="bi bi-download"></i></button>' +
-    '<div class="oc-ust"><div class="oc-isim">' + baslik +
-    ' <span class="grafik-info" data-tip="' + aciklama + '"><i class="bi bi-info-circle"></i></span></div>' +
-    '<div class="oc-deger">' + finBuyuk(son) + '</div></div>' +
-    '<div class="oc-grafik">' + cizgiGrafik(seri, {fmt: finBuyuk}) + '</div></div>';
-}
-function hdGrafikler(){
-  const kap = document.getElementById("hd-icerik");
-  let html = '<div class="hd-baslik-ic">Grafikler & Raporlar</div>';
-
-  // Finansaldan turetilen trend grafikleri
-  const kartlar = [
-    ["Net Dönem Kârı", finKalemBul(/net dönem k|dönem net k|dönem kâr\/zarar|dönem kârı|net kâr/), "Şirketin dönemsel net kârı."],
-    ["Hasılat / Gelir", finKalemBul(/^hasılat|satış gel|kâr payı geli|toplam gelir|faiz gel/), "Şirketin ana gelir kalemi."],
-    ["Özkaynaklar", finKalemBul(/toplam özkaynak|özkaynaklar$|ana ortaklığa ait özkaynak/), "Şirketin öz sermayesi."],
-    ["Toplam Varlıklar", finKalemBul(/toplam varlık|aktif toplam/), "Şirketin toplam varlık büyüklüğü (aktif)."],
-  ];
-  const kartHtml = kartlar.map(k => hdGrafikCard(k[0], k[1], k[2])).filter(Boolean).join("");
-  html += '<div class="oc-grid">' + (kartHtml || '<div class="durum-kutu">Bu hisse için finansal grafik bulunamadı.</div>') + '</div>';
-  html += '<div class="hd-not">Grafikler İş Yatırım finansallarından türetilmiştir. Dönemler kümülatiftir. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>';
-  kap.innerHTML = html;
-}
-function finGrupAc(g){
-  FIN_KAPALI[g] = !FIN_KAPALI[g];
-  document.getElementById("fingrup-" + g).classList.toggle("acik");
-}
-function hisseDetayGeri(){
-  document.getElementById("view-hissedetay").classList.add("hidden");
-  if(ONCEKI_VIEW === "sektorhisse"){
-    document.getElementById("view-hisseler").classList.remove("hidden");
-    document.getElementById("topbarTitle").textContent = "Hisseler";
-  } else {
-    document.getElementById("view-hisseliste").classList.remove("hidden");
-    document.getElementById("topbarTitle").textContent = "Hisseler";
-    document.querySelector('.nav-link-gnc[data-view="hisseliste"]').classList.add("active");
-  }
+  const maMesafe = xu100Ma ? xu100Ma.mesafe_yuzde : null;
+  kap.innerHTML = gaLedgerTablo(
+    gaLedgerSatir("BIST100 (dönem sonu)", seviye!==null ? Math.round(seviye).toLocaleString("tr-TR") : "—") +
+    gaLedgerSatir("Haftalık değişim", haftalik!==null ? gncYuzde(haftalik) : "—", haftalik!==null ? (haftalik>=0?"up":"down") : null) +
+    gaLedgerSatir("Yabancı net akış (haftalık)", "— (kaynak araştırılıyor)") +
+    gaLedgerSatir("200 günlük ort. mesafe", maMesafe!==null ? gncYuzde(maMesafe) : "—")
+  );
 }
 
-/* Hisseler tam listesi (sektore gore gruplu) */
-const SEKTOR_AD = { XUTEK:"Teknoloji", XBANK:"Bankacılık", XSGRT:"Sigorta", XFINK:"Fin. Kiralama Faktoring", XHOLD:"Holding ve Yatırım", XGYO:"Gayrimenkul Yat. Ort.", XYORT:"Menkul Kıymet Yat. Ort.", XGIDA:"Gıda ve İçecek", XKMYA:"Kimya Petrol Plastik", XMANA:"Metal Ana Sanayi", XMESY:"Metal Eşya Makina", XTAST:"Taş Toprak (Cam Çimento)", XTEKS:"Tekstil ve Deri", XKAGT:"Orman Kağıt Basım", XELKT:"Elektrik", XILTM:"İletişim", XULAS:"Ulaştırma", XTCRT:"Ticaret", XTRZM:"Turizm", XINSA:"İnşaat ve Bayındırlık", XMADN:"Madencilik", XBLSM:"Bilişim", XSPOR:"Spor" };
-let HL_MAP = null;
-async function hisseListeYukle(){
-  HL_MAP = await hisseMapYukle();
-  hisseListeFiltre();
-}
-function hisseListeFiltre(){
-  if(!HL_MAP) return;
-  const q = (document.getElementById("hl-input").value || "").toLocaleUpperCase("tr");
-  const kap = document.getElementById("hl-icerik");
-  const kodlar = Object.keys(HL_MAP).sort((a,b) => (SEKTOR_AD[a]||a).localeCompare(SEKTOR_AD[b]||b, "tr"));
-  let html = "", toplam = 0;
-  for(const sk of kodlar){
-    const eslesen = (HL_MAP[sk] || [])
-      .filter(h => !q || h.kod.toLocaleUpperCase("tr").includes(q) || (h.ad||"").toLocaleUpperCase("tr").includes(q))
-      .sort((a,b) => a.kod.localeCompare(b.kod));
-    if(!eslesen.length) continue;
-    toplam += eslesen.length;
-    html += '<div class="hl-sektor"><div class="hl-sektor-bas">' + (SEKTOR_AD[sk] || sk) + ' <span>' + eslesen.length + '</span></div>' +
-      '<div class="hl-grid">' + eslesen.map(h =>
-        '<div class="hl-kart" onclick="hisseDetay(\'' + h.kod + '\',\'' + (h.ad||"").replace(/'/g,"") + '\')">' +
-          '<div class="kod">' + h.kod + '</div><div class="ad">' + (h.ad||"") + '</div></div>').join("") + '</div></div>';
-  }
-  document.getElementById("hl-adet").textContent = toplam + " hisse";
-  kap.innerHTML = html || '<div class="durum-kutu">Eşleşen hisse yok.</div>';
-}
-
-function hisseGeri(){
-  document.getElementById("view-hisseler").classList.add("hidden");
-  document.getElementById("view-sektorler").classList.remove("hidden");
-  document.getElementById("topbarTitle").textContent = "BIST Sektörler";
-  document.querySelector('.nav-link-gnc[data-view="sektorler"]').classList.add("active");
-  document.querySelector('.nav-link-gnc[data-view="takvim"]').classList.remove("active");
-}
-
-/* ---- EKONOMİK TAKVİM ---- */
-let TAKVIM_SONUC = [];
-
-async function takvimCek(){
+/* ---- MAKRO TAKVİM ---- */
+function gaTakvim(takvim){
   const kap = document.getElementById("takvim-icerik");
-  kap.innerHTML = '<div class="durum-kutu">Veriler çekiliyor…</div>';
-  try{
-    TAKVIM_SONUC = await Promise.all(TAKVIM.map(async (ev) => {
-      try{
-        const res = await fetch('/.netlify/functions/fred?series_id=' + encodeURIComponent(ev.seri));
-        const data = await res.json();
-        const obs = (data.observations || []).map(o => parseFloat(o.value)).filter(v => !isNaN(v));
-        return Object.assign({}, ev, hesapla(ev.mod, obs));
-      }catch(e){ return Object.assign({}, ev, { son:null, onceki:null, seri_gecmis:[] }); }
-    }));
-    // sonraki tarihe gore sirala (en yakin ustte)
-    TAKVIM_SONUC.sort((a,b) => (a.sonraki?Date.parse(a.sonraki):Infinity) - (b.sonraki?Date.parse(b.sonraki):Infinity));
-    takvimCiz();
-  }catch(e){
-    kap.innerHTML = '<div class="durum-kutu">Takvim verisi alınamadı.<br>Bu panel Netlify\'daki <b>fred</b> fonksiyonuna bağlıdır.<br><button class="btn-gnc" onclick="takvimCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+  if(!takvim || !takvim.gelecek || !takvim.gelecek.length){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Takvim verisi henüz yok.</div>';
+    return;
   }
-}
-
-// obs: en yeni -> en eski. Moda gore son/onceki + gecmis seri (kronolojik, en fazla 12) uretir.
-function hesapla(mod, obs){
-  if(obs.length < 2) return { son:null, onceki:null, seri_gecmis:[] };
-  let seri;
-  if(mod === "level"){
-    seri = obs.slice();                          // degerin kendisi
-  } else if(mod === "diff"){
-    seri = obs.slice(0,-1).map((v,i) => v - obs[i+1]);   // ardisik fark
-  } else if(mod === "yoy"){
-    seri = obs.slice(0,-12).map((v,i) => (v/obs[i+12]-1)*100);  // yillik % degisim (12 ay onceye gore)
-  } else {                                        // pct
-    seri = obs.slice(0,-1).map((v,i) => (v/obs[i+1]-1)*100);
-  }
-  if(!seri.length) return { son:null, onceki:null, seri_gecmis:[] };
-  const son = seri[0];
-  const onceki = seri.length > 1 ? seri[1] : null;
-  const gecmis = seri.slice(0, 18).reverse();     // kronolojik (eski->yeni)
-  return { son:son, onceki:onceki, seri_gecmis:gecmis };
-}
-
-function surpriz(ev){
-  if(ev.beklenti == null || ev.son == null) return null;
-  const esik = ev.mod === "bin" || ev.birim === "bin" ? 1 : 0.01;
-  if(ev.son > ev.beklenti + esik) return "ust";
-  if(ev.son < ev.beklenti - esik) return "alt";
-  return "tam";
-}
-
-function takvimCiz(){
-  const simdi = Date.now();
-  document.getElementById("takvim-icerik").innerHTML = TAKVIM_SONUC.map((ev, i) => {
-    const yuzdeMod = ev.mod === "pct" || ev.mod === "yoy";
-    const bicim = (x) => yuzdeMod ? fmtYuzde(x) : fmtDeger(x, ev.birim);
-    const sp = surpriz(ev);
-    let spBadge = '<span class="tk-badge tam">beklenti yok</span>';
-    if(sp === "ust") spBadge = '<span class="tk-badge ust"><i class="bi bi-arrow-up"></i> Üstünde</span>';
-    else if(sp === "alt") spBadge = '<span class="tk-badge alt"><i class="bi bi-arrow-down"></i> Altında</span>';
-    else if(sp === "tam") spBadge = '<span class="tk-badge tam">Beklenti gibi</span>';
-
-    let tarih = '<span class="tk-tarih">tarih yok</span>';
-    if(ev.sonraki){
-      const fark = Date.parse(ev.sonraki) - simdi;
-      if(fark > 0){
-        const gun = Math.floor(fark/86400000), saat = Math.floor((fark%86400000)/3600000);
-        tarih = '<span class="tk-tarih' + (gun<3?' yakin':'') + '"><i class="bi bi-clock"></i> ' + (gun>0?gun+" gün ":"") + saat + " saat</span>";
-      } else { tarih = '<span class="tk-tarih">açıklandı</span>'; }
-    }
-
-    return '<div class="tk-row" id="tkrow-' + i + '">' +
-      '<div class="tk-ana" onclick="tkAc(' + i + ')">' +
-        '<div><div class="tk-isim">' + ev.isim + (ev.yuksek?'<span class="tk-yuksek">Yüksek etki</span>':'') + '</div>' +
-        '<div class="tk-seri">FRED: ' + ev.seri + '</div></div>' +
-        '<div class="tk-col"><div class="k">Önceki</div><div class="v small">' + bicim(ev.onceki) + '</div></div>' +
-        '<div class="tk-col"><div class="k">Beklenti <span class="manuel">·el</span></div><div class="v small">' + (ev.beklenti!=null?bicim(ev.beklenti):"—") + '</div></div>' +
-        '<div class="tk-col"><div class="k">Açıklanan</div><div class="v">' + bicim(ev.son) + '</div></div>' +
-        '<div class="tk-surpriz">' + spBadge + '</div>' +
-        '<div>' + tarih + '</div>' +
-        '<div class="tk-caret"><i class="bi bi-chevron-down"></i></div>' +
-      '</div>' +
-      '<div class="tk-detay">' +
-        '<div class="tk-gecmis"><div class="baslik">Geçmiş dönemler</div>' + sparkCiz(ev) +
-        '</div>' +
-        '<div class="tk-yorum">' +
-          bekBlok(ev, sp) +
-          '<div class="baslik">Nasıl yorumlanır?</div>' +
-          '<div class="tk-yorum-metin">' + ev.yorum + '</div>' +
-          '<div class="tk-ai-not"><i class="bi bi-stars"></i> Döneme özel yorum ileride yapay zeka ile eklenecek.</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  }).join("");
-}
-
-function bekBlok(ev, sp){
-  const yuzdeMod = ev.mod === "pct" || ev.mod === "yoy";
-  const bic = (x) => x==null ? "—" : (yuzdeMod ? fmtYuzde(x) : fmtDeger(x, ev.birim));
-  // Aciklanan kutusu: beklentinin ustunde yesil, altinda kirmizi
-  let acikSinif = "";
-  if(sp === "ust") acikSinif = "acik-yes";
-  else if(sp === "alt") acikSinif = "acik-no";
-  return '<div class="baslik">Beklenti / Açıklanan</div>' +
-    '<div class="tk-bekblok">' +
-      '<div class="tk-bekkutu"><div class="k">Önceki</div><div class="v" style="color:var(--gnc-text-faded)">' + bic(ev.onceki) + '</div></div>' +
-      '<div class="tk-bekkutu"><div class="k">Beklenti</div><div class="v" style="color:var(--bs-emphasis-color)">' + bic(ev.beklenti) + '</div></div>' +
-      '<div class="tk-bekkutu ' + acikSinif + '"><div class="k">Açıklanan</div><div class="v" style="color:' + (sp==="ust"?"var(--gnc-success)":sp==="alt"?"var(--gnc-danger)":"var(--bs-emphasis-color)") + '">' + bic(ev.son) + '</div></div>' +
-    '</div>';
-}
-function sparkCiz(ev){
-  const g = ev.seri_gecmis || [];
-  if(g.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);">Yeterli geçmiş veri yok.</div>';
-  const min = Math.min(...g);
-  const max = Math.max(...g);
-  const aralik = (max - min) || 1;
-  const H = 96;
-  const et = (v) => (ev.mod === "pct" || ev.mod === "yoy") ? fmtYuzde(v) : fmtDeger(v, ev.birim);
-  const bar = g.map((v, i) => {
-    const yuk = 10 + ((v - min) / aralik) * (H - 22);
-    const yon = i === 0 ? (g[1] >= v ? "down" : "up") : (v >= g[i-1] ? "up" : "down");
-    return '<div class="spark-bar ' + yon + '" style="height:' + yuk + 'px" data-tip="' + et(v) + '"></div>';
-  }).join("");
-  return '<div class="spark" style="height:' + H + 'px">' + bar + '</div>' +
-    '<div class="spark-alt"><span style="text-align:left">' + et(g[0]) + '</span><span style="text-align:right">' + et(g[g.length-1]) + '</span></div>';
-}
-
-function tkAc(i){
-  const row = document.getElementById("tkrow-" + i);
-  const acik = row.classList.contains("acik");
-  document.querySelectorAll(".tk-row.acik").forEach(r => r.classList.remove("acik"));
-  if(!acik) row.classList.add("acik");
-}
-
-/* ---- ANA SAYFA ---- */
-// 2026 BIST tam kapali gunler (düzenlenebilir)
-const BIST_TATIL_TAM = ["2026-01-01","2026-03-20","2026-04-23","2026-05-01","2026-05-19","2026-05-27","2026-05-28","2026-05-29","2026-07-15","2026-10-29"];
-// Yarim gun (13:00'a kadar acik)
-const BIST_YARIM = ["2026-03-19","2026-05-26","2026-10-28"];
-
-function istanbulZaman(){
-  const p = new Intl.DateTimeFormat("en-CA", { timeZone:"Europe/Istanbul", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, weekday:"short" }).formatToParts(new Date());
-  const g = {}; p.forEach(x => g[x.type] = x.value);
-  return { tarih: g.year+"-"+g.month+"-"+g.day, saat:+g.hour, dk:+g.minute, saatStr: g.hour+":"+g.minute+":"+g.second, gunAdi:g.weekday };
-}
-function piyasaDurum(){
-  const z = istanbulZaman();
-  const dk = z.saat*60 + z.dk;
-  if(BIST_TATIL_TAM.includes(z.tarih)) return { durum:"KAPALI", sinif:"kapali", not:"Resmi tatil" };
-  if(z.gunAdi === "Sat" || z.gunAdi === "Sun") return { durum:"KAPALI", sinif:"kapali", not:"Hafta sonu" };
-  if(BIST_YARIM.includes(z.tarih)){
-    if(dk >= 600 && dk < 780) return { durum:"AÇIK", sinif:"yarim", not:"Yarım gün · 13:00'a kadar" };
-    return { durum:"KAPALI", sinif:"kapali", not:"Yarım gün (seans dışı)" };
-  }
-  if(dk >= 600 && dk < 1080) return { durum:"AÇIK", sinif:"acik", not:"Seans sürüyor · 10:00–18:00" };
-  return { durum:"KAPALI", sinif:"kapali", not:"Seans dışı · 10:00–18:00" };
-}
-function saatTik(){
-  const z = istanbulZaman();
-  const tb = document.getElementById("topbarSaat");
-  if(tb) tb.textContent = z.saatStr;
-  const as = document.getElementById("as-saat");
-  if(as){
-    as.textContent = z.saatStr;
-    const p = piyasaDurum();
-    const kart = document.getElementById("as-piyasa");
-    if(kart){
-      kart.className = "as-kart as-piyasa " + p.sinif;
-      document.getElementById("as-piyasa-durum").textContent = p.durum;
-      document.getElementById("as-piyasa-not").textContent = p.not;
-    }
-    const t = new Intl.DateTimeFormat("tr-TR", { timeZone:"Europe/Istanbul", weekday:"long", day:"numeric", month:"long", year:"numeric" }).format(new Date());
-    const st = document.getElementById("as-saat-tarih"); if(st) st.textContent = t;
-    const at = document.getElementById("as-tarih"); if(at) at.textContent = t;
-  }
-}
-
-async function kriptoYukle(){
-  const kap = document.getElementById("kripto-strip");
-  const semboller = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT"];
-  try{
-    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify(semboller)));
-    const data = await res.json();
-    const sirali = semboller.map(s => data.find(d => d.symbol === s)).filter(Boolean);
-    kap.innerHTML = sirali.map(d => {
-      const fiyat = parseFloat(d.lastPrice), deg = parseFloat(d.priceChangePercent);
-      const ad = d.symbol.replace("USDT","");
-      const f = fiyat >= 100 ? fiyat.toLocaleString("en-US",{maximumFractionDigits:0}) : fiyat.toLocaleString("en-US",{maximumFractionDigits:2});
-      return '<div class="kripto-kart ' + yon(deg) + '"><div class="sembol">' + ad + '/USDT</div>' +
-        '<div class="fiyat">$' + f + '</div>' +
-        '<div class="deg ' + yon(deg) + '">' + fmtYuzde(deg) + ' <span style="color:var(--gnc-text-dim);font-weight:400;">24s</span></div></div>';
-    }).join("");
-  }catch(e){ kap.innerHTML = '<div class="durum-kutu" style="grid-column:1/-1;">Kripto verisi alınamadı.</div>'; }
-}
-
-let SEKTOR_GRAFIK_VERI = [], sektGrafikDonem = "g1";
-async function anaSayfaYukle(){
-  saatTik();
-  ethbtcYukle();
-  // Sektor rotasyon grafigi
-  try{
-    const res = await fetch('/.netlify/functions/veri?dosya=sektor_verisi.json&t=' + Date.now());
-    const veri = await res.json();
-    SEKTOR_GRAFIK_VERI = veri.endeksler.filter(e => e.tip === "sektor" && e.g1 !== null);
-    try { document.getElementById("as-sekt-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR"); } catch(e){}
-    sektorGrafikCiz();
-  }catch(e){ document.getElementById("as-sektor-grafik").innerHTML = '<div class="durum-kutu">Sektör verisi henüz yok.</div>'; }
-  veriDurumYukle();
-}
-function sektorGrafikCiz(){
-  if(!SEKTOR_GRAFIK_VERI.length){ return; }
-  const liste = [...SEKTOR_GRAFIK_VERI].sort((a,b) => (b[sektGrafikDonem]||0) - (a[sektGrafikDonem]||0));
-  const maxAbs = Math.max(...liste.map(s => Math.abs(s[sektGrafikDonem]||0)), 0.1);
-  const html = '<div class="skt-liste">' + liste.map(s => {
-    const v = s[sektGrafikDonem] || 0;
-    const gen = (Math.abs(v) / maxAbs) * 50;
-    const bar = v >= 0
-      ? '<div class="skt-bar pos" style="width:' + gen.toFixed(1) + '%"></div>'
-      : '<div class="skt-bar neg" style="width:' + gen.toFixed(1) + '%"></div>';
-    return '<div class="skt-row" data-ad="' + (SEKTOR_AD[s.kod]||s.kod) + '">' +
-      '<div class="skt-kod">' + s.kod + '</div>' +
-      '<div class="skt-track"><div class="skt-mid"></div>' + bar + '</div>' +
-      '<div class="skt-deg ' + yon(v) + '">' + fmtYuzde(v) + '</div>' +
-    '</div>';
-  }).join("") + '</div>';
-  const a = document.getElementById("as-sektor-grafik"); if(a) a.innerHTML = html;
-  const b = document.getElementById("sekt-sayfa-grafik"); if(b) b.innerHTML = html;
-  piyasaGenisligiCiz();
-}
-/* ---- ROTASYON HARİTASI (RRG) ---- */
-function rrgEndeksle(aylikGetiriler){
-  // [{ay,getiri}] (eskiden yeniye) -> kumulatif endeks, 100'den basliyor
-  // NOT: Bu fonksiyon hem Isi Haritasi hem Reel Getiri Karsilastir tarafindan kullanilir.
-  let deger = 100;
-  return aylikGetiriler.map(a => { deger *= (1 + (a.getiri || 0) / 100); return { ay: a.ay, deger }; });
-}
-/* ---- SEKTÖR ISI HARİTASI (yıllık / çeyreklik + TCMB faiz şeridi) ---- */
-let ISI_SEKTOR_HAM = null, ISI_FAIZ_HAM = null, ISI_MOD = "yillik";
-async function isiYukle(){
-  const kap = document.getElementById("isi-icerik");
-  try{
-    const [sektorler, faizRes] = await Promise.all([
-      sektorGecmisGetir(),
-      fetch('/.netlify/functions/veri?dosya=faiz_gecmis.json&t=' + Date.now())
-    ]);
-    ISI_SEKTOR_HAM = sektorler;
-    ISI_FAIZ_HAM = faizRes.ok ? ((await faizRes.json()).seri || []) : [];
-    isiCiz();
-  }catch(e){
-    if(kap) kap.innerHTML = '<div class="durum-kutu">Isı haritası verisi henüz yok.</div>';
-  }
-}
-function isiModSec(m){
-  ISI_MOD = m;
-  document.querySelectorAll(".isimod").forEach(c => c.classList.toggle("active", c.dataset.m === m));
-  isiCiz();
-}
-function isiDonemAnahtari(ym, mod){
-  const [y, a] = ym.split("-");
-  if(mod === "yillik") return y;
-  const c = Math.ceil(parseInt(a, 10) / 3);
-  return y + " Ç" + c;
-}
-function isiDonemselGetiriler(aylikListe, mod){
-  const gruplar = {};
-  aylikListe.forEach(a => {
-    const k = isiDonemAnahtari(a.ay, mod);
-    if(!gruplar[k]) gruplar[k] = [];
-    gruplar[k].push(a.getiri || 0);
-  });
-  const sonuc = {};
-  Object.keys(gruplar).forEach(k => {
-    let carpim = 1;
-    gruplar[k].forEach(g => { carpim *= (1 + g / 100); });
-    sonuc[k] = (carpim - 1) * 100;
-  });
-  return sonuc;
-}
-function isiHesapla(){
-  const sektorler = ISI_SEKTOR_HAM;
-  if(!sektorler) return null;
-  const xu = sektorler["XU100"];
-  if(!xu || !xu.aylik) return null;
-
-  const xuDonem = isiDonemselGetiriler(xu.aylik, ISI_MOD);
-  const donemler = Object.keys(xuDonem).sort();
-
-  const satirlar = [];
-  Object.keys(sektorler).forEach(kod => {
-    if(kod === "XU100") return;
-    const s = sektorler[kod];
-    if(!s.aylik) return;
-    const sDonem = isiDonemselGetiriler(s.aylik, ISI_MOD);
-    const hucreler = donemler.map(d => {
-      if(sDonem[d] === undefined || xuDonem[d] === undefined) return null;
-      return Math.round((sDonem[d] - xuDonem[d]) * 10) / 10;
-    });
-    satirlar.push({ kod, ad: SEKTOR_AD[kod] || s.ad || kod, hucreler });
-  });
-  satirlar.sort((a, b) => {
-    const av = a.hucreler[a.hucreler.length - 1], bv = b.hucreler[b.hucreler.length - 1];
-    return (bv === null ? -999 : bv) - (av === null ? -999 : av);
-  });
-
-  const faizAy = {};
-  (ISI_FAIZ_HAM || []).forEach(f => { faizAy[f.tarih] = f.deger; });
-  const faizDonemGrup = {};
-  donemler.forEach(d => { faizDonemGrup[d] = []; });
-  Object.keys(faizAy).forEach(ym => {
-    const k = isiDonemAnahtari(ym, ISI_MOD);
-    if(faizDonemGrup[k]) faizDonemGrup[k].push(faizAy[ym]);
-  });
-  const faizOrtalama = donemler.map(d => {
-    const liste = faizDonemGrup[d];
-    if(!liste || !liste.length) return null;
-    return liste.reduce((t, v) => t + v, 0) / liste.length;
-  });
-
-  return { donemler, satirlar, faizOrtalama };
-}
-function isiRenk(v){
-  if(v === null || v === undefined) return "rgba(255,255,255,0.03)";
-  const yogunluk = Math.min(1, Math.abs(v) / 20);
-  if(v >= 0) return "rgba(34,197,94," + (0.15 + yogunluk * 0.65).toFixed(2) + ")";
-  return "rgba(239,68,68," + (0.15 + yogunluk * 0.65).toFixed(2) + ")";
-}
-function isiCiz(){
-  const kap = document.getElementById("isi-icerik");
-  if(!kap) return;
-  const veri = isiHesapla();
-  if(!veri || !veri.donemler.length){ kap.innerHTML = '<div class="durum-kutu">Isı haritası için yeterli veri yok.</div>'; return; }
-
-  const { donemler, satirlar, faizOrtalama } = veri;
-  const genislik = 150 + donemler.length * 44;
-
-  let html = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:10.5px;min-width:' + genislik + 'px;width:100%;">';
-  html += '<tr><td style="padding:4px 8px;"></td>' +
-    donemler.map(d => '<td style="padding:4px 6px;text-align:center;color:var(--gnc-text-dim);font-weight:700;white-space:nowrap;">' + d + '</td>').join("") +
-  '</tr>';
-  html += '<tr style="border-bottom:1px solid var(--bs-border-color);">' +
-    '<td style="padding:4px 10px;font-weight:700;color:var(--gnc-accent);white-space:nowrap;">Politika Faizi</td>' +
-    faizOrtalama.map(f => '<td style="padding:4px 6px;text-align:center;color:var(--gnc-accent);font-weight:700;white-space:nowrap;">' + (f !== null ? Math.round(f) + '%' : '—') + '</td>').join("") +
-  '</tr>';
-  satirlar.forEach(s => {
-    html += '<tr>' +
-      '<td style="padding:4px 10px;font-weight:700;color:var(--bs-emphasis-color);white-space:nowrap;">' + s.kod + '</td>' +
-      s.hucreler.map(v =>
-        '<td style="padding:1px;"><div' + (v !== null ? ' onclick="sektorHisseAc(\'' + s.kod + '\',\'' + s.ad.replace(/'/g,"") + '\')" style="cursor:pointer;' : ' style="') +
-        'width:38px;height:24px;background:' + isiRenk(v) + ';display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--bs-emphasis-color);font-weight:700;">' +
-        (v !== null ? (v >= 0 ? '+' : '') + Math.round(v) : '') + '</div></td>'
-      ).join("") +
-    '</tr>';
-  });
-  html += '</table></div>';
-  html += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:10.5px;color:var(--gnc-text-dim);">' +
-    '<span><span style="display:inline-block;width:12px;height:12px;background:rgba(34,197,94,0.6);margin-right:4px;vertical-align:middle;"></span>XU100\'den güçlü</span>' +
-    '<span><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,0.6);margin-right:4px;vertical-align:middle;"></span>XU100\'den zayıf</span>' +
-  '</div>';
-  html += '<div class="hd-not">Hücre değeri, o dönemde sektörün XU100\'e göre yüzde puan farkıdır (sektör getirisi eksi XU100 getirisi). Politika Faizi şeridi, o dönemin ortalama TCMB 1 hafta repo faizidir. Bir hücreye tıklayınca o sektörün hisselerine gidersin. Bu bir tarama aracıdır, alım-satım sinyali değildir.</div>';
-
-  kap.innerHTML = html;
-}
-function piyasaGenisligiCiz(){
-  const kap = document.getElementById("as-genislik");
-  if(!kap || !SEKTOR_GRAFIK_VERI.length) return;
-  const g = SEKTOR_GRAFIK_VERI, m = sektGrafikDonem;
-  const yuk = g.filter(s => (s[m]||0) > 0).length;
-  const dus = g.filter(s => (s[m]||0) < 0).length;
-  const toplam = g.length || 1;
-  const yuzYuk = Math.round(yuk / toplam * 100);
-  const sirali = [...g].sort((x,y) => (y[m]||0) - (x[m]||0));
-  const enIyi = sirali[0], enKotu = sirali[sirali.length-1];
-  const oran = dus > 0 ? (yuk / dus).toFixed(2) : "—";
-  const donemAd = m === "g1" ? "günlük" : m === "h1" ? "haftalık" : "aylık";
-  kap.innerHTML =
-    '<div class="pg-ust"><div class="pg-buyuk">' + yuzYuk + '<small>% sektör artıda (' + donemAd + ')</small></div></div>' +
-    '<div class="pg-bar"><span class="pos" style="width:' + (yuk/toplam*100).toFixed(1) + '%">' + (yuk||"") + '</span><span class="neg" style="width:' + (dus/toplam*100).toFixed(1) + '%">' + (dus||"") + '</span></div>' +
-    '<div class="pg-etiket"><span class="y">' + yuk + ' artıda</span><span class="d">' + dus + ' ekside</span></div>' +
-    '<div class="pg-satir"><span class="et">En güçlü</span><span class="dg ' + yon(enIyi[m]) + '">' + enIyi.kod + ' · ' + fmtYuzde(enIyi[m]) + '</span></div>' +
-    '<div class="pg-satir"><span class="et">En zayıf</span><span class="dg ' + yon(enKotu[m]) + '">' + enKotu.kod + ' · ' + fmtYuzde(enKotu[m]) + '</span></div>' +
-    '<div class="pg-satir"><span class="et">Artan / Azalan</span><span class="dg">' + oran + '</span></div>';
-}
-async function blokIndir(btn, baslik){
-  if(typeof html2canvas === "undefined"){ alert("Görsel aracı yükleniyor, birkaç saniye sonra tekrar deneyin."); return; }
-  const kart = btn.closest(".as-kart, .oc-kart");
-  if(!kart) return;
-  btn.style.visibility = "hidden";
-  try{
-    const cv = await html2canvas(kart, { backgroundColor: "#0d0d0d", scale: 2, logging: false, useCORS: true });
-    const W = 1080, H = 1350;
-    const out = document.createElement("canvas"); out.width = W; out.height = H;
-    const ctx = out.getContext("2d");
-    // Arka plan
-    ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, W, 168);
-    // Marka basligi
-    ctx.fillStyle = "#d4af37"; ctx.font = "bold 46px Arial"; ctx.textBaseline = "alphabetic";
-    ctx.fillText("GNC INSIGHT", 60, 82);
-    ctx.fillStyle = "#9a9aa2"; ctx.font = "600 24px Arial";
-    ctx.fillText(baslik || "Veri Paneli", 60, 122);
-    ctx.fillStyle = "#d4af37"; ctx.fillRect(60, 148, 64, 4);
-    // Icerigi TAM GENISLIKTE olceklendir, dikey ortala
-    const padX = 56, ustAlan = 210, altAlan = 150;
-    const availW = W - 2*padX, availH = H - ustAlan - altAlan;
-    let r = availW / cv.width;                 // once tam genislik
-    if(cv.height * r > availH) r = availH / cv.height;  // tasarsa sigdir
-    const dw = cv.width * r, dh = cv.height * r;
-    const dx = (W - dw) / 2, dy = ustAlan + (availH - dh) / 2;
-    // Kart arka plani (cerceve)
-    const fpad = 24;
-    ctx.fillStyle = "#0f0f0f";
-    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(dx - fpad, dy - fpad, dw + 2*fpad, dh + 2*fpad, 18); ctx.fill(); }
-    else { ctx.fillRect(dx - fpad, dy - fpad, dw + 2*fpad, dh + 2*fpad); }
-    ctx.drawImage(cv, dx, dy, dw, dh);
-    // Alt bilgi
-    ctx.fillStyle = "#7a7a82"; ctx.font = "600 22px Arial";
-    ctx.fillText("gncinsight.com · " + new Date().toLocaleDateString("tr-TR"), 60, H - 92);
-    ctx.fillStyle = "#5a5a62"; ctx.font = "500 19px Arial";
-    ctx.fillText("Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.", 60, H - 56);
-    const a = document.createElement("a");
-    a.download = "gnc-insight-" + Date.now() + ".png";
-    a.href = out.toDataURL("image/png"); a.click();
-  }catch(e){
-    alert("Görsel oluşturulamadı. (Grafik gömülü/dış kaynaklıysa indirilemez.)");
-  }finally{
-    btn.style.visibility = "";
-  }
-}
-let ETHBTC_SERI = null, ETHBTC_OLCEK = 30;
-async function ethbtcYukle(){
-  const kap = document.getElementById("as-ethbtc");
-  try{
-    if(!ETHBTC_SERI){
-      const res = await fetch('https://api.binance.com/api/v3/klines?symbol=ETHBTC&interval=1d&limit=1000');
-      const data = await res.json();
-      ETHBTC_SERI = data.map(k => ({ t: new Date(k[0]).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"2-digit"}), v: parseFloat(k[4]) }));
-    }
-    ethbtcCiz();
-  }catch(e){ kap.innerHTML = '<div class="durum-kutu">ETH/BTC verisi alınamadı.</div>'; }
-}
-function ethbtcCiz(){
-  const kap = document.getElementById("as-ethbtc");
-  if(!ETHBTC_SERI){ return; }
-  const dilim = ETHBTC_SERI.slice(-ETHBTC_OLCEK);
-  const son = dilim[dilim.length-1].v, ilk = dilim[0].v;
-  const deg = (son/ilk - 1) * 100;
-  kap.innerHTML =
-    '<div class="ethbtc-ust"><div class="ethbtc-deger">' + son.toFixed(5) + '</div>' +
-    '<div class="ethbtc-deg ' + yon(deg) + '">' + fmtYuzde(deg) + ' <span style="color:var(--gnc-text-dim);font-weight:400;font-size:11px;">dönem</span></div></div>' +
-    cizgiGrafik(dilim, {birim:"ratio"}) +
-    '<div style="font-size:10px;color:var(--gnc-text-dim);margin-top:6px;">kaynak: Binance</div>';
-}
-function asOzet(et, dg, y){
-  const renk = y==="up"?"var(--gnc-success)":y==="down"?"var(--gnc-danger)":"var(--bs-emphasis-color)";
-  return '<div class="as-ozet-satir"><span class="et">' + et + '</span><span class="dg" style="color:' + renk + '">' + dg + '</span></div>';
-}
-async function veriDurumYukle(){
-  const kap = document.getElementById("as-veri-durum");
-  const bicim = (iso) => { try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return "—"; } };
-  const kaynaklar = [
-    ['Sektör verisi', '/.netlify/functions/veri?dosya=sektor_verisi.json'],
-    ['Hisse fiyatları', '/.netlify/functions/veri?dosya=sektor_hisse_veri.json'],
-    ['Türkiye takvimi', '/.netlify/functions/veri?dosya=turkiye_takvim.json'],
-  ];
   let html = "";
-  for(const [ad, url] of kaynaklar){
-    try{ const r = await fetch(url+'&t='+Date.now()); if(!r.ok) throw 0; const d = await r.json(); html += vdSatir(ad, bicim(d.guncelleme), true); }
-    catch(e){ html += vdSatir(ad, 'henüz yok', false); }
-  }
-  html += vdSatir('Ekonomik takvim (FRED)', 'canlı', true);
-  html += vdSatir('Kripto & On-chain (tarayıcı)', 'canlı', true);
+  takvim.gelecek.slice(0, 6).forEach(e => {
+    html += `<div class="cal-item">` +
+      `<div class="cal-date">${gncTarihKisa(e.tarih)}</div>` +
+      `<div><div class="cal-title">${e.baslik}</div><div class="cal-tag">${e.etki} etki</div></div>` +
+    `</div>`;
+  });
   kap.innerHTML = html;
 }
-function vdSatir(ad, zaman, ok){
-  return '<div class="vd-satir"><span class="vd-sol"><span class="vd-nokta ' + (ok?'ok':'yok') + '"></span>' + ad + '</span><span class="vd-zaman">' + zaman + '</span></div>';
-}
 
-/* ---- TÜRKİYE TAKVİMİ (tarihli) ---- */
-async function turkiyeCek(){
-  const kap = document.getElementById("tr-icerik");
-  kap.innerHTML = '<div class="durum-kutu">Yükleniyor…</div>';
-  try{
-    const res = await fetch('/.netlify/functions/veri?dosya=turkiye_takvim.json&t=' + Date.now());
-    if(!res.ok) throw new Error();
-    const veri = await res.json();
-    try { document.getElementById("tr-guncelleme").textContent = new Date(veri.guncelleme).toLocaleString("tr-TR") + " · doviz.com"; } catch(e){}
-    turkiyeCiz(veri.olaylar || []);
-  }catch(e){
-    document.getElementById("tr-guncelleme").textContent = "veri henüz yok";
-    kap.innerHTML = '<div class="durum-kutu">Türkiye takvimi henüz oluşmadı.<br>Zamanlanmış görev ilk kez çalışınca (veya elle tetikleyince) <b>turkiye_takvim.json</b> oluşur.<br><button class="btn-gnc" onclick="turkiyeCek()"><i class="bi bi-arrow-clockwise"></i> Tekrar dene</button></div>';
+/* ---- BU HAFTANIN ÖNE ÇIKANLARI (editoryal, elle güncellenir) ---- */
+function gaOneCikan(oneCikan){
+  const kap = document.getElementById("one-cikan-icerik");
+  if(!oneCikan || !oneCikan.maddeler || !oneCikan.maddeler.length){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Bu hafta için henüz not eklenmedi. gnc-panel/one_cikanlar.json dosyasından elle eklenebilir.</div>';
+    return;
   }
-}
-let TR_OLAYLAR = [];
-function trSayi(x){
-  if(x == null) return null;
-  const n = parseFloat(String(x).replace(/[^0-9,.\-]/g, "").replace(/\./g, "").replace(",", "."));
-  return isNaN(n) ? null : n;
-}
-function trOnemli(olay){
-  const s = (olay||"").toLocaleLowerCase("tr");
-  return /enflasyon|tüfe|tufe|üfe|ufe|faiz|işsizlik|issizlik|istihdam|gsyih|büyüme|buyume|cari (denge|işlem|açık)|sanayi üretim|kapasite kullanım|tüketici güven|reel kesim|ekonomik güven|imalat pmi|\bpmi\b|merkez bankas|tcmb|politika faiz|bütçe|dış ticaret dengesi|konut sat|perakende sat|dış borç/.test(s);
-}
-function trTarihGun(t){ return (t || "").slice(0, 10); }
-function turkiyeCiz(olaylar){
-  const kap = document.getElementById("tr-icerik");
-  // Sadece onemli makro verileri tut (enflasyon, faiz, issizlik vb.)
-  olaylar = (olaylar || []).filter(o => trOnemli(o.olay));
-  if(!olaylar.length){ kap.innerHTML = '<div class="durum-kutu">Bu dönemde önemli veri bulunamadı.</div>'; return; }
-  olaylar.sort((a,b) => trTarihGun(a.tarih).localeCompare(trTarihGun(b.tarih)) || (a.saat||"").localeCompare(b.saat||""));
-  TR_OLAYLAR = olaylar;
-  const onemSinif = (o) => { const s=(o||"").toLowerCase(); return s.includes("high")||s.includes("yüksek")||s==="3"?"high":s.includes("medium")||s.includes("orta")||s==="2"?"medium":"low"; };
-  const bugunStr = new Date().toISOString().slice(0,10);
-
-  let html = '<div class="tr-liste">', sonGun = "";
-  olaylar.forEach((o, i) => {
-    const gun = trTarihGun(o.tarih);
-    if(gun !== sonGun){
-      sonGun = gun;
-      let etiket = gun;
-      const dt = new Date(gun + "T00:00:00");
-      if(!isNaN(dt)) etiket = dt.toLocaleDateString("tr-TR", {weekday:"long", day:"numeric", month:"long"});
-      const bugunMu = gun === bugunStr;
-      html += '<div class="tr-gun">' + etiket + (bugunMu?' <span class="tr-bugun">bugün</span>':'') + '</div>';
-    }
-    const gelecek = o.aciklanan == null;
-    // surpriz (aciklanan vs beklenti)
-    let rozet = "";
-    const sa = trSayi(o.aciklanan), sb = trSayi(o.beklenti);
-    if(!gelecek && sa != null && sb != null){
-      if(sa > sb) rozet = '<span class="tr-rozet ust">↑ Üstünde</span>';
-      else if(sa < sb) rozet = '<span class="tr-rozet alt">↓ Altında</span>';
-      else rozet = '<span class="tr-rozet esit">= Beklentide</span>';
-    }
-    html += '<div class="tr-row" id="trrow-' + i + '">' +
-      '<div class="tr-satir' + (gelecek?' gelecek':'') + '" onclick="trOlayAc(' + i + ')">' +
-        '<div class="tr-saat">' + (o.saat || "—") + '</div>' +
-        '<div class="tr-olay"><span class="tr-onem ' + onemSinif(o.onem) + '"></span>' + (o.olay || "") + (o.donem?' <span style="color:var(--gnc-text-dim);font-size:11px;">('+o.donem+')</span>':'') + '</div>' +
-        '<div class="tr-deg"><div class="k">Önceki</div><div class="v" style="color:var(--gnc-text-faded)">' + (o.onceki || "—") + '</div></div>' +
-        '<div class="tr-deg"><div class="k">' + (gelecek?"Durum":"Açıklanan") + '</div><div class="v' + (gelecek?' bekliyor':'') + '">' + (gelecek?"bekleniyor":(o.aciklanan||"—")) + '</div></div>' +
-        '<div class="tr-caret"><i class="bi bi-chevron-down"></i></div>' +
-      '</div>' +
-      '<div class="tr-detay">' +
-        trGecmisGrafik(o.olay) +
-        '<div class="tr-blok">' +
-          '<div class="tr-kutu"><div class="e">Önceki</div><div class="d">' + (o.onceki || "—") + '</div></div>' +
-          '<div class="tr-kutu"><div class="e">Beklenti</div><div class="d">' + (o.beklenti || "—") + '</div></div>' +
-          '<div class="tr-kutu ' + (gelecek?'bekliyor':(rozet.includes("ust")?'ust':rozet.includes("alt")?'alt':'')) + '"><div class="e">' + (gelecek?"Durum":"Açıklanan") + '</div><div class="d">' + (gelecek?"bekleniyor":(o.aciklanan||"—")) + '</div></div>' +
-        '</div>' +
-        (rozet ? '<div class="tr-rozet-satir">' + rozet + ' <span style="color:var(--gnc-text-dim);font-size:11px;">açıklanan, beklentiye göre</span></div>' : '') +
-        '<div class="tr-not">' + (gelecek
-          ? 'Bu veri henüz açıklanmadı; ' + (o.beklenti?('beklenti: <b>'+o.beklenti+'</b>.'):'tarih ve saatinde açıklanacak.')
-          : 'Kaynak: doviz.com. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.') + '</div>' +
-      '</div>' +
-    '</div>';
+  let html = "";
+  oneCikan.maddeler.forEach(m => {
+    html += `<div class="note-item">` +
+      `<span class="note-tag ${m.tag}">${m.tag}</span>` +
+      `<div class="note-body"><div class="nt">${m.title}</div><div class="nd">${m.note}</div></div>` +
+    `</div>`;
   });
-  kap.innerHTML = html + '</div>';
-}
-function trGecmisGrafik(olayAd){
-  if(!olayAd) return "";
-  const gecmis = TR_OLAYLAR
-    .filter(o => o.olay === olayAd && o.aciklanan != null && trSayi(o.aciklanan) != null)
-    .sort((a,b) => (a.tarih||"").localeCompare(b.tarih||""));
-  if(gecmis.length < 2) return "";
-  // birim: yuzde mi?
-  const yuzdeMi = /%/.test(gecmis[gecmis.length-1].aciklanan || "");
-  const seri = gecmis.map(o => {
-    let t = trTarihGun(o.tarih);
-    const dt = new Date(t + "T00:00:00");
-    if(!isNaN(dt)) t = dt.toLocaleDateString("tr-TR",{month:"short",year:"2-digit"});
-    return { t: t, v: trSayi(o.aciklanan) };
-  });
-  return '<div class="tr-gecmis-grafik"><div class="baslik">Geçmiş açıklamalar (' + seri.length + ')</div>' +
-    cizgiGrafik(seri, {fmt: (v) => v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + (yuzdeMi?"%":"")}) + '</div>';
-}
-function trOlayAc(i){
-  const row = document.getElementById("trrow-" + i);
-  const acik = row.classList.contains("acik");
-  document.querySelectorAll("#tr-icerik .tr-row.acik").forEach(r => r.classList.remove("acik"));
-  if(!acik) row.classList.add("acik");
-}
-
-/* ---- ON-CHAIN ---- */
-const OC_TANIM = [
-  {isim:"MVRV Oranı", birim:"x",
-   yorum:"Piyasa değerinin gerçekleşen değere (aggregate maliyet bazına) oranı. 1'in altı tarihsel dip bölgesi, aşırı yüksek seviyeler tepe uyarısıdır. Tek başına değil, teyitle okunmalı.",
-   kaynak:"https://charts.checkonchain.com/btconchain/pricing/pricing_mvrv_bands/pricing_mvrv_bands_light.html"},
-  {isim:"NUPL (Net Gerçekleşmemiş K/Z)", birim:"",
-   yorum:"Dolaşımdaki coinlerin toplam gerçekleşmemiş kâr/zarar oranı. Pozitif = piyasa toplu kârda, negatif = zararda. Aşırı pozitif bölge açgözlülük, negatif bölge teslimiyet duygusudur.",
-   kaynak:"https://charts.checkonchain.com/btconchain/unrealised/nupl/nupl_light.html"},
-  {isim:"Realized Price / Cap", birim:"$",
-   yorum:"Coinlerin son hareket ettiği fiyatların ortalaması; ağın toplam maliyet bazı. Fiyat bu seviyenin altına inince piyasa ortalama zararda demektir, tarihsel dip bölgeleri buralardır.",
-   kaynak:"https://charts.checkonchain.com/btconchain/pricing/pricing_realisedcap/pricing_realisedcap_light.html"},
-  {isim:"SOPR", birim:"",
-   yorum:"Harcanan coinlerin kâr/zarar oranı. 1'in üstü ortalama kârda satış, altı zararda satış. 1 seviyesi boğa piyasasında destek, ayı piyasasında direnç gibi çalışır.",
-   kaynak:"https://charts.checkonchain.com/btconchain/realised/sopr/sopr_light.html"},
-  {isim:"Aktif Adres Sayısı", birim:"",
-   yorum:"Günlük ağda işlem yapan benzersiz adres sayısı; ağ kullanımının ve talebin göstergesi. Artan aktivite sağlıklı talep, düşen aktivite ilgi kaybı sinyali olabilir.",
-   kaynak:"https://charts.checkonchain.com/btconchain/adoption/addresscounts/addresscounts_light.html"},
-];
-const OC_LINKLER = [
-  {isim:"MVRV Z-Score", aciklama:"Döngü tepe/dip için normalize MVRV", link:"https://charts.checkonchain.com/btconchain/unrealised/histogram_bullbear_mvrv_zscore/histogram_bullbear_mvrv_zscore_light.html"},
-  {isim:"HODL Dalgaları", aciklama:"Coin yaşına göre arz dağılımı", link:"https://charts.checkonchain.com/btconchain/supply/rcap_hodlwave_bycohort/rcap_hodlwave_bycohort_light.html"},
-  {isim:"CDD", aciklama:"Yok edilen coin-gün", link:"https://charts.checkonchain.com/btconchain/lifespan/cdd/cdd_light.html"},
-  {isim:"Funding & Open Interest", aciklama:"Türev piyasa konumlanması", link:"https://www.coinglass.com/FundingRate"},
-];
-async function onchainCek(){
-  const kap = document.getElementById("oc-icerik");
-  try { document.getElementById("oc-guncelleme").textContent = "canlı · Checkonchain"; } catch(e){}
-  let html = '<div class="oc-grid">' + OC_TANIM.map(x =>
-    '<div class="oc-kart">' +
-      '<div class="oc-ust"><div class="oc-isim">' + x.isim +
-        ' <span class="grafik-info" data-tip="' + (x.yorum||"").replace(/"/g,"&quot;") + '"><i class="bi bi-info-circle"></i></span>' +
-      '</div></div>' +
-      '<div class="oc-embed"><iframe src="' + x.kaynak + '" loading="lazy" title="' + x.isim + '"></iframe></div>' +
-      '<a class="oc-link" href="' + x.kaynak + '" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Tam ekran aç (Checkonchain)</a>' +
-    '</div>').join("") + '</div>';
-  html += '<div class="oc-derin"><div class="as-eyebrow"><span>Derin Metrikler</span><small>eğitim kaynakların</small></div>' +
-    '<div class="oc-derin-grid">' + OC_LINKLER.map(l =>
-      '<a class="oc-derin-kart" href="' + l.link + '" target="_blank" rel="noopener">' +
-        '<div class="baslik">' + l.isim + ' <i class="bi bi-box-arrow-up-right" style="font-size:11px;color:var(--gnc-text-dim)"></i></div>' +
-        '<div class="aciklama">' + l.aciklama + '</div></a>').join("") + '</div></div>';
   kap.innerHTML = html;
 }
-function onchainHesapla(ham){
-  const f = (x) => { const n = parseFloat(x); return isNaN(n) ? null : n; };
-  const seri = ham.map(r => {
-    const mkt = f(r.CapMrktCurUSD), real = f(r.CapRealUSD), sply = f(r.SplyCur);
-    return {
-      t: (r.time || "").slice(0,10),
-      mvrv: f(r.CapMVRVCur), mkt, real,
-      nupl: (mkt && real) ? (mkt - real) / mkt : null,
-      rprice: (real && sply) ? real / sply : null,
-      adr: f(r.AdrActCnt),
-    };
-  });
-  const mktler = seri.map(s => s.mkt).filter(x => x !== null);
-  let std = 0;
-  if(mktler.length > 2){
-    const ort = mktler.reduce((a,b)=>a+b,0) / mktler.length;
-    std = Math.sqrt(mktler.reduce((a,b)=>a+(b-ort)**2,0) / mktler.length);
-  }
-  seri.forEach(s => { s.mvrvz = (s.mkt && s.real && std) ? (s.mkt - s.real) / std : null; });
 
-  const son = (k) => { for(let i=seri.length-1;i>=0;i--){ if(seri[i][k]!=null) return seri[i][k]; } return null; };
-  const gecmis = (k) => seri.filter(s => s[k]!=null).map(s => ({t:s.t, v:Math.round(s[k]*10000)/10000}));
-  const metrikler = OC_TANIM.map(m => Object.assign({}, m, { son: son(m.anahtar), seri: gecmis(m.anahtar) }));
-  return { metrikler, linkler: OC_LINKLER };
-}
-function ocDeger(v, birim){
-  if(v === null || v === undefined) return "—";
-  if(birim === "$") return "$" + Math.round(v).toLocaleString("tr-TR");
-  if(birim === "x") return v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + "x";
-  if(Math.abs(v) >= 1000) return Math.round(v).toLocaleString("tr-TR");
-  return v.toLocaleString("tr-TR",{maximumFractionDigits:2});
-}
-let CG_ID = 0; const CG = {};
-function cizgiGrafik(seri, opts){
-  opts = opts || {};
-  if(!seri || seri.length < 2) return '<div style="font-size:12px;color:var(--gnc-text-dim);padding:20px 0;">Yeterli veri yok.</div>';
-  const W = 320, H = opts.yukseklik || 96, P = 4;
-  // ekstraSeriler: [{seri,renk,kesikli,etiket}] - genel coklu-cizgi mekanizmasi.
-  // opts.seri2/etiket2 eski cagrilar icin otomatik ekstra'ya donusturulur (geriye uyumluluk).
-  let ekstra = (opts.ekstraSeriler || []).filter(e => e.seri && e.seri.length === seri.length);
-  if(opts.seri2 && opts.seri2.length === seri.length){
-    ekstra = [{ seri: opts.seri2, renk: "var(--bs-emphasis-color)", kesikli: true, etiket: opts.etiket2 || "" }].concat(ekstra);
-  }
-  const tumVals = seri.map(s => s.v).concat(...ekstra.map(e => e.seri.map(s => s.v)));
-  const min = Math.min(...tumVals), max = Math.max(...tumVals), aralik = (max - min) || 1;
-  const x = (i) => P + (i / (seri.length - 1)) * (W - 2*P);
-  const y = (v) => P + (1 - (v - min) / aralik) * (H - 2*P);
-  const nokta = seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
-  const cizgi = "M" + nokta.join(" L");
-  // Birden fazla cizgi varsa alan doldurma karisikligi onlemek icin kapatilir.
-  const alan = ekstra.length <= 1 ? (cizgi + " L" + x(seri.length-1).toFixed(1) + "," + (H-P) + " L" + x(0).toFixed(1) + "," + (H-P) + " Z") : null;
-  let ekstraYol = "";
-  ekstra.forEach((e, idx) => {
-    const noktaE = e.seri.map((s, i) => x(i).toFixed(1) + "," + y(s.v).toFixed(1));
-    const renk = e.renk || "var(--gnc-text-dim)";
-    const dash = e.kesikli !== false ? ' stroke-dasharray="5 4"' : "";
-    ekstraYol += '<path data-eidx="' + idx + '" d="M' + noktaE.join(" L") + '" fill="none" stroke="' + renk + '" stroke-width="1.75"' + dash + ' vector-effect="non-scaling-stroke"/>';
-  });
-  const id = "cg" + (++CG_ID);
-  CG[id] = { seri, ekstra, min, aralik, H, P, birim: opts.birim || "", fmt: opts.fmt || null, etiket1: opts.etiket1 || "" };
-  const noktaHTML = '<div class="cg-guide"></div><div class="cg-dot"></div>' +
-    ekstra.map((e, idx) => '<div class="cg-dotx" data-eidx="' + idx + '" style="background:' + (e.renk || "var(--gnc-text-dim)") + '"></div>').join("") +
-    '<div class="cg-tip"></div>';
-  return '<div class="cg-wrap" id="' + id + '" onmousemove="cgMove(event,\'' + id + '\')" onmouseleave="cgLeave(\'' + id + '\')" ontouchmove="cgMove(event,\'' + id + '\')" ontouchend="cgLeave(\'' + id + '\')">' +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="height:' + H + 'px">' +
-    (alan ? '<path class="oc-alan" d="' + alan + '"/>' : "") +
-    '<path class="oc-cizgi" d="' + cizgi + '" vector-effect="non-scaling-stroke"/>' +
-    ekstraYol +
-    '</svg>' + noktaHTML +
-  '</div>';
-}
-function cgFmt(v, birim){
-  if(birim === "$") return "$" + Math.round(v).toLocaleString("tr-TR");
-  if(birim === "x") return v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + "x";
-  if(birim === "ratio") return v.toFixed(5);
-  if(Math.abs(v) >= 1000) return Math.round(v).toLocaleString("tr-TR");
-  return v.toLocaleString("tr-TR",{maximumFractionDigits:2});
-}
-function cgMove(e, id){
-  const c = CG[id]; if(!c) return;
-  const wrap = document.getElementById(id); if(!wrap) return;
-  const rect = wrap.getBoundingClientRect();
-  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const n = c.seri.length;
-  let i = Math.round((cx / rect.width) * (n - 1));
-  i = Math.max(0, Math.min(n - 1, i));
-  const s = c.seri[i];
-  const px = (i / (n - 1)) * rect.width;
-  const yv = c.P + (1 - (s.v - c.min) / c.aralik) * (c.H - 2*c.P);
-  const py = (yv / c.H) * rect.height;
-  const deger = c.fmt ? c.fmt(s.v) : cgFmt(s.v, c.birim);
-  wrap.classList.add("aktif");
-  wrap.querySelector(".cg-guide").style.left = px + "px";
-  const dot = wrap.querySelector(".cg-dot"); dot.style.left = px + "px"; dot.style.top = py + "px";
-  const tip = wrap.querySelector(".cg-tip");
-  const satirlar = [(c.etiket1 ? c.etiket1 + ": " : "") + deger];
-  (c.ekstra || []).forEach((eS, idx) => {
-    const sE = eS.seri[i];
-    const yvE = c.P + (1 - (sE.v - c.min) / c.aralik) * (c.H - 2*c.P);
-    const pyE = (yvE / c.H) * rect.height;
-    const dotE = wrap.querySelector('.cg-dotx[data-eidx="' + idx + '"]');
-    if(dotE){ dotE.style.left = px + "px"; dotE.style.top = pyE + "px"; }
-    const degerE = c.fmt ? c.fmt(sE.v) : cgFmt(sE.v, c.birim);
-    satirlar.push((eS.etiket ? eS.etiket + ": " : "") + degerE);
-  });
-  tip.innerHTML = satirlar.join(" · ") + (s.t ? '<br><span style="opacity:.6;font-weight:400">' + s.t + '</span>' : "");
-  tip.style.left = Math.max(30, Math.min(rect.width - 30, px)) + "px";
-  tip.style.top = py + "px";
-}
-function cgLeave(id){ const w = document.getElementById(id); if(w) w.classList.remove("aktif"); }
-let OC_VERI = null, OC_OLCEK = 365;
-function onchainCiz(veri){
-  if(veri) OC_VERI = veri;
-  if(!OC_VERI) return;
-  const m = OC_VERI.metrikler || [];
-  const linkler = OC_VERI.linkler || [];
-  let html = '<div class="grafik-olcek" id="oc-olcek">' +
-    [["90","3 Ay"],["365","Yıl"],["1095","3 Yıl"],["9999","Tüm"]].map(o =>
-      '<button class="chip ocolcek' + (parseInt(o[0])===OC_OLCEK?' active':'') + '" data-n="' + o[0] + '">' + o[1] + '</button>').join("") + '</div>';
-  html += '<div class="oc-grid">' + m.map(x => {
-    const dilim = (x.seri || []).slice(-OC_OLCEK);
-    return '<div class="oc-kart">' +
-      '<div class="oc-ust"><div class="oc-isim">' + x.isim +
-        ' <span class="grafik-info" data-tip="' + (x.yorum||"").replace(/"/g,"&quot;") + '"><i class="bi bi-info-circle"></i></span>' +
-      '</div><div class="oc-deger">' + ocDeger(x.son, x.birim) + '</div></div>' +
-      '<div class="oc-grafik">' + cizgiGrafik(dilim, {birim:x.birim}) + '</div>' +
-      '<a class="oc-link" href="' + x.kaynak + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Checkonchain\'de tam grafiği aç</a>' +
-    '</div>';
-  }).join("") + '</div>';
-
-  if(linkler.length){
-    html += '<div class="oc-derin"><div class="as-eyebrow"><span>Derin Metrikler</span><small>ücretsiz API yok · kaynağa git</small></div>' +
-      '<div class="oc-derin-grid">' + linkler.map(l =>
-        '<a class="oc-derin-kart" href="' + l.link + '" target="_blank" rel="noopener">' +
-          '<div class="baslik">' + l.isim + ' <i class="bi bi-box-arrow-up-right" style="font-size:11px;color:var(--gnc-text-dim)"></i></div>' +
-          '<div class="aciklama">' + l.aciklama + '</div></a>').join("") + '</div></div>';
-  }
-  document.getElementById("oc-icerik").innerHTML = html;
-  document.querySelectorAll(".ocolcek").forEach(c => c.addEventListener("click", () => { OC_OLCEK = parseInt(c.dataset.n); onchainCiz(); }));
-}
-
-/* ---- gorunum gecisi ---- */
-const BASLIK = { anasayfa:"Ana Sayfa", sektorler:"BIST Sektörler", hisseliste:"Hisseler", reelgetiri:"Reel Getiri Karşılaştır", takvim:"Ekonomik Takvim (ABD)", turkiye:"Türkiye Takvimi", onchain:"On-Chain" };
-document.querySelectorAll(".nav-link-gnc").forEach(link => {
-  link.addEventListener("click", () => {
-    document.querySelectorAll(".nav-link-gnc").forEach(l => l.classList.remove("active"));
-    link.classList.add("active");
-    const v = link.dataset.view;
-    document.getElementById("view-hisseler").classList.add("hidden");
-    document.getElementById("view-hissedetay").classList.add("hidden");
-    document.getElementById("view-anasayfa").classList.toggle("hidden", v !== "anasayfa");
-    document.getElementById("view-sektorler").classList.toggle("hidden", v !== "sektorler");
-    document.getElementById("view-hisseliste").classList.toggle("hidden", v !== "hisseliste");
-    document.getElementById("view-reelgetiri").classList.toggle("hidden", v !== "reelgetiri");
-    document.getElementById("view-takvim").classList.toggle("hidden", v !== "takvim");
-    document.getElementById("view-turkiye").classList.toggle("hidden", v !== "turkiye");
-    document.getElementById("view-onchain").classList.toggle("hidden", v !== "onchain");
-    document.getElementById("topbarTitle").textContent = BASLIK[v];
-    document.getElementById("sidebar").classList.remove("open");
-    document.getElementById("sidebarOverlay").classList.remove("show");
-    if(v === "anasayfa") anaSayfaYukle();
-    if(v === "sektorler" && !window._sektorYuklendi){ window._sektorYuklendi = true; sektorCek(); isiYukle(); }
-    if(v === "hisseliste") hisseListeYukle();
-    if(v === "reelgetiri" && !window._rgkYuklendi){ window._rgkYuklendi = true; rgkBaslat(); }
-    if(v === "takvim" && !window._takvimYuklendi){ window._takvimYuklendi = true; takvimCek(); }
-    if(v === "turkiye" && !window._turkiyeYuklendi){ window._turkiyeYuklendi = true; turkiyeCek(); }
-    if(v === "onchain" && !window._onchainYuklendi){ window._onchainYuklendi = true; onchainCek(); }
-  });
-});
-document.getElementById("refreshBtn").addEventListener("click", () => {
-  const btn = document.getElementById("refreshBtn");
-  btn.classList.remove("donuyor"); void btn.offsetWidth; btn.classList.add("donuyor");
-  const aktif = document.querySelector(".nav-link-gnc.active").dataset.view;
-  if(aktif === "anasayfa") anaSayfaYukle();
-  else if(aktif === "takvim") takvimCek();
-  else if(aktif === "turkiye") turkiyeCek();
-  else if(aktif === "hisseliste") hisseListeYukle();
-  else if(aktif === "reelgetiri") rgkCiz();
-  else if(aktif === "sektorler"){ sektorCek(); isiYukle(); }
-  else sektorCek();
-});
-
-/* ---- tema (localStorage hafizali, panelinle ayni) ---- */
-(function(){
-  const htmlEl = document.documentElement;
-  let saved = null;
-  try { saved = localStorage.getItem('gnc-theme'); } catch(e) {}
-  if(saved === 'light' || saved === 'dark') htmlEl.setAttribute('data-bs-theme', saved);
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const next = htmlEl.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-    htmlEl.setAttribute('data-bs-theme', next);
-    try { localStorage.setItem('gnc-theme', next); } catch(e) {}
-  });
-})();
-
-/* ---- mobil sidebar ---- */
-(function(){
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  document.getElementById('sidebarToggle').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
-  overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
-})();
-
-// Baslangic: Ana Sayfa + canli saat
-document.querySelectorAll(".donem2").forEach(c => c.addEventListener("click", () => {
-  sektGrafikDonem = c.dataset.d;
-  document.querySelectorAll(".donem2").forEach(x => x.classList.toggle("active", x.dataset.d === sektGrafikDonem));
-  sektorGrafikCiz();
-}));
-document.querySelectorAll("#ethbtc-olcek .olcek").forEach(c => c.addEventListener("click", () => {
-  document.querySelectorAll("#ethbtc-olcek .olcek").forEach(x => x.classList.remove("active"));
-  c.classList.add("active");
-  ETHBTC_OLCEK = parseInt(c.dataset.n);
-  ethbtcCiz();
-}));
-anaSayfaYukle();
-setInterval(saatTik, 1000);
+anaSayfaBaslat();
 </script>
 </body>
 </html>
