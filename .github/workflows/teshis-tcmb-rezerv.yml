@@ -1,0 +1,23 @@
+name: TCMB rezerv teshis (tek seferlik kesif)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  kesfet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kutuphaneleri yukle
+        run: pip install borsapy pandas
+      - name: TCMB rezerv serilerini kesfet ve logla
+        env:
+          EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
+        run: python teshis_tcmb_rezerv.py
