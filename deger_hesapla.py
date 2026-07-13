@@ -263,35 +263,61 @@ def main():
             continue
 
         son_donem, son_eps = eps_yillik[0]
-        if son_eps and son_eps > 0:
-            fk = guncel_fiyat / son_eps
-            if 0 < fk < 150:
-                sektor_fk_guncel.setdefault(sektor, []).append(fk)
-                guncel_islenen += 1
-        elif son_eps is not None and son_eps <= 0:
-            negatif_epsli_sirket_sayisi[sektor] = negatif_epsli_sirket_sayisi.get(sektor, 0) + 1
 
-        # DUZELTME (13 Tem 2026, IKINCI VERSIYON): Onceki versiyon, bolunme
-        # supheli sirketleri TAMAMEN DISLIYORDU - Doruk hakli olarak itiraz
-        # etti: "dislamak olmaz, ayak uydurmamiz lazim". Gercek/kesin cozum:
-        # HER YILIN KENDI EPS'i yerine, HER YILIN NET KARINI (TOPLAM - hisse
-        # sayisindan ETKILENMEZ) BUGUNKU hisse sayisina boluyoruz. Boylece
-        # gecmiste kac kere bolunme/bedelsiz sermaye artirimi olmus olursa
-        # olsun, TUM yillar ayni (bugunku) hisse sayisi paydasinda -
-        # otomatik duzelir, TESPIT ya da DISLAMA gerekmez.
-        #   guncel_hisse_sayisi = guncel_net_kar / guncel_eps  (ikisi de ayni
-        #                          donemden, ayni HAM raporlanmis degerler)
-        #   normalize_eps(yil)  = net_kar(yil) / guncel_hisse_sayisi
-        # Sonra bu normalize EPS'i TUFE ile bugune tasiyip (Shiller CAPE)
-        # ortalaniyor - iki duzeltme UST USTE: once hisse sayisi, sonra enflasyon.
+        # DUZELTME (13 Tem 2026, UCUNCU VERSIYON): THYAO ornegiyle bulundu -
+        # buyuk sirketlerde raporlanan "Hisse Basina Kazanc" TAM SAYIYA
+        # yuvarlaniyor olabilir (THYAO'da neredeyse her donem "0.0" gorunuyor,
+        # oysa gercek net kari 130 MİLYAR TL - gercek EPS ~94 TL olmali, test
+        # edildi). Bu, sadece TARIHSEL karsilastirmayi degil GUNCEL F/K'yi de
+        # bozar. SAGLAM COZUM: hisse sayisini EPS'e hic bagimli olmadan,
+        # dogrudan "Odenmis Sermaye"den al (Turkiye'de nominal deger neredeyse
+        # evrensel olarak 1 TL) - bu alan HER ZAMAN tam hassasiyetle raporlanir.
+        # Sonra GUNCEL EPS'i de (raporlanan degeri degil) net_kar/hisse_sayisi
+        # olarak YENIDEN INSA edip kullaniyoruz - hem guncel hem tarihsel F/K
+        # icin AYNI, daha guvenilir EPS kaynagi.
+        odenmis_sermaye_serisi = kalem_bul(kalemler, "Ödenmiş Sermaye")
+        guncel_hisse_sayisi = None
+        if odenmis_sermaye_serisi:
+            gecerli_sermaye = {d: v for d, v in odenmis_sermaye_serisi.items() if v}
+            if gecerli_sermaye:
+                def _donem_anahtari(d):
+                    yil, ay = d.split("/")
+                    return (int(yil), int(ay))
+                son_sermaye_donem = sorted(gecerli_sermaye.keys(), key=_donem_anahtari, reverse=True)[0]
+                guncel_hisse_sayisi = gecerli_sermaye[son_sermaye_donem]  # 1 TL nominal varsayimiyla = hisse sayisi
+
         net_kar_serisi = net_kar_yillik(kalemler)
         net_kar_harita = dict(net_kar_serisi)
         guncel_net_kar = net_kar_harita.get(son_donem)
 
-        real_eps_listesi = []
-        if guncel_net_kar and son_eps and son_eps > 0:
+        if not guncel_hisse_sayisi and guncel_net_kar and son_eps and son_eps > 0:
+            # YEDEK: Odenmis Sermaye yoksa/gecersizse, eski yonteme don
             guncel_hisse_sayisi = guncel_net_kar / son_eps
-            if guncel_hisse_sayisi > 0:
+
+        # Guncel F/K icin: raporlanan son_eps yerine, mumkunse YENIDEN INSA
+        # EDILMIS (net_kar/hisse_sayisi) EPS'i tercih ediyoruz - THYAO gibi
+        # buyuk sirketlerde raporlanan deger yuvarlanmis/guvenilmez olabilir.
+        etkin_son_eps = son_eps
+        if guncel_hisse_sayisi and guncel_net_kar:
+            etkin_son_eps = guncel_net_kar / guncel_hisse_sayisi
+
+        if etkin_son_eps and etkin_son_eps > 0:
+            fk = guncel_fiyat / etkin_son_eps
+            if 0 < fk < 150:
+                sektor_fk_guncel.setdefault(sektor, []).append(fk)
+                guncel_islenen += 1
+        elif etkin_son_eps is not None and etkin_son_eps <= 0:
+            negatif_epsli_sirket_sayisi[sektor] = negatif_epsli_sirket_sayisi.get(sektor, 0) + 1
+
+        real_eps_listesi = []
+        if guncel_hisse_sayisi and guncel_hisse_sayisi > 0:
+            if guncel_net_kar is None:
+                print(f"  {kod} ({sektor}): Net Dönem Kârı kalemi bulunamadı (aday isimler eşleşmedi)")
+                supheli_bolunmeler.append({
+                    "kod": kod, "sektor": sektor,
+                    "not": "Net Dönem Kârı kalemi bulunamadı (aday isimler eşleşmedi) - hisse-sayısı normalizasyonu yapılamadı.",
+                })
+            else:
                 for donem, eps in eps_yillik:
                     yil = donem[:4]
                     net_kar_o_yil = net_kar_harita.get(donem)
@@ -309,10 +335,10 @@ def main():
                         # ama YINE DE hisse-sayisi normalizasyonu uygulanmis halde
                         real_eps_listesi.append(normalize_eps)
         else:
-            print(f"  {kod} ({sektor}): net kar verisi bulunamadi (kalem adi eslesmedi) - hisse-sayisi normalizasyonu YAPILAMADI, bu sirket tarihsel karsilastirmaya KATILAMIYOR")
+            print(f"  {kod} ({sektor}): hisse sayısı hesaplanamadı (Ödenmiş Sermaye alanı yok/geçersiz VE net kâr/EPS'ten türetme de başarısız) - tarihsel karşılaştırmaya KATILAMIYOR")
             supheli_bolunmeler.append({
                 "kod": kod, "sektor": sektor,
-                "not": "Net Dönem Kârı kalemi bulunamadı (aday isimler eşleşmedi) - hisse-sayısı normalizasyonu yapılamadı.",
+                "not": "Hisse sayısı hesaplanamadı (Ödenmiş Sermaye alanı yok/geçersiz ve yedek türetme de başarısız).",
             })
 
         if len(real_eps_listesi) >= 2 and guncel_fiyat:
@@ -422,18 +448,20 @@ def main():
         "guncelleme": datetime.now(timezone.utc).isoformat(),
         "durum": "deneysel",
         "not": (
-            "DENEYSEL/BETA: Tarihsel F/K karşılaştırması iki kademeli düzeltmeyle hesaplanıyor. "
-            "1) HİSSE SAYISI NORMALİZASYONU: her yılın EPS'i yerine, o yılın TOPLAM Net Dönem "
-            "Kârı, BUGÜNKÜ hisse sayısına (güncel net kâr / güncel EPS'ten geriye hesaplanır) "
-            "bölünür. Toplam kâr hisse sayısından etkilenmediği için, bu adım geçmişte kaç kez "
-            "bedelsiz sermaye artırımı/hisse bölünmesi olduysa olsun otomatik düzelir - artık "
-            "şüpheli şirketleri DIŞLAMIYORUZ, matematiksel olarak DÜZELTİYORUZ (13 Tem 2026'da "
-            "gerçek bir bölünme senaryosuyla test edildi: hesaplanan hisse sayısı çarpanı testteki "
-            "gerçek değerle birebir eşleşti). "
-            "2) TÜFE İLE REEL DEĞER (Shiller CAPE): normalize edilmiş EPS'ler TÜFE ile bugünün "
+            "DENEYSEL/BETA: Hem güncel hem tarihsel F/K, üç kademeli düzeltmeyle hesaplanıyor. "
+            "1) HİSSE SAYISI: Ödenmiş Sermaye'den alınır (Türkiye'de nominal değer neredeyse "
+            "evrensel olarak 1 TL). Bazı büyük şirketlerde (örn. THYAO) kaynağın raporladığı "
+            "\"Hisse Başına Kazanç\" tam sayıya yuvarlanıp neredeyse hep \"0\" görünebiliyor - "
+            "bu yüzden hisse sayısını EPS'e bağımlı olmadan, doğrudan Ödenmiş Sermaye'den alıyoruz. "
+            "2) GÜNCEL VE TARİHSEL EPS: raporlanan (bazen yuvarlanmış) EPS yerine, her yılın "
+            "TOPLAM Net Dönem Kârı bu hisse sayısına bölünerek YENİDEN HESAPLANIR - hem daha "
+            "hassas hem de geçmişte kaç kez bedelsiz sermaye artırımı/hisse bölünmesi olduysa "
+            "olsun otomatik düzelir, şüpheli şirketleri DIŞLAMIYORUZ (test edildi: THYAO'da "
+            "kaynağın \"0\" gösterdiği EPS, gerçekte ~94 TL çıktı). "
+            "3) TÜFE İLE REEL DEĞER (Shiller CAPE): normalize edilmiş EPS'ler TÜFE ile bugünün "
             "TL'sine taşınır (TP.FG.J0), şirketin kendi yılları arasındaki medyanı alınır, bugünkü "
             "fiyat bu medyana bölünür - S&P 500 için Robert Shiller'ın kullandığı yöntemin aynısı. "
-            "Bu iki adım sayesinde 2023 öncesine de gidilebiliyor (sabit yıl sınırı yok). "
+            "Bu adımlar sayesinde 2023 öncesine de gidilebiliyor (sabit yıl sınırı yok). "
             "Net Dönem Kârı kalemi bulunamayan (adı eşleşmeyen) şirketler bu karşılaştırmaya "
             "katılamaz - bu, veri eksikliğidir, aykırı değer dışlaması değildir. "
             "Kesin yüzde yerine kaba bir bant (Ucuz/Nötr/Pahalı, ±%30 eşiğiyle) esas alınmalıdır; "
