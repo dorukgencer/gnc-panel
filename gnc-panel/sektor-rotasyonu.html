@@ -17,7 +17,12 @@
   .sr-evre-chipler { display: flex; gap: 6px; flex-wrap: wrap; }
   .sr-evre-filtre { padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; }
   .sr-evre-filtre.aktif { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .sr-arama { margin-left: auto; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; width: 220px; background: var(--surface-raised); }
+  .sr-arama { margin-left: auto; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 16px; width: 220px; max-width: 100%; background: var(--surface-raised); }
+  @media (max-width: 700px) {
+    .sr-arama { margin-left: 0; width: 100%; }
+    .sr-periyot-grup, .sr-evre-chipler { width: 100%; }
+    .sr-evre-chipler { justify-content: flex-start; }
+  }
 
   .sr-saat-wrap { display: grid; grid-template-columns: 1fr; gap: 18px; margin-bottom: 18px; }
   .sr-saat-zemin { fill: var(--surface-raised); }
@@ -37,7 +42,14 @@
   .sr-bubble-hint { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-faint); margin-top: 8px; }
   .sr-bubble-hint .bh-dots { display: flex; align-items: center; gap: 4px; }
   .sr-bubble-hint .bh-dots span { display: inline-block; border-radius: 50%; background: var(--ink-faint); }
-  @media (max-width: 1150px) { .sr-saat-grid { grid-template-columns: 1fr; } }
+  .sr-saat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sr-saat-scroll > svg { display: block; width: 100%; height: auto; min-width: 700px; }
+  @media (max-width: 1150px) {
+    .sr-saat-grid { grid-template-columns: 1fr; }
+    .sr-lejant { order: -1; display: flex; flex-wrap: wrap; gap: 14px 24px; }
+    .sr-lejant .qg { margin-bottom: 0; flex: 1 1 200px; }
+    .sr-lejant .sr-trail-hint, .sr-lejant .sr-bubble-hint { width: 100%; margin-top: 4px; padding-top: 8px; }
+  }
 
   .sr-gunluk-satir { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .sr-gunluk-satir:last-child { border-bottom: none; }
@@ -54,6 +66,12 @@
 
   .sr-deger-satir { display: grid; grid-template-columns: 130px 1fr 180px; align-items: center; gap: 10px; padding: 7px 0; font-size: 12px; }
   .sr-eksen { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-iki-sutun { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  @media (max-width: 800px) {
+    .sr-iki-sutun { grid-template-columns: 1fr; }
+    .sr-katki-satir, .sr-deger-satir { grid-template-columns: 1fr; gap: 3px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+    .sr-katki-satir .sr-katki-bar-track, .sr-deger-satir .sr-katki-bar-track { order: 2; }
+  }
 
   .sr-isi-tablo { border-collapse: collapse; font-size: 11.5px; width: 100%; }
   .sr-isi-tablo td, .sr-isi-tablo th { padding: 6px 8px; text-align: center; }
@@ -143,10 +161,10 @@
             </ul>
           </span></span>
         </div>
-        <div id="tablo-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        <div id="tablo-icerik" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+      <div class="sr-iki-sutun">
         <!-- ENDEKSE KATKI -->
         <div class="gnc-panel-kart">
           <div class="gnc-panel-baslik">
@@ -335,7 +353,7 @@ function srCizSaat(){
   yerlestir(grup.toparlanma, 25, "end", 45, 290);
   yerlestir(grup.daralma, 25, "end", 310, 555);
 
-  let svg = `<svg width="100%" height="560" viewBox="-160 0 920 600">`;
+  let svg = `<svg viewBox="-160 0 920 600">`;
 
   svg += `<defs>`;
   Object.keys(renkler).forEach(evre => {
@@ -391,7 +409,7 @@ function srCizSaat(){
       <div class="sr-bubble-hint"><span class="bh-dots"><span style="width:7px;height:7px;"></span><span style="width:13px;height:13px;"></span><span style="width:19px;height:19px;"></span></span> baloncuk boyutu = ağırlık</div>
     </div>`;
 
-  kap.innerHTML = `<div class="sr-saat-grid"><div>${svg}</div>${lejant}</div>`;
+  kap.innerHTML = `<div class="sr-saat-grid"><div class="sr-saat-scroll">${svg}</div>${lejant}</div>`;
 }
 
 /* ============ DEĞERLEME KARŞILAŞTIRMASI ============ */
