@@ -23,6 +23,7 @@ bos kalacak - bu FRED'in kendi kisiti, cozulemez.
 """
 
 import json
+import time
 import os
 import urllib.request
 import urllib.parse
@@ -106,17 +107,32 @@ def yahoo_gunluk_cek(sembol, session, crumb):
     params = {"range": "5y", "interval": "1d"}
     if crumb:
         params["crumb"] = crumb
-    try:
-        r = session.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}", params=params, timeout=30)
-        if r.status_code != 200:
-            print(f"  {sembol}: cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+    veri = None
+    for deneme in range(3):
+        try:
+            r = session.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}", params=params, timeout=30)
+            if r.status_code == 429:
+                bekle = 5 * (deneme + 1)
+                print(f"  {sembol}: 429 (rate limit), {bekle}sn bekleyip tekrar denenecek ({deneme+1}/3)")
+                time.sleep(bekle)
+                continue
+            if r.status_code != 200:
+                print(f"  {sembol}: cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+                return []
+            veri = r.json()
+            break
+        except Exception as e:
+            print(f"  {sembol}: cekilemedi ({e})")
             return []
-        data = r.json()
-        result = data["chart"]["result"][0]
+    if veri is None:
+        print(f"  {sembol}: 3 denemede de basarisiz (rate limit devam ediyor)")
+        return []
+    try:
+        result = veri["chart"]["result"][0]
         zamanlar = result["timestamp"]
         kapanislar = result["indicators"]["quote"][0]["close"]
     except Exception as e:
-        print(f"  {sembol}: cekilemedi ({e})")
+        print(f"  {sembol}: yanit ayristirilamadi ({e})")
         return []
     seri = []
     for t, c in zip(zamanlar, kapanislar):
@@ -172,23 +188,14 @@ def main():
                 print(f"  {anahtar}: hata {str(e)[:60]}")
                 fred_ham[anahtar] = []
 
-    print("Yahoo'dan gunluk DXY, US10Y, VIX ve USD/TRY cekiliyor...")
+    print("Yahoo'dan gunluk DXY, US10Y, VIX ve USD/TRY cekiliyor (tek kimlik, sirali)...")
     session, crumb = _yahoo_kimlik()
+    yahoo_hedefler = [("dxy", "DX-Y.NYB"), ("usdtry", "TRY=X"), ("us10y_nominal", "^TNX"), ("vix", "^VIX")]
     yahoo_ham = {}
-    with ThreadPoolExecutor(max_workers=4) as havuz:
-        gelecekler = {
-            havuz.submit(yahoo_gunluk_cek, "DX-Y.NYB", session, crumb): "dxy",
-            havuz.submit(yahoo_gunluk_cek, "TRY=X", session, crumb): "usdtry",
-            havuz.submit(yahoo_gunluk_cek, "^TNX", session, crumb): "us10y_nominal",
-            havuz.submit(yahoo_gunluk_cek, "^VIX", session, crumb): "vix",
-        }
-        for gelecek in as_completed(gelecekler):
-            anahtar = gelecekler[gelecek]
-            try:
-                yahoo_ham[anahtar] = gelecek.result()
-            except Exception as e:
-                print(f"  {anahtar}: hata {str(e)[:60]}")
-                yahoo_ham[anahtar] = []
+    for i, (anahtar, sembol) in enumerate(yahoo_hedefler):
+        if i > 0:
+            time.sleep(3)  # ardisik istekler arasi nazik bekleme - rate limit tetiklememek icin
+        yahoo_ham[anahtar] = yahoo_gunluk_cek(sembol, session, crumb)
 
     # ^TNX savunma kontrolu: Yahoo'nun gosterim sayfasi dogrudan yuzde
     # gosteriyor (12 Tem 2026'da dogrulandi) ama ham API farkli olcekte
