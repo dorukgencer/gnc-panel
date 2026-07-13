@@ -286,15 +286,27 @@ def main():
             "sirket_sayisi_guncel": len(guncel_liste),
             "guven_dusuk": len(guncel_liste) < 3,  # az sirketle hesaplanmis, sayfada isaretlenmeli
         }
-        if len(besyil_liste) >= 1:
+        # DUZELTME (13 Tem 2026): esik >=1'den >=3'e yukseltildi. TMS 29 sinirindan
+        # oturu elimizde sadece 2-3 "temiz" yil var - bu zaten kisa bir pencere;
+        # USTUNE 1-2 sirketle hesaplanmis bir "tarihsel ortalama" istatistiksel
+        # olarak guvenilir DEGIL, sadece guvenilir GORUNUYOR (kesin yuzde
+        # bicimindeki). Az veriyle "veri yetersiz" demek, az veriyle yanlis
+        # kesinlik iddia etmekten daha DURUST.
+        if len(besyil_liste) >= 3:
             girdi["fk_5yil_ortalama_medyan"] = round(statistics.median(besyil_liste), 2)
             girdi["sirket_sayisi_5yil"] = len(besyil_liste)
-            girdi["sapma_yuzde"] = round((girdi["fk_guncel_medyan"] - girdi["fk_5yil_ortalama_medyan"]) / girdi["fk_5yil_ortalama_medyan"] * 100, 1)
-            # 5 yillik ortalama da az sirketle hesaplanmis olabilir - sapma_yuzde
-            # bu durumda GUVENILMEZ olur ama eskiden sadece guncel sirket sayisi
-            # kontrol ediliyordu, bu deligi kapatiyoruz.
-            if len(besyil_liste) < 3:
-                girdi["guven_dusuk"] = True
+            sapma = round((girdi["fk_guncel_medyan"] - girdi["fk_5yil_ortalama_medyan"]) / girdi["fk_5yil_ortalama_medyan"] * 100, 1)
+            girdi["sapma_yuzde"] = sapma
+            # DUZELTME: kesin yuzde yerine (ya da yaninda) KABA bir bant da
+            # veriyoruz. Veri sadece 2-3 yillik oldugu icin "+61.9%" gibi tek
+            # ondalikli bir kesinlik iddia etmek gercekci degil - "Pahali"
+            # demek, veri buna yeter ama "%61.9 pahali" demek yetmez.
+            if sapma <= -30:
+                girdi["bant"] = "ucuz"
+            elif sapma >= 30:
+                girdi["bant"] = "pahali"
+            else:
+                girdi["bant"] = "notr"
         if len(pddd_liste) >= 1:
             girdi["pd_dd_medyan"] = round(statistics.median(pddd_liste), 2)
         if len(pd_satis_liste) >= 1:
@@ -303,20 +315,28 @@ def main():
 
     cikti = {
         "guncelleme": datetime.now(timezone.utc).isoformat(),
+        "durum": "deneysel",
         "not": (
+            "DENEYSEL/BETA: Tarihsel F/K karşılaştırması şu an SADECE 2023-2025'i (TMS 29 enflasyon "
+            "muhasebesi geçişi öncesi rakamlar karşılaştırılamaz olduğu için) kapsıyor - bu, güvenilir "
+            "bir 'tarihsel ortalama' için istatistiksel olarak KISA bir pencere. Bu yüzden kesin yüzde "
+            "yerine kaba bir bant (Ucuz/Nötr/Pahalı, ±%30 eşiğiyle) esas alınmalı; yüzdenin kendisi "
+            "referans amaçlıdır, tek başına hassas bir ölçüm olarak okunmamalıdır. Zaman geçtikçe "
+            "(2026, 2027...) pencere büyüyecek ve güvenilirlik artacaktır. "
             "F/K = Fiyat / Hisse Başına Kazanç (EPS), en son açıklanan YILLIK (/12) dönem kullanılır. "
             "PD/DD = Piyasa Değeri / Özkaynaklar, en son açıklanan (herhangi bir çeyrek) dönem kullanılır. "
             "PD/Satışlar = Piyasa Değeri / en son açıklanan YILLIK Hasılat. F/K ve PD/DD'nin aksine "
             "zarar eden şirketleri de kapsar (hasılat kâr gibi sıfıra/negatife düşmez) ve F/K'nin "
             "yaşadığı aşırı saçıklığı (bir şirket F/K 10, diğeri F/K 500 gibi) çok daha az yaşar - "
             "F/K hesaplanamayan sektörlerde bile PD/DD ve PD/Satışlar hâlâ dolu olabilir. "
-            "Sektör değerleri, sektördeki şirketlerin medyanıdır. Negatif/sıfır kârlı şirketler F/K'ye "
-            "dahil edilmez. Tarihsel ortalama, SADECE 2023 ve sonrası mali yıllardan hesaplanır - "
-            "31.12.2023 ve sonrası mali tablolar TMS 29 (enflasyon muhasebesi) gereği TÜFE ile bugünün "
-            "satın alma gücüne yeniden ifade edilirken, 2023 öncesi rakamlar düzeltilmemiş nominal "
-            "haliyle kalıyor; bu iki dönem birbiriyle karşılaştırılabilir olmadığı için 2023 öncesine "
-            "gidilmiyor. En az 2 yıl (2023, 2024, 2025) gerekir, bu yüzden bazı sektörlerde henüz "
-            "yeterli veri olmayabilir. "
+            "Sektör değerleri, sektördeki şirketlerin medyanıdır (hem her şirketin kendi çok-yıllık "
+            "F/K'sinde hem sektör genelinde) - tek bir aykırı yılın/şirketin ortalamayı sürüklemesini "
+            "azaltmak için. Negatif/sıfır kârlı şirketler F/K'ye dahil edilmez. Tarihsel ortalama "
+            "SADECE en az 3 şirketle hesaplanabiliyorsa gösterilir (2 şirketle 'medyan' istatistiksel "
+            "olarak neredeyse ortalamaya eşitleşir, aykırı değere karşı korumasız kalır). "
+            "31.12.2023 ve sonrası mali tablolar TMS 29 gereği TÜFE ile bugünün satın alma gücüne "
+            "yeniden ifade edilirken, 2023 öncesi rakamlar düzeltilmemiş nominal haliyle kalıyor; "
+            "bu iki dönem karşılaştırılabilir olmadığı için 2023 öncesine gidilmiyor. "
             "Sapma % = (güncel F/K - tarihsel ortalama F/K) / tarihsel ortalama F/K × 100. "
             "Tek başına alım-satım sinyali değildir, eğitim ve araştırma amaçlıdır."
         ),
