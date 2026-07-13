@@ -18,23 +18,24 @@ degiskeninden okunur (GitHub Actions secret) - borsapy bu ismi otomatik tanir.
 
 import json
 import os
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import borsapy as bp
-import requests
 
 KLASOR = Path(__file__).parent
 HEDEF = KLASOR / "gnc-panel" / "deflator.json"
 HEDEF_FAIZ = KLASOR / "gnc-panel" / "faiz_gecmis.json"
 
-TUFE_SERI = "TP.FG.J0"          # TUFE genel endeks (2003=100), aylik - TCMB EVDS (kacinilmaz, Turkiye'nin kendi verisi)
-# USD_SERI ve ALTIN_SERI ARTIK KULLANILMIYOR (EVDS yerine Yahoo Finance'ten
-# hesaplaniyor - bkz. _yahoo_kimlik/_yahoo_aylik_cek). Turkiye kaynaklarina
-# guven sinirli oldugu icin, Turkiye'ye ozgu olmayan (USD/TRY, ons altin)
-# veriler artik uluslararasi/global kaynaktan geliyor.
+TUFE_SERI = "TP.FG.J0"          # TUFE genel endeks (2003=100), aylik - TCMB EVDS
+USD_SERI = "TP.DK.USD.A.YTL"    # USD/TRY alis kuru - TCMB EVDS
+GOLD_FRED = "GOLDAMGBD228NLBM"  # Ons altin (LBMA, USD) - FRED
+# NOT (13 Tem 2026): USD/TRY ve altin ONCEDEN Yahoo Finance'ten cekiliyordu
+# ("uluslararasi, likit, standart kaynak" gerekcesiyle) ama GitHub Actions'ta
+# Yahoo SUREKLI 429 (Too Many Requests) verdi - bekleme/retry ile de cozulmedi,
+# yani muhtemelen IP bazli engelleme. Artik ikisi de EVDS/FRED'den - ayni script
+# icinde zaten sorunsuz calisan altyapilar.
 GRAM_ONS = 31.1034768
 
 
@@ -45,77 +46,42 @@ def _key():
     return k
 
 
-_YAHOO_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+def _fred_key():
+    k = os.environ.get("FRED_API_KEY", "").strip()
+    if not k:
+        raise SystemExit("FRED_API_KEY ortam degiskeni bulunamadi (GitHub secret).")
+    return k
 
 
-def _yahoo_kimlik():
-    """Yahoo Finance cerez+crumb al (sektor.js/kuresel.js'teki AYNI mantik,
-    Python tarafinda). Ons altin (XAUUSD=X) ve USD/TRY (TRY=X) icin kullanilir -
-    Turkiye kaynagina guven sinirli oldugu icin bu ikisi artik global/Yahoo'dan.
-    TESHIS: basarisizlik durumunda durum kodu ve ham yaniti loglar (GitHub Actions'in
-    IP'sinin Yahoo tarafindan engellenip engellenmedigini gormek icin)."""
-    session = requests.Session()
-    session.headers.update({"User-Agent": _YAHOO_UA})
+def _fred_aylik_cek(seri_kod, baslangic):
+    """FRED'den aylik (gunluk seriler icin ay ortalamasi) veri ceker.
+    Ons altin (GOLDAMGBD228NLBM) icin kullanilir - Yahoo'nun GitHub Actions'ta
+    surekli 429 vermesi uzerine (13 Tem 2026'da dogrulandi) FRED'e gecildi."""
+    import urllib.request
+    import urllib.parse
+    params = urllib.parse.urlencode({
+        "series_id": seri_kod, "api_key": _fred_key(), "file_type": "json",
+        "observation_start": baslangic, "frequency": "m", "aggregation_method": "avg",
+    })
+    url = f"https://api.stlouisfed.org/fred/series/observations?{params}"
     try:
-        session.get("https://fc.yahoo.com/", timeout=15)
+        with urllib.request.urlopen(url, timeout=30) as r:
+            data = json.loads(r.read().decode("utf-8"))
     except Exception as e:
-        print(f"    [TESHIS] fc.yahoo.com cerez istegi hata: {e}")
-    crumb = None
-    try:
-        r = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", timeout=15)
-        if r.status_code == 200 and "<" not in r.text:
-            crumb = r.text.strip()
-        else:
-            print(f"    [TESHIS] crumb alinamadi - durum kodu: {r.status_code}, ilk 150 karakter: {r.text[:150]!r}")
-    except Exception as e:
-        print(f"    [TESHIS] crumb istegi hata: {e}")
-        pass
-    return session, crumb
-
-
-def _yahoo_aylik_cek(sembol, session, crumb):
-    """Yahoo'dan uzun donem AYLIK kapanis serisi -> [{'tarih':'YYYY-MM','deger':float}] yeni->eski."""
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}"
-    params = {"range": "20y", "interval": "1mo"}
-    if crumb:
-        params["crumb"] = crumb
-    veri = None
-    for deneme in range(3):
-        try:
-            r = session.get(url, params=params, timeout=30)
-            if r.status_code == 429:
-                bekle = 5 * (deneme + 1)
-                print(f"  {sembol}: 429 (rate limit), {bekle}sn bekleyip tekrar denenecek ({deneme+1}/3)")
-                time.sleep(bekle)
-                continue
-            if r.status_code != 200:
-                print(f"  {sembol}: cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
-                return []
-            veri = r.json()
-            break
-        except Exception as e:
-            print(f"  {sembol}: cekilemedi ({e})")
-            return []
-    if veri is None:
-        print(f"  {sembol}: 3 denemede de basarisiz (rate limit devam ediyor)")
+        print(f"  {seri_kod}: cekilemedi ({e})")
         return []
-    try:
-        result = veri["chart"]["result"][0]
-        zamanlar = result["timestamp"]
-        kapanislar = result["indicators"]["quote"][0]["close"]
-    except Exception as e:
-        print(f"  {sembol}: yanit ayristirilamadi ({e})")
-        return []
-
-    tekil = {}
-    for t, c in zip(zamanlar, kapanislar):
-        if c is None:
+    seri = []
+    for obs in data.get("observations", []):
+        v = obs.get("value")
+        if v in (None, ".", ""):
             continue
-        ay = datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m")
-        tekil[ay] = round(float(c), 4)  # ayni aya birden fazla nokta duserse SON deger kalir
-    seri = [{"tarih": t, "deger": d} for t, d in tekil.items()]
+        try:
+            deger = round(float(v), 4)
+        except ValueError:
+            continue
+        seri.append({"tarih": obs["date"][:7], "deger": deger})
     seri.sort(key=lambda x: x["tarih"], reverse=True)
-    print(f"  {sembol}: {len(seri)} aylik gozlem")
+    print(f"  {seri_kod}: {len(seri)} aylik gozlem (son: {seri[0]['tarih'] if seri else '-'})")
     return seri
 
 
@@ -240,16 +206,14 @@ def main():
                 evds_sonuc[anahtar] = []
     tufe, faiz = evds_sonuc["tufe"], evds_sonuc["faiz"]
 
-    # USD/TRY ve ons altin Turkiye'ye OZGU degil - global piyasa fiyati.
-    # Turkiye kaynagina guven sinirli oldugu icin Yahoo Finance'ten (uluslararasi,
-    # likit, standart) cekilir; gram altin TL kendimiz hesaplariz.
-    print("Yahoo Finance'ten USD/TRY ve ons altin cekiliyor...")
-    session, crumb = _yahoo_kimlik()
-    # Sirali cekiyoruz (paralel degil) - 2 sembol bile olsa, ayni IP'den ust uste
-    # istekler rate limit tetikleyebiliyor (makro_cek.py'de 4 sembolde dogrulandi).
-    usdtry_seri = _yahoo_aylik_cek("TRY=X", session, crumb)
-    time.sleep(3)
-    xau_seri = _yahoo_aylik_cek("XAUUSD=X", session, crumb)
+    # USD/TRY artik EVDS'ten (TP.DK.USD.A.YTL) - ayni script'te zaten calisan,
+    # kanitlanmis borsapy/EVDS altyapisi yeniden kullaniliyor. Ons altin FRED'den
+    # (GOLDAMGBD228NLBM). YAHOO ARTIK KULLANILMIYOR - GitHub Actions'ta surekli
+    # 429 (Too Many Requests) verdigi ILK ISTEKTE bile dogrulandi (13 Tem 2026),
+    # yani rate-limit degil muhtemelen IP bazli engelleme - beklemeyle cozulmuyor.
+    print("USD/TRY (EVDS) ve ons altin (FRED) cekiliyor...")
+    usdtry_seri = _seri_cek(USD_SERI, baslangic)
+    xau_seri = _fred_aylik_cek(GOLD_FRED, baslangic)
 
     usd = usdtry_seri  # USD/TRY serisinin kendisi zaten "usd" olarak kullanilan sey
     usdtry_map = {s["tarih"]: s["deger"] for s in usdtry_seri}
