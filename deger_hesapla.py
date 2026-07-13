@@ -179,6 +179,23 @@ def main():
                 fk_o_yil = fiyat / eps
                 if 0 < fk_o_yil < 500:
                     yillik_fk_listesi.append(fk_o_yil)
+
+        # SAVUNMA (13 Tem 2026): 10 yila cikarinca bazi sektorlerde (XMADN,
+        # XMANA, XKMYA...) sapma %700'lere kadar cikti - fizyolojik olarak
+        # mantiksiz. Suphe: BIST'te sik gorulen "bedelsiz sermaye artirimi"
+        # (hisse bolunmesi) - eger gecmis fiyat bolunme-duzeltmeli geliyorsa
+        # ama o donemki EPS duzeltmesiz geliyorsa, eski yillarin F/K'si yapay
+        # sekilde sisip sirketin KENDI ortalamasini bozuyor. KESIN dogrulanana
+        # kadar, sirketin KENDI serisi icinde medyandan asiri sapan (4 kattan
+        # fazla/az) yillari o SIRKET icin DISLIYORUZ - hala supheli olabilir
+        # ama en azindan tek bir bozuk yilin sektor medyanini surklemesini
+        # onler.
+        if len(yillik_fk_listesi) >= 3:
+            kendi_medyan = statistics.median(yillik_fk_listesi)
+            temiz_liste = [f for f in yillik_fk_listesi if kendi_medyan/4 <= f <= kendi_medyan*4]
+            if len(temiz_liste) >= 2:
+                yillik_fk_listesi = temiz_liste
+
         if len(yillik_fk_listesi) >= 2:
             sirket_ortalama = sum(yillik_fk_listesi) / len(yillik_fk_listesi)
             sektor_fk_5yil.setdefault(sektor, []).append(sirket_ortalama)
@@ -242,7 +259,9 @@ def main():
             "dahil edilmez. Tarihsel ortalama, her şirketin bulunabilen EN FAZLA 10 yılının (veri "
             "yoksa daha azının) yıl-sonu fiyat/EPS oranlarının kendi içindeki ortalaması alınıp, "
             "sektör genelinde medyanlanmasıyla bulunur - şirket ne kadar eski veriye sahipse o kadar "
-            "yıl kullanılır, en az 2 yıl gerekir. "
+            "yıl kullanılır, en az 2 yıl gerekir. Bir şirketin KENDİ serisinde medyanından 4 kattan "
+            "fazla sapan yıllar (muhtemelen bölünme/bedelsiz sermaye artırımı kaynaklı veri "
+            "uyumsuzluğu) otomatik dışlanır. "
             "Sapma % = (güncel F/K - tarihsel ortalama F/K) / tarihsel ortalama F/K × 100. "
             "Tek başına alım-satım sinyali değildir, eğitim ve araştırma amaçlıdır."
         ),
