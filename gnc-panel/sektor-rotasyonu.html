@@ -209,13 +209,14 @@
       <!-- DEĞERLEME KARŞILAŞTIRMASI -->
       <div class="gnc-panel-kart" style="margin-bottom:18px;">
         <div class="gnc-panel-baslik">
-          <h2><i class="bi bi-graph-up"></i> Değerleme Karşılaştırması</h2>
+          <h2><i class="bi bi-graph-up"></i> Değerleme Karşılaştırması <span style="font-size:9.5px;font-weight:600;color:var(--copper-dark);border:1px solid var(--copper-dark);border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle;">DENEYSEL</span></h2>
           <span class="gnc-info">i<span class="gnc-tooltip">
             <h4>Değerleme karşılaştırmasını nasıl okumalı</h4>
-            <p>Her çubuk, sektörün güncel <b>F/K</b> oranının kendi <b>tarihsel ortalamasına</b> (bulunabilen en fazla 10 yıl) göre yüzde sapmasını gösterir.</p>
+            <p>Her çubuk, sektörün güncel <b>F/K</b> oranının kendi <b>CAPE değerine</b> göre yüzde sapmasını gösterir. Geçmiş yılların kârı önce <b>bugünkü hisse sayısına</b> göre yeniden hesaplanır (bölünme/bedelsiz sermaye artırımı etkisini otomatik giderir), sonra <b>TÜFE ile bugüne taşınır</b> (Shiller CAPE yöntemi) ve medyanı alınır.</p>
             <ul>
               <li>Çubuk <span style="color:#1D6555;font-weight:600;">sola</span> uzuyorsa: sektör kendi tarihine göre ucuz bölgede.</li>
               <li>Çubuk <span style="color:#9B3A2C;font-weight:600;">sağa</span> uzuyorsa: sektör kendi tarihine göre pahalı bölgede.</li>
+              <li><b>PD/DD</b> ve <b>PD/Satışlar</b>: F/K'nin aksine zarar eden şirketleri de kapsar, bu yüzden F/K hesaplanamayan sektörlerde bile bu ikisi dolu olabilir.</li>
               <li>Rotasyon evresiyle birlikte okunmalı.</li>
             </ul>
             <div class="not-alt">Bu karşılaştırma tarihsel bağlam sunar; tek başına alım-satım sinyali olarak değerlendirilmemelidir.</div>
@@ -279,6 +280,7 @@ let SR_GETIRI = {};         // kod -> {g1,h1,a1,agirlik} (sektor_verisi.json'dan
 let SR_GUNLUK = [];         // rotasyon_degisim_log.json kayitlar[]
 let SR_ISI = null;          // sektor_gecmis.json ham
 let SR_DEGER = {};          // degerleme_gecmis.json sektorler{}
+let SR_DEGER_SUPHELI = [];  // degerleme_gecmis.json supheli_bolunmeler[] - net kar verisi bulunamayan sirketler
 let SR_ZAMAN_SERISI = null; // rotasyon_zaman_serisi.json (haftalik gecmis anlik goruntuler)
 let SR_SECILI_HAFTA = null; // null = bugun (canli veri), aksi halde secili tarih string'i
 let SR_GUNLUK_ARSIV = null; // gunluk_arsiv.json (Endekse Katki + Deger gecmisi, gunluk)
@@ -318,6 +320,7 @@ async function srBaslat(){
   SR_GUNLUK = (gunluk && gunluk.kayitlar) || [];
   SR_ISI = isi;
   SR_DEGER = (deger && deger.sektorler) || {};
+  SR_DEGER_SUPHELI = (deger && deger.supheli_bolunmeler) || [];
   SR_ZAMAN_SERISI = zamanSerisi;
   SR_GUNLUK_ARSIV = gunlukArsiv;
   zamanCubuguKur();
@@ -603,12 +606,17 @@ function srCizDeger(){
     return;
   }
 
-  // Sapmasi olanlari ucuzdan pahaliya sirala, olmayanlari (5 yillik veri yetersiz) sona at
+  // Once sapmasi olanlar (ucuzdan pahaliya), sonra sadece guncel F/K'si olanlar,
+  // en sona da F/K'si hic hesaplanamayan (null) sektorler.
   liste.sort((a,b) => {
-    if(a.sapma_yuzde === undefined && b.sapma_yuzde === undefined) return a.fk_guncel_medyan - b.fk_guncel_medyan;
-    if(a.sapma_yuzde === undefined) return 1;
-    if(b.sapma_yuzde === undefined) return -1;
-    return a.sapma_yuzde - b.sapma_yuzde;
+    const aSapma = a.sapma_yuzde !== undefined, bSapma = b.sapma_yuzde !== undefined;
+    if(aSapma && bSapma) return a.sapma_yuzde - b.sapma_yuzde;
+    if(aSapma !== bSapma) return aSapma ? -1 : 1;
+    const aNull = a.fk_guncel_medyan === null || a.fk_guncel_medyan === undefined;
+    const bNull = b.fk_guncel_medyan === null || b.fk_guncel_medyan === undefined;
+    if(aNull !== bNull) return aNull ? 1 : -1;
+    if(aNull && bNull) return 0;
+    return a.fk_guncel_medyan - b.fk_guncel_medyan;
   });
   const sapmaliListe = liste.filter(s => s.sapma_yuzde !== undefined);
   const maxAbs = Math.max(...sapmaliListe.map(s => Math.abs(s.sapma_yuzde)), 1);
@@ -616,6 +624,7 @@ function srCizDeger(){
   let html = '<div class="sr-eksen"><span>← Ucuz</span><span>Tarihsel Ortalama</span><span>Pahalı →</span></div>';
   liste.forEach(s => {
     const azSirket = s.guven_dusuk ? ' <span style="color:var(--ink-faint);font-weight:400;">(az şirket)</span>' : '';
+    const pdSatisParca = s.pd_satis_medyan!==undefined ? `<b>PD/Satışlar</b> ${s.pd_satis_medyan}` : '';
     if(s.sapma_yuzde !== undefined){
       const genislikYuzde = Math.min(50, Math.abs(s.sapma_yuzde) / maxAbs * 50);
       const pahali = s.sapma_yuzde >= 0;
@@ -626,23 +635,42 @@ function srCizDeger(){
           `<div class="sr-katki-bar ${pahali?'pahali':'ucuz'}" style="width:${genislikYuzde}%"></div></div>` +
         `<div class="mono num" style="text-align:right;font-size:11.5px;line-height:1.6;">` +
           `<div><b>F/K</b> ${s.fk_guncel_medyan} &nbsp;·&nbsp; <b>ort.</b> ${s.fk_5yil_ortalama_medyan}</div>` +
-          `<div>${pdddSatir}${pdddSatir?' &nbsp;·&nbsp; ':''}<strong class="${gncYon(-s.sapma_yuzde)}" style="font-size:12.5px;"><b>Sapma</b> ${s.sapma_yuzde>=0?'+':''}${s.sapma_yuzde}%</strong></div>` +
+          `<div>${pdddSatir}${pdddSatir&&pdSatisParca?' &nbsp;·&nbsp; ':''}${pdSatisParca}</div>` +
+          `<div><strong class="${gncYon(-s.sapma_yuzde)}" style="font-size:12.5px;"><b>Sapma</b> ${s.sapma_yuzde>=0?'+':''}${s.sapma_yuzde}%</strong></div>` +
         `</div>` +
       `</div>`;
-    } else {
-      // 5 yillik karsilastirma yok - sadece guncel F/K'yi bar olmadan goster
-      const pdddSatir = s.pd_dd_medyan!==undefined ? ` &nbsp;·&nbsp; <b>PD/DD</b> ${s.pd_dd_medyan}` : '';
+    } else if(s.fk_guncel_medyan !== null && s.fk_guncel_medyan !== undefined){
+      // Guncel F/K var ama tarihsel karsilastirma yok (yeterli 2023-sonrasi yil yok)
+      const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
       html += `<div class="sr-deger-satir">` +
         `<span>${s.kod}${azSirket}</span>` +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div></div>` +
         `<div class="mono num" style="text-align:right;font-size:11.5px;color:var(--ink-faint);line-height:1.6;">` +
-          `<div><b>F/K</b> ${s.fk_guncel_medyan}${pdddSatir}</div>` +
-          `<div>Geçmiş veri yetersiz</div>` +
+          `<div><b>F/K</b> ${s.fk_guncel_medyan}</div>` +
+          `<div>${pdddSatir}${pdddSatir&&pdSatisParca?' &nbsp;·&nbsp; ':''}${pdSatisParca}</div>` +
+          `<div>Tarihsel karşılaştırma için yeterli yıl yok</div>` +
+        `</div>` +
+      `</div>`;
+    } else {
+      // F/K HIC hesaplanamiyor (zarar/veri yok) - ama PD/DD ve PD/Satislar hala dolu olabilir
+      const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
+      html += `<div class="sr-deger-satir">` +
+        `<span>${s.kod}${azSirket}</span>` +
+        `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div></div>` +
+        `<div class="mono num" style="text-align:right;font-size:11.5px;color:var(--ink-faint);line-height:1.6;">` +
+          `<div>${s.hesaplanamiyor_nedeni || 'F/K hesaplanamıyor'}</div>` +
+          `<div>${pdddSatir}${pdddSatir&&pdSatisParca?' &nbsp;·&nbsp; ':''}${pdSatisParca}</div>` +
         `</div>` +
       `</div>`;
     }
   });
   html += '<div class="gnc-spk-not">Negatif sapma (yeşil) = tarihsel ortalamasına göre ucuz, pozitif (kırmızı) = pahalı. "Az şirket" etiketi, o hesaplamanın 3\'ten az şirketle yapıldığını gösterir, güvenilirliği düşüktür. Tek başına alım-satım sinyali değildir.</div>';
+  if(SR_DEGER_SUPHELI.length){
+    html += `<div style="margin-top:10px;padding:10px 12px;background:var(--ochre-soft);border-radius:6px;font-size:11px;color:var(--ink);">` +
+      `<b>⚠ ${SR_DEGER_SUPHELI.length} şirket tarihsel karşılaştırmaya katılamadı</b> (Net Dönem Kârı kalemi bulunamadı): ` +
+      SR_DEGER_SUPHELI.map(s => s.kod).join(", ") +
+    `</div>`;
+  }
   kap.innerHTML = gunBaslik + html;
 }
 
