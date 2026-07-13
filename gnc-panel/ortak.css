@@ -52,6 +52,17 @@ html, body {
   font-family: 'IBM Plex Sans', -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  overflow-x: hidden;   /* sayfanin kendisi hicbir zaman yatay kaymamali */
+  width: 100%;
+}
+
+/* iOS Safari: bir input'a odaklaninca font-size 16px'in altindaysa
+   tarayici OTOMATIK yakinlastirir (kullanicinin istemedigi bir davranis -
+   "Apple zoom" diye bilinen sorun budur). TUM form elemanlarini 16px'e
+   sabitliyoruz - gelecekte eklenecek her input icin de gecerli olsun diye
+   genel bir kural, tek tek hatirlamaya gerek kalmasin.*/
+input, select, textarea, button {
+  font-size: 16px;
 }
 
 h1, h2, h3, .baslik {
@@ -60,6 +71,7 @@ h1, h2, h3, .baslik {
   color: var(--ink);
   margin: 0;
 }
+.font-display { font-family: 'Fraunces', Georgia, serif; }
 
 .mono, .sayi, table td.num, .veri {
   font-family: 'IBM Plex Mono', monospace;
@@ -70,7 +82,7 @@ a { color: var(--copper); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* ---------- Genel iskelet: sidebar + içerik ---------- */
-.gnc-shell { display: flex; min-height: 100vh; }
+.gnc-shell { display: flex; min-height: 100vh; max-width: 100vw; overflow-x: hidden; }
 
 .gnc-sidebar {
   width: 204px;
@@ -93,12 +105,14 @@ a:hover { text-decoration: underline; }
 .sidebar-foot { padding: 16px 22px; border-top: 1px solid var(--line); font-size: 10.5px; color: var(--ink-faint); line-height: 1.5; }
 .sidebar-foot b { color: var(--ink-soft); }
 
-.gnc-main { margin-left: 204px; flex: 1; min-width: 0; }
+.gnc-main { margin-left: 204px; flex: 1; min-width: 0; max-width: 100%; }
 .gnc-topbar {
-  height: 56px;
+  min-height: 56px;
   border-bottom: 1px solid var(--line);
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28px;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .gnc-topbar .baslik-satiri { display: flex; align-items: baseline; gap: 12px; }
 .gnc-topbar h1 { font-size: 18px; }
@@ -110,12 +124,16 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--line);
   padding: 3px 9px;
   border-radius: 20px;
+  white-space: nowrap;
 }
-.gnc-content { padding: 26px 28px 60px; max-width: 1400px; }
+.gnc-content { padding: 26px 28px 60px; max-width: 1400px; overflow-x: hidden; }
 
 @media (max-width: 980px) {
   .gnc-sidebar { display: none; }
   .gnc-main { margin-left: 0; }
+  .gnc-content { padding: 16px 14px 40px; }
+  .gnc-topbar { padding: 10px 14px; }
+  .gnc-topbar h1 { font-size: 16px; }
 }
 
 /* ---------- Genel kart/panel ---------- */
@@ -137,7 +155,7 @@ a:hover { text-decoration: underline; }
 /* ---------- Bilgi (i) tooltip ikonu ---------- */
 .gnc-info {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 15px; height: 15px;
+  width: 18px; height: 18px;
   border-radius: 50%;
   border: 1px solid var(--line-strong);
   color: var(--ink-faint);
@@ -150,31 +168,54 @@ a:hover { text-decoration: underline; }
 .gnc-tooltip {
   display: none;
   position: absolute; z-index: 50;
-  top: 22px; left: 0;
-  width: 240px;
-  background: var(--ink);
-  color: var(--surface);
+  top: 26px; left: 0;
+  width: 360px; max-width: 80vw;
+  background: var(--surface-raised);
+  color: var(--ink);
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 11.5px;
   line-height: 1.5;
-  padding: 10px 12px;
-  border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  padding: 16px 18px;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 8px 24px rgba(20,26,25,0.14);
   cursor: default;
+  text-align: left;
+}
+.gnc-tooltip::before {
+  content: ''; position: absolute; top: -7px; left: 14px;
+  width: 12px; height: 12px; background: var(--surface-raised);
+  border-left: 1px solid var(--line-strong); border-top: 1px solid var(--line-strong);
+  transform: rotate(45deg);
+}
+.gnc-tooltip h4 { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; margin: 0 0 8px 0; color: var(--ink); }
+.gnc-tooltip p { font-size: 12px; color: var(--ink-soft); line-height: 1.6; margin: 0 0 8px 0; }
+.gnc-tooltip ul { margin: 0 0 8px 0; padding-left: 16px; }
+.gnc-tooltip li { font-size: 11.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 3px; }
+.gnc-tooltip .not-alt { font-size: 10.5px; color: var(--ink-faint); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 8px; line-height: 1.5; }
+
+/* Mobilde tooltip ikonun tam altina/yanina degil, ekranin ortasina sabit
+   (fixed) gosterilir - ikon ekranin neresinde olursa olsun tasma olmaz. */
+@media (max-width: 640px) {
+  .gnc-tooltip {
+    position: fixed;
+    top: auto; bottom: 16px; left: 16px; right: 16px;
+    width: auto; max-width: none;
+    max-height: 60vh; overflow-y: auto;
+  }
+  .gnc-tooltip::before { display: none; }
 }
 
 /* ---------- Evre chip'leri (Sektör Rotasyonu + Genel Bakış ortak) ---------- */
 .evre-chip {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 11px; font-weight: 600;
-  color: #fff;
+  padding: 2px 8px;
+  font-size: 10px; font-weight: 500;
+  white-space: nowrap;
 }
-.evre-chip.genisleme { background: var(--evre-genisleme); }
-.evre-chip.toparlanma { background: var(--evre-toparlanma); }
-.evre-chip.yavaslama { background: var(--evre-yavaslama); }
-.evre-chip.daralma { background: var(--evre-daralma); }
+.evre-chip.genisleme { background: var(--pine-soft); color: var(--pine-dark); }
+.evre-chip.toparlanma { background: var(--copper-soft); color: var(--copper-dark); }
+.evre-chip.yavaslama { background: var(--ochre-soft); color: var(--ochre); }
+.evre-chip.daralma { background: var(--brick-soft); color: var(--brick); }
 
 /* ---------- Yön (pozitif/negatif) renklendirme ---------- */
 .yon-pozitif { color: var(--up); }
@@ -196,7 +237,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ---------- Basit tablo ---------- */
-table.gnc-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.gnc-tablo { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 12.5px; }
 table.gnc-tablo thead th {
   text-align: left; font-weight: 600;
   font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
