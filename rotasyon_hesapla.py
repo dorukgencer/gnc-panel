@@ -151,13 +151,47 @@ def bubble_yaricap(weight):
 
 
 def sektor_agirliklari():
-    """sektor_verisi.json'dan (varsa) guncel agirliklari oku. Yoksa None doner,
-    o zaman bubble boyutu esit varsayilir (agirlik netlesince duzelir)."""
+    """sektor_verisi.json'dan (varsa) GERCEK (halka aciklik duzeltmeli) agirliklari
+    okur. Eger bu veri henuz gelmemisse (HAO_PD teshisi bekleniyor), sektor_hisse_veri.json'daki
+    HAM piyasa degerlerinden (duzeltmesiz) YAKLASIK bir agirlik hesaplar - boylece
+    Endekse Katki ve baloncuk boyutu, gercek veri gelene kadar tamamen bos kalmaz.
+    Bu YAKLASIK deger, gercek HAO_PD-duzeltmeli agirliktan onemli olcude sapabilir
+    (bazi sektorlerde halka aciklik cok dusuk oldugu icin ham PD sisirilmis olabilir) -
+    cagiran taraf (rotasyon sayfasi) bunu acikca 'yaklasik' diye etiketlemeli."""
     try:
         veri = json.loads((KLASOR / "gnc-panel" / "sektor_verisi.json").read_text(encoding="utf-8"))
-        return {e["kod"]: e.get("agirlik") for e in veri.get("endeksler", []) if e.get("tip") == "sektor"}
+        gercek = {e["kod"]: e.get("agirlik") for e in veri.get("endeksler", []) if e.get("tip") == "sektor"}
     except Exception:
-        return {}
+        gercek = {}
+
+    if any(v is not None for v in gercek.values()):
+        return gercek, False  # gercek veri var, yaklasik degil
+
+    # Yaklasik hesaba dus
+    try:
+        hisse_veri = json.loads((KLASOR / "gnc-panel" / "sektor_hisse_veri.json").read_text(encoding="utf-8"))
+        sektor_harita = json.loads((KLASOR / "gnc-panel" / "sektor_hisseler.json").read_text(encoding="utf-8"))
+        kod_to_sektor = {}
+        for sektor_kod, hisseler in sektor_harita.get("hisseler", {}).items():
+            for h in hisseler:
+                kod_to_sektor[h["kod"]] = sektor_kod
+
+        sektor_pd_toplam = {}
+        genel_toplam = 0.0
+        for kod, v in hisse_veri.get("hisseler", {}).items():
+            pd = v.get("pd") if isinstance(v, dict) else None
+            sektor = kod_to_sektor.get(kod)
+            if pd and sektor:
+                sektor_pd_toplam[sektor] = sektor_pd_toplam.get(sektor, 0.0) + pd
+                genel_toplam += pd
+
+        if not genel_toplam:
+            return {}, False
+
+        yaklasik = {kod: round(toplam / genel_toplam * 100, 2) for kod, toplam in sektor_pd_toplam.items()}
+        return yaklasik, True  # yaklasik oldugunu isaretle
+    except Exception:
+        return {}, False
 
 
 def main():
@@ -171,7 +205,7 @@ def main():
     if not kodlar:
         raise SystemExit("Hicbir sektor endeks_gecmis dosyasi bulunamadi.")
 
-    agirliklar = sektor_agirliklari()
+    agirliklar, agirlik_yaklasik_mi = sektor_agirliklari()
     atlanan = []
     ham = []  # ilk gecis: sadece ham X/Y degerleri (koordinat henuz yok)
 
@@ -241,6 +275,7 @@ def main():
 
     cikti = {
         "guncelleme": datetime.now(timezone.utc).isoformat(),
+        "agirlik_yaklasik_mi": agirlik_yaklasik_mi,
         "not": (
             "GNC Insight'in kendi sadelestirilmis rotasyon metodolojisi - "
             "resmi/akademik RRG (Relative Rotation Graph) formulu degildir. "
@@ -249,6 +284,9 @@ def main():
             "Grafikteki KONUM, ham puan degil, sektorler arasi SIRALAMAYA (rank) gore "
             "olceklenmistir - boylece farklar kucuk olsa bile baloncuklar ceyrek alanini "
             "tam kullanir. x_goreli_guc_13hf / y_momentum_4hf alanlari HAM puan degeridir. "
+            + ("AGIRLIK ALANI HENUZ HALKA ACIKLIK DUZELTMESI YAPILMAMIS HAM PIYASA DEGERINDEN "
+               "YAKLASIK HESAPLANMISTIR - HAO_PD verisi gelince gercek degerle degisecektir. "
+               if agirlik_yaklasik_mi else "") +
             "Egitim ve arastirma amaclidir, yatirim tavsiyesi degildir."
         ),
         "parametreler": {"x_pencere_hafta": X_PENCERE_HAFTA, "y_pencere_hafta": Y_PENCERE_HAFTA, "trail_geri_hafta": TRAIL_GERI_HAFTA},
