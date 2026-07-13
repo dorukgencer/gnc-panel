@@ -137,12 +137,15 @@ def main():
     pd_dd_islenen = 0
     pd_harita = pd_haritasi()
     bankalar = banka_kodlari()
+    tum_sektor_kodlari = set()          # sektor haritasinda GORULEN her sektor (veri olsun olmasin)
+    negatif_epsli_sirket_sayisi = {}    # sektor -> kac sirket zarar ediyor (aciklama icin)
 
     for dosya in dosyalar:
         kod = dosya.stem
         sektor = sektor_map.get(kod)
         if not sektor:
             continue
+        tum_sektor_kodlari.add(sektor)
         try:
             veri = json.loads(dosya.read_text(encoding="utf-8"))
         except Exception:
@@ -165,6 +168,8 @@ def main():
             if 0 < fk < 500:
                 sektor_fk_guncel.setdefault(sektor, []).append(fk)
                 guncel_islenen += 1
+        elif son_eps is not None and son_eps <= 0:
+            negatif_epsli_sirket_sayisi[sektor] = negatif_epsli_sirket_sayisi.get(sektor, 0) + 1
 
         yillik_fk_listesi = []
         for donem, eps in eps_yillik[:5]:
@@ -192,12 +197,23 @@ def main():
         raise SystemExit("Hicbir sektor icin guncel F/K hesaplanamadi. EPS kalem adi degismis olabilir.")
 
     sonuc = {}
-    tum_sektorler = set(sektor_fk_guncel) | set(sektor_fk_5yil)
-    for sektor in tum_sektorler:
+    # ONEMLI: sadece F/K hesaplanabilen sektorler degil, sektor haritasinda GORULEN
+    # TUM sektorler dolasilir - boylece "tum sirketleri zarar eden" bir sektor
+    # sessizce kaybolmaz, acikca "hesaplanamiyor" diye gorunur.
+    for sektor in tum_sektor_kodlari:
         guncel_liste = sektor_fk_guncel.get(sektor, [])
         besyil_liste = sektor_fk_5yil.get(sektor, [])
         if len(guncel_liste) < 1:
-            continue  # gercekten hic sirket yoksa gosterilecek bir sey yok
+            zarar_sayisi = negatif_epsli_sirket_sayisi.get(sektor, 0)
+            sonuc[sektor] = {
+                "fk_guncel_medyan": None,
+                "sirket_sayisi_guncel": 0,
+                "hesaplanamiyor_nedeni": (
+                    f"Bu sektördeki {zarar_sayisi} şirket şu an zarar ediyor, pozitif kârlı şirket yok."
+                    if zarar_sayisi > 0 else "Bu sektör için finansal veri henüz yok."
+                ),
+            }
+            continue
         girdi = {
             "fk_guncel_medyan": round(statistics.median(guncel_liste), 2),
             "sirket_sayisi_guncel": len(guncel_liste),
@@ -207,6 +223,11 @@ def main():
             girdi["fk_5yil_ortalama_medyan"] = round(statistics.median(besyil_liste), 2)
             girdi["sirket_sayisi_5yil"] = len(besyil_liste)
             girdi["sapma_yuzde"] = round((girdi["fk_guncel_medyan"] - girdi["fk_5yil_ortalama_medyan"]) / girdi["fk_5yil_ortalama_medyan"] * 100, 1)
+            # 5 yillik ortalama da az sirketle hesaplanmis olabilir - sapma_yuzde
+            # bu durumda GUVENILMEZ olur ama eskiden sadece guncel sirket sayisi
+            # kontrol ediliyordu, bu deligi kapatiyoruz.
+            if len(besyil_liste) < 3:
+                girdi["guven_dusuk"] = True
         pddd_liste = sektor_pd_dd.get(sektor, [])
         if len(pddd_liste) >= 1:
             girdi["pd_dd_medyan"] = round(statistics.median(pddd_liste), 2)
@@ -229,7 +250,10 @@ def main():
 
     print(f"\nTamamlandi: {len(sonuc)} sektor -> {HEDEF}")
     print(f"  Guncel F/K icin islenen sirket: {guncel_islenen}, 5-yillik icin: {besyil_islenen}, PD/DD icin: {pd_dd_islenen}")
-    for sek, veri in sorted(sonuc.items(), key=lambda x: x[1]["fk_guncel_medyan"]):
+    for sek, veri in sorted(sonuc.items(), key=lambda x: (x[1]["fk_guncel_medyan"] is None, x[1]["fk_guncel_medyan"] or 0)):
+        if veri["fk_guncel_medyan"] is None:
+            print(f"  {sek:8s} F/K=HESAPLANAMIYOR ({veri.get('hesaplanamiyor_nedeni','-')})")
+            continue
         sapma = veri.get("sapma_yuzde")
         pddd = veri.get("pd_dd_medyan")
         sapma_str = f" sapma=%{sapma:+.1f}" if sapma is not None else " (5y veri yetersiz)"
