@@ -24,10 +24,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Kutuphaneleri yukle
-        run: pip install borsapy pandas requests
+        run: pip install borsapy pandas
       - name: Deflatoru ve faiz gecmisini cek
         env:
           EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python reel_getiri_cek.py
       - name: Kaydet
         run: |
