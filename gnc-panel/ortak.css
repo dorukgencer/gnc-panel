@@ -142,15 +142,16 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 18px 20px;
+  position: relative;
 }
 .gnc-panel-baslik {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 8px;
   margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
 }
 .gnc-panel-baslik h2 { font-size: 15px; }
-.gnc-panel-baslik .alt-etiket { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-faint); }
+.gnc-panel-baslik .alt-etiket { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-faint); margin-left: auto; }
 
 /* ---------- Bilgi (i) tooltip ikonu ---------- */
 .gnc-info {
@@ -167,7 +168,7 @@ a:hover { text-decoration: underline; }
 .gnc-info.acik .gnc-tooltip { display: block; }
 .gnc-tooltip {
   display: none;
-  position: absolute; z-index: 50;
+  position: absolute; z-index: 9999;
   top: 26px; left: 0;
   width: 360px; max-width: 80vw;
   background: var(--surface-raised);
