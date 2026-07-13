@@ -31,7 +31,8 @@
   .sr-bubble.sonuk { opacity: .18; }
   .sr-bubble-etiket { font-family: 'IBM Plex Sans', sans-serif; font-size: 10.5px; font-weight: 600; fill: var(--ink); }
   .sr-leader { stroke: #A8B2A2; stroke-width: .8; opacity: .8; }
-  .sr-trail { stroke-dasharray: 3 3; fill: none; stroke-width: 1.6; opacity: 0.5; }
+  .sr-veri-zaman { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-faint); text-align: right; }
+  .sr-trail { stroke-dasharray: 4 2; fill: none; stroke-width: 2.2; opacity: 0.85; }
   .sr-trail-start { opacity: 0.3; }
   .sr-saat-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: center; }
   .sr-lejant .qg { margin-bottom: 16px; }
@@ -64,8 +65,17 @@
   .sr-katki-bar.ucuz { right: 50%; background: var(--up); }
   .sr-katki-bar.pahali { left: 50%; background: var(--down); }
 
-  .sr-deger-satir { display: grid; grid-template-columns: 110px 0.7fr 230px; align-items: center; gap: 10px; padding: 8px 0; font-size: 12px; }
-  .sr-eksen { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-deger-satir { display: grid; grid-template-columns: 150px 0.7fr 230px; align-items: center; gap: 10px; padding: 8px 0; font-size: 12px; }
+  .sr-eksen-deger { display: grid; grid-template-columns: 150px 0.7fr 230px; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-detay-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 4px;
+    background: var(--surface); border: 1px solid var(--line);
+    color: var(--ink-faint); font-size: 10px; text-decoration: none; flex-shrink: 0;
+  }
+  .sr-detay-btn:hover { background: var(--copper-dark); border-color: var(--copper-dark); color: #fff; text-decoration: none; }
+  .sr-eksen-katki { display: grid; grid-template-columns: 130px 1fr 70px; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-eksen-orta { display: flex; justify-content: space-between; }
   @media (max-width: 800px) {
     .sr-katki-satir, .sr-deger-satir { grid-template-columns: 1fr; gap: 3px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
     .sr-katki-satir .sr-katki-bar-track, .sr-deger-satir .sr-katki-bar-track { order: 2; }
@@ -140,7 +150,12 @@
             <p>Sektörler <b>sıklıkla</b> bu dört evre arasında saat yönünde bir eğilim gösterir: <b>Toparlanma → Genişleme → Yavaşlama → Daralma</b>. Ama bu kesin bir kural değil — bir sektör evreler arasında geri de gidebilir, bir evrede uzun süre kalabilir ya da bir sonrakini atlayabilir.</p>
             <ul>
               <li><b>Sağ taraf</b> = sektör BIST100'ü geçiyor (son 3 ayda daha güçlü). <b>Sol taraf</b> = geride kalıyor.</li>
-              <li><b>Üst taraf</b> = bu fark son 1 ayda büyüyor (ivme artıyor). <b>Alt taraf</b> = fark kapanıyor (ivme azalıyor).</li>
+              <li><b>Üst taraf</b> = bu güç farkı son dönemde artıyor. <b>Alt taraf</b> = fark azalıyor.</li>
+              <li style="margin-top:6px;"><b>Evreler bu iki eksenin birleşimidir:</b></li>
+              <li><b>Genişleme</b>: BIST100'den güçlü <b>ve</b> güçlenmeye devam ediyor.</li>
+              <li><b>Yavaşlama</b>: Hâlâ BIST100'den güçlü <b>ama</b> ivmesi zayıflıyor.</li>
+              <li><b>Daralma</b>: BIST100'ün gerisinde <b>ve</b> geriliyor.</li>
+              <li><b>Toparlanma</b>: BIST100'ün gerisinde <b>ama</b> aradaki fark kapanmaya başlamış.</li>
               <li>Baloncuk boyutu: sektörün BIST100 içindeki ağırlığını gösterir, büyük baloncuk = endeksteki etkisi büyük.</li>
               <li>Kısa çizgi ve ok: son 3 aydaki hareket yönünü gösterir (uzunluk sadeleştirilmiştir, ölçekli değildir).</li>
               <li>İnce gri çizgi: baloncuğu ilgili etikete bağlayan yönlendirme çizgisidir, isimlerin üst üste binmesini engeller.</li>
@@ -150,6 +165,7 @@
           </span></span>
         </div>
         <div id="saat-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        <div class="sr-veri-zaman" id="saat-veri-zaman"></div>
         <div id="zaman-cubugu-alan" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
           <div style="display:flex;align-items:center;gap:12px;">
             <span style="font-size:10.5px;color:var(--ink-faint);white-space:nowrap;">Geçmişe git</span>
@@ -176,6 +192,7 @@
           </span></span>
         </div>
         <div id="gunluk-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        <div class="sr-veri-zaman" id="gunluk-veri-zaman"></div>
       </div>
 
       <!-- TÜM SEKTÖRLER TABLOSU -->
@@ -191,19 +208,26 @@
             </ul>
           </span></span>
         </div>
-        <div class="sr-periyot-grup" id="periyot-grup" style="margin-bottom:14px;">
-          <button class="sr-periyot-btn aktif" data-periyot="g1">Günlük</button>
-          <button class="sr-periyot-btn" data-periyot="h1">Haftalık</button>
-          <button class="sr-periyot-btn" data-periyot="a1">Aylık</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <div class="sr-periyot-grup" id="periyot-grup">
+            <button class="sr-periyot-btn aktif" data-periyot="g1">Günlük</button>
+            <button class="sr-periyot-btn" data-periyot="h1">Haftalık</button>
+            <button class="sr-periyot-btn" data-periyot="a1">Aylık</button>
+          </div>
+          <div class="sr-periyot-grup" id="tablo-sirala-grup">
+            <button class="sr-periyot-btn aktif" data-sirala="dusen">Yükselenden ↓</button>
+            <button class="sr-periyot-btn" data-sirala="yukselen">Düşenden ↑</button>
+          </div>
+          <select id="tablo-evre-filtre" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-raised);font-size:16px;color:var(--ink);">
+            <option value="tumu">Tüm evreler</option>
+            <option value="genisleme">Genişleme</option>
+            <option value="toparlanma">Toparlanma</option>
+            <option value="yavaslama">Yavaşlama</option>
+            <option value="daralma">Daralma</option>
+          </select>
         </div>
         <div id="tablo-icerik" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
-      </div>
-
-      <!-- GUN SECICI (Endekse Katki + Degerleme'yi birlikte etkiler) -->
-      <div class="gnc-panel-kart" style="margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-        <span style="font-size:11px;color:var(--ink-faint);white-space:nowrap;">Endekse Katkı ve Değerleme için gün:</span>
-        <div class="sr-periyot-grup" id="gun-secici"></div>
-        <span id="gun-secici-not" style="font-size:10.5px;color:var(--ink-faint);"></span>
+        <div class="sr-veri-zaman" id="tablo-veri-zaman"></div>
       </div>
 
       <!-- DEĞERLEME KARŞILAŞTIRMASI -->
@@ -222,12 +246,17 @@
             <div class="not-alt">Bu karşılaştırma tarihsel bağlam sunar; tek başına alım-satım sinyali olarak değerlendirilmemelidir.</div>
           </span></span>
         </div>
-        <div style="display:flex;gap:6px;margin-bottom:12px;" id="deger-filtre-grup">
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center;" id="deger-filtre-grup">
           <button class="sr-periyot-btn deger-filtre-btn aktif" data-deger-filtre="tumu" style="border:1px solid var(--line);border-radius:6px;">Tümü</button>
           <button class="sr-periyot-btn deger-filtre-btn" data-deger-filtre="ucuz" style="border:1px solid var(--line);border-radius:6px;">Ucuz</button>
           <button class="sr-periyot-btn deger-filtre-btn" data-deger-filtre="pahali" style="border:1px solid var(--line);border-radius:6px;">Pahalı</button>
         </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="font-size:10.5px;color:var(--ink-faint);white-space:nowrap;">Gün:</span>
+          <div class="sr-periyot-grup" id="deger-gun-secici"></div>
+        </div>
         <div id="deger-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        <div class="sr-veri-zaman" id="deger-veri-zaman"></div>
       </div>
 
       <!-- ENDEKSE KATKI -->
@@ -244,25 +273,36 @@
             </ul>
           </span></span>
         </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="font-size:10.5px;color:var(--ink-faint);white-space:nowrap;">Gün:</span>
+          <div class="sr-periyot-grup" id="katki-gun-secici"></div>
+        </div>
         <div id="katki-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        <div class="sr-veri-zaman" id="katki-veri-zaman"></div>
       </div>
 
       <!-- ISI HARİTASI -->
       <div class="gnc-panel-kart">
         <div class="gnc-panel-baslik">
-          <h2><i class="bi bi-grid-3x3"></i> Yıllara Göre Sektör Getirileri</h2>
+          <h2><i class="bi bi-grid-3x3"></i> Sektör Getirileri (Isı Haritası)</h2>
           <span class="gnc-info">i<span class="gnc-tooltip">
             <h4>Isı haritasını nasıl okumalı</h4>
-            <p>Her hücre, ilgili sektörün o yılki toplam getirisini gösterir. Renk yoğunluğu getiri büyüklüğünü ifade eder.</p>
+            <p>Her hücre, ilgili sektörün o dönemdeki <b>bileşik toplam getirisini</b> gösterir (aylık getiriler çarpılarak birleştirilir). Renk yoğunluğu getiri büyüklüğünü ifade eder.</p>
             <ul>
-              <li>Koyu yeşil: güçlü pozitif yıl.</li>
-              <li>Açık ton / bej: nötre yakın yıl.</li>
-              <li>Koyu kahve-kırmızı: güçlü negatif yıl.</li>
+              <li>Koyu yeşil: güçlü pozitif dönem.</li>
+              <li>Açık ton / bej: nötre yakın dönem.</li>
+              <li>Koyu kahve-kırmızı: güçlü negatif dönem.</li>
+              <li><b>Yıllık / Çeyreklik</b> düğmesiyle görünüm değişir.</li>
             </ul>
-            <p>Kısa vadeli rotasyon okumasının aksine, sektörlerin <b>uzun vadeli döngü davranışını</b> görmek için kullanılır. 2026 sütunu yıl başından bugüne kadarki kısmi getiridir.</p>
+            <p>Kısa vadeli rotasyon okumasının aksine, sektörlerin <b>uzun vadeli döngü davranışını</b> görmek için kullanılır. İçinde bulunulan dönem kısmi (henüz tamamlanmamış) getiridir.</p>
           </span></span>
         </div>
+        <div class="sr-periyot-grup" id="isi-periyot-grup" style="margin-bottom:14px;">
+          <button class="sr-periyot-btn aktif" data-isi="yillik">Yıllık</button>
+          <button class="sr-periyot-btn" data-isi="ceyreklik">Çeyreklik</button>
+        </div>
         <div id="isi-icerik" style="overflow-x:auto;"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+        <div class="sr-veri-zaman" id="isi-veri-zaman"></div>
       </div>
 
     </div>
@@ -284,14 +324,19 @@ let SR_DEGER_SUPHELI = [];  // degerleme_gecmis.json supheli_bolunmeler[] - net 
 let SR_ZAMAN_SERISI = null; // rotasyon_zaman_serisi.json (haftalik gecmis anlik goruntuler)
 let SR_SECILI_HAFTA = null; // null = bugun (canli veri), aksi halde secili tarih string'i
 let SR_GUNLUK_ARSIV = null; // gunluk_arsiv.json (Endekse Katki + Deger gecmisi, gunluk)
-let SR_SECILI_GUN = null;   // null = bugun (canli veri), aksi halde "YYYY-MM-DD"
 let SR_PERIYOT = "g1";
 let SR_EVRE_FILTRE = "tumu";
 let SR_ARAMA = "";
+let SR_TURETILMIS = null;      // rotasyon_turetilmis.json (Endekse Katki + Isi Haritasi - SUNUCUDA hesaplandi)
+let SR_TABLO_SIRALA = "dusen"; // "dusen" (en yuksek once) | "yukselen"
+let SR_TABLO_EVRE = "tumu";    // Tum Sektorler tablosuna OZEL evre filtresi
+let SR_KATKI_GUN = null;       // Endekse Katki icin AYRI gun secici (null = bugun)
+let SR_DEGER_GUN = null;       // Degerleme icin AYRI gun secici (null = bugun)
+let SR_ISI_PERIYOT = "yillik"; // "yillik" | "ceyreklik"
 
 /* ============ VERİ YÜKLEME ============ */
 async function srBaslat(){
-  const [rotasyon, sektorVerisi, gunluk, isi, deger, zamanSerisi, gunlukArsiv] = await Promise.all([
+  const [rotasyon, sektorVerisi, gunluk, isi, deger, zamanSerisi, gunlukArsiv, turetilmis] = await Promise.all([
     gncVeriCek("rotasyon_gecmis.json"),
     gncVeriCek("sektor_verisi.json"),
     gncVeriCek("rotasyon_degisim_log.json"),
@@ -299,6 +344,7 @@ async function srBaslat(){
     gncVeriCek("degerleme_gecmis.json"),
     gncVeriCek("rotasyon_zaman_serisi.json"),
     gncVeriCek("gunluk_arsiv.json"),
+    gncVeriCek("rotasyon_turetilmis.json"),
   ]);
 
   if(!rotasyon || !rotasyon.sektorler || !rotasyon.sektorler.length){
@@ -323,8 +369,22 @@ async function srBaslat(){
   SR_DEGER_SUPHELI = (deger && deger.supheli_bolunmeler) || [];
   SR_ZAMAN_SERISI = zamanSerisi;
   SR_GUNLUK_ARSIV = gunlukArsiv;
+  SR_TURETILMIS = turetilmis;
+  if(SR_TURETILMIS && SR_TURETILMIS.agirlik_yaklasik_mi !== undefined){
+    SR_AGIRLIK_YAKLASIK = !!SR_TURETILMIS.agirlik_yaklasik_mi;
+  }
   zamanCubuguKur();
-  gunSeciciKur();
+  gunSeciciKur("katki-gun-secici", (g) => { SR_KATKI_GUN = g; srCizKatki(); });
+  gunSeciciKur("deger-gun-secici", (g) => { SR_DEGER_GUN = g; srCizDeger(); });
+
+  // MADDE 8: Her bolumun VERI ZAMANI - hangi dosyadan beslendigini ve
+  // o dosyanin ne zaman uretildigini acikca gosterir.
+  veriZamaniYaz("saat-veri-zaman", rotasyon && rotasyon.guncelleme);
+  veriZamaniYaz("gunluk-veri-zaman", gunluk && gunluk.guncelleme);
+  veriZamaniYaz("tablo-veri-zaman", sektorVerisi && sektorVerisi.guncelleme);
+  veriZamaniYaz("deger-veri-zaman", deger && deger.guncelleme);
+  veriZamaniYaz("katki-veri-zaman", (turetilmis && turetilmis.guncelleme) || (sektorVerisi && sektorVerisi.guncelleme));
+  veriZamaniYaz("isi-veri-zaman", (turetilmis && turetilmis.guncelleme) || (isi && isi.guncelleme));
 
   // Donem etiketi: rotasyon verisinin guncelleme tarihinden turet
   try{
@@ -358,33 +418,46 @@ function srFiltrelenmisListe(){
 }
 
 /* ============ GÜN SEÇİCİ (Endekse Katkı + Değerleme için 5 gün geriye) ============ */
-function gunSeciciKur(){
-  const kap = document.getElementById("gun-secici");
-  const notEl = document.getElementById("gun-secici-not");
-  if(!SR_GUNLUK_ARSIV || !SR_GUNLUK_ARSIV.gunler || !Object.keys(SR_GUNLUK_ARSIV.gunler).length){
-    kap.innerHTML = '';
-    notEl.textContent = "Günlük arşiv henüz yok - sadece bugünkü canlı veri gösteriliyor.";
-    return;
-  }
-  const gunler = Object.keys(SR_GUNLUK_ARSIV.gunler).sort().reverse(); // en yeni once
-  const gosterilecek = gunler.slice(0, 6); // bugun + en fazla 5 geriye
+function veriZamaniYaz(elemanId, isoTarih){
+  const el = document.getElementById(elemanId);
+  if(!el) return;
+  if(!isoTarih){ el.textContent = "Veri zamanı bilinmiyor"; return; }
+  try {
+    const d = new Date(isoTarih);
+    const gun = String(d.getDate()).padStart(2,'0');
+    const ay = String(d.getMonth()+1).padStart(2,'0');
+    const saat = String(d.getHours()).padStart(2,'0');
+    const dk = String(d.getMinutes()).padStart(2,'0');
+    el.textContent = `Veri güncellenme: ${gun}.${ay}.${d.getFullYear()} ${saat}:${dk}`;
+  } catch(e){ el.textContent = "Veri zamanı okunamadı"; }
+}
+
+/* Gun secici - PARAMETRELI: her panel (Endekse Katki, Degerleme) KENDI
+   secicisini kurar, biri digerini ETKILEMEZ (Doruk'un istegi).
+   geriCagir(gun) -> secilen gun ("YYYY-MM-DD") ya da null (bugun). */
+function gunSeciciKur(kapsayiciId, geriCagir){
+  const kap = document.getElementById(kapsayiciId);
+  if(!kap) return;
+  const gunler = (SR_GUNLUK_ARSIV && SR_GUNLUK_ARSIV.gunler) ? Object.keys(SR_GUNLUK_ARSIV.gunler).sort().reverse() : [];
+  // Bugun + en fazla 5 gun geriye. Arsiv her gun otomatik birikiyor, bugun
+  // basladiysa sadece "Bugun" gorunur - 5 is gunu sonra 6 buton olur.
+  const gecmisGunler = gunler.slice(1, 6);
 
   let html = `<button class="sr-periyot-btn aktif" data-gun="">Bugün</button>`;
-  gosterilecek.forEach((tarih, idx) => {
-    if(idx === 0) return; // en yenisi zaten "Bugun" canli veriyle gosteriliyor, arsivdeki kopyasini tekrar butonlamiyoruz
+  gecmisGunler.forEach(tarih => {
     html += `<button class="sr-periyot-btn" data-gun="${tarih}">${gncTarihKisa(tarih)}</button>`;
   });
+  if(!gecmisGunler.length){
+    html += `<span style="font-size:10px;color:var(--ink-faint);padding:7px 10px;">Geçmiş günler her gün otomatik birikiyor</span>`;
+  }
   kap.innerHTML = html;
-  notEl.textContent = '';
 
   kap.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if(!btn) return;
     kap.querySelectorAll("button").forEach(b => b.classList.remove("aktif"));
     btn.classList.add("aktif");
-    SR_SECILI_GUN = btn.dataset.gun || null;
-    srCizKatki();
-    srCizDeger();
+    geriCagir(btn.dataset.gun || null);
   });
 }
 
@@ -464,6 +537,26 @@ document.getElementById("arama-kutusu").addEventListener("input", (e) => {
   SR_GUNLUK_SAYFA = 1;
   srCizHepsi();
 });
+document.getElementById("isi-periyot-grup").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  document.querySelectorAll("#isi-periyot-grup button").forEach(b => b.classList.remove("aktif"));
+  btn.classList.add("aktif");
+  SR_ISI_PERIYOT = btn.dataset.isi;
+  srCizIsi();
+});
+document.getElementById("tablo-sirala-grup").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  document.querySelectorAll("#tablo-sirala-grup button").forEach(b => b.classList.remove("aktif"));
+  btn.classList.add("aktif");
+  SR_TABLO_SIRALA = btn.dataset.sirala;
+  srCizTablo();
+});
+document.getElementById("tablo-evre-filtre").addEventListener("change", (e) => {
+  SR_TABLO_EVRE = e.target.value;
+  srCizTablo();
+});
 document.getElementById("deger-filtre-grup").addEventListener("click", (e) => {
   const btn = e.target.closest(".deger-filtre-btn");
   if(!btn) return;
@@ -509,7 +602,7 @@ function srCizSaat(){
 
   svg += `<defs>`;
   Object.keys(renkler).forEach(evre => {
-    svg += `<marker id="ok-${evre}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${renkler[evre]}" opacity="0.7"/></marker>`;
+    svg += `<marker id="ok-${evre}" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="${renkler[evre]}"/></marker>`;
   });
   svg += `</defs>`;
 
@@ -530,20 +623,27 @@ function srCizSaat(){
   svg += `<text x="${MERKEZ}" y="24" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--ink-faint)">BÜYÜME ARTIYOR</text>`;
   svg += `<text x="${MERKEZ}" y="586" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--ink-faint)">BÜYÜME YAVAŞLIYOR</text>`;
 
-  // Iz (trail, baslangic noktali) + leader
+  // Iz (trail) + leader. NOT: ok basi ARTIK baloncugun MERKEZINDE degil,
+  // baloncugun KENARINDA bitiyor - yoksa baloncuk (yaricapi 8-20px) okun
+  // uzerine cizilip onu TAMAMEN ortuyordu (13 Tem 2026'da tespit edildi).
   etiketler.forEach(et => {
     const s = liste.find(x => x.kod === et.kod);
     const renk = renkler[s.evre];
     if(s.cx_3ay_once !== null && s.cx_3ay_once !== undefined){
-      // Iz cizgisini KISALTIYORUZ - ham 3 aylik mesafeyi degil, bugunku
-      // noktaya yakin, sadece YONU gosteren kisa bir cizgi ciziyoruz.
-      // KISALTMA_ORANI: 1.0 = tam mesafe (eski, karisik hali), 0.4 = %40'i
-      // (baslangic noktasi bugune %60 yaklastirilir, ok hala doğru yonu gosterir).
-      const KISALTMA_ORANI = 0.4;
-      const kisa_x1 = s.cx - (s.cx - s.cx_3ay_once) * KISALTMA_ORANI;
-      const kisa_y1 = s.cy - (s.cy - s.cy_3ay_once) * KISALTMA_ORANI;
-      svg += `<line class="sr-trail" x1="${kisa_x1.toFixed(1)}" y1="${kisa_y1.toFixed(1)}" x2="${s.cx}" y2="${s.cy}" stroke="${renk}" marker-end="url(#ok-${s.evre})"/>`;
-      svg += `<circle class="sr-trail-start" cx="${kisa_x1.toFixed(1)}" cy="${kisa_y1.toFixed(1)}" r="2" fill="${renk}"/>`;
+      const KISALTMA_ORANI = 0.45;
+      const ham_x1 = s.cx - (s.cx - s.cx_3ay_once) * KISALTMA_ORANI;
+      const ham_y1 = s.cy - (s.cy - s.cy_3ay_once) * KISALTMA_ORANI;
+      // Cizginin bitis noktasini baloncugun KENARINA cek (merkeze degil):
+      const dx = s.cx - ham_x1, dy = s.cy - ham_y1;
+      const uzunluk = Math.sqrt(dx*dx + dy*dy);
+      if(uzunluk > 1){
+        const geri_cek = s.yaricap + 3;  // baloncuk yaricapi + ok basi payi
+        const oran = Math.max(0, (uzunluk - geri_cek) / uzunluk);
+        const bitis_x = ham_x1 + dx * oran;
+        const bitis_y = ham_y1 + dy * oran;
+        svg += `<line class="sr-trail" x1="${ham_x1.toFixed(1)}" y1="${ham_y1.toFixed(1)}" x2="${bitis_x.toFixed(1)}" y2="${bitis_y.toFixed(1)}" stroke="${renk}" marker-end="url(#ok-${s.evre})"/>`;
+        svg += `<circle class="sr-trail-start" cx="${ham_x1.toFixed(1)}" cy="${ham_y1.toFixed(1)}" r="2.5" fill="${renk}"/>`;
+      }
     }
     svg += `<line class="sr-leader" x1="${et.bubble_cx}" y1="${et.bubble_cy}" x2="${et.etiket_x}" y2="${et.etiket_y}"/>`;
   });
@@ -574,18 +674,17 @@ function srCizSaat(){
 /* ============ DEĞERLEME KARŞILAŞTIRMASI ============ */
 function srCizDeger(){
   const kap = document.getElementById("deger-icerik");
-  // SR_SECILI_GUN doluysa (bugun degil, gecmis bir gun secilmisse) arsivden
-  // o gunun deger verisini kullan - canli SR_DEGER yerine.
+  // SR_DEGER_GUN (Degerleme'ye OZEL gun secici - Endekse Katki'dan BAGIMSIZ)
   let degerKaynagi = SR_DEGER;
   let gunBaslik = "";
-  if(SR_SECILI_GUN){
-    const gunKaydi = SR_GUNLUK_ARSIV?.gunler?.[SR_SECILI_GUN];
+  if(SR_DEGER_GUN){
+    const gunKaydi = SR_GUNLUK_ARSIV?.gunler?.[SR_DEGER_GUN];
     degerKaynagi = gunKaydi?.deger || {};
-    gunBaslik = `<div style="font-size:11px;color:var(--copper-dark);font-weight:600;margin-bottom:10px;">📅 ${gncTarihKisa(SR_SECILI_GUN)} tarihli arşivlenmiş görünüm (canlı değil)</div>`;
+    gunBaslik = `<div style="font-size:11px;color:var(--copper-dark);font-weight:600;margin-bottom:10px;">📅 ${gncTarihKisa(SR_DEGER_GUN)} tarihli arşivlenmiş görünüm (canlı değil)</div>`;
   }
   const sektorKodlari = Object.keys(degerKaynagi);
   if(!sektorKodlari.length){
-    kap.innerHTML = gunBaslik + '<div class="gnc-durum-kutu">' + (SR_SECILI_GUN ? "Bu gün için arşivlenmiş değerleme verisi yok." : "Değerleme verisi henüz yok. deger-hesapla workflow'unun en az bir kez çalışması gerekir.") + '</div>';
+    kap.innerHTML = gunBaslik + '<div class="gnc-durum-kutu">' + (SR_DEGER_GUN ? "Bu gün için arşivlenmiş değerleme verisi yok." : "Değerleme verisi henüz yok. deger-hesapla workflow'unun en az bir kez çalışması gerekir.") + '</div>';
     return;
   }
   let liste = sektorKodlari.map(kod => Object.assign({ kod }, degerKaynagi[kod]));
@@ -621,16 +720,27 @@ function srCizDeger(){
   const sapmaliListe = liste.filter(s => s.sapma_yuzde !== undefined);
   const maxAbs = Math.max(...sapmaliListe.map(s => Math.abs(s.sapma_yuzde)), 1);
 
-  let html = '<div class="sr-eksen"><span>← Ucuz</span><span>Tarihsel Ortalama</span><span>Pahalı →</span></div>';
+  let html = '<div class="sr-eksen-deger"><span></span><div class="sr-eksen-orta"><span>← Ucuz</span><span>Tarihsel Ortalama</span><span>Pahalı →</span></div><span></span></div>';
   liste.forEach(s => {
     const azSirket = s.guven_dusuk ? ' <span style="color:var(--ink-faint);font-weight:400;">(az şirket)</span>' : '';
+    // MADDE 5: sektor ADI da gorunsun (sadece kod anlasilmiyordu). Ad
+    // rotasyon verisinden geliyor - kod ustte, ad altinda kucuk punto.
+    const sektorAd = SR_ROTASYON.find(r => r.kod === s.kod)?.ad || "";
+    // MADDE 9: sektor detay sayfasina git (sayfa henuz yok - hazir olunca
+    // bu link calisacak, simdilik ayni sektorler sayfasina yonlendiriyor).
+    const isimHucre = `<div>` +
+      `<div style="display:flex;align-items:center;gap:4px;"><span style="font-weight:600;">${s.kod}</span>${azSirket}` +
+        `<a href="sektorler.html?sektor=${s.kod}" title="${sektorAd || s.kod} sektöründeki hisseleri gör" class="sr-detay-btn">→</a>` +
+      `</div>` +
+      (sektorAd ? `<div style="font-size:10px;color:var(--ink-faint);line-height:1.3;margin-top:1px;">${sektorAd}</div>` : '') +
+    `</div>`;
     const pdSatisParca = s.pd_satis_medyan!==undefined ? `<b>PD/Satışlar</b> ${s.pd_satis_medyan}` : '';
     if(s.sapma_yuzde !== undefined){
       const genislikYuzde = Math.min(50, Math.abs(s.sapma_yuzde) / maxAbs * 50);
       const pahali = s.sapma_yuzde >= 0;
       const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
       html += `<div class="sr-deger-satir">` +
-        `<span>${s.kod}${azSirket}</span>` +
+        isimHucre +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div>` +
           `<div class="sr-katki-bar ${pahali?'pahali':'ucuz'}" style="width:${genislikYuzde}%"></div></div>` +
         `<div class="mono num" style="text-align:right;font-size:11.5px;line-height:1.6;">` +
@@ -643,7 +753,7 @@ function srCizDeger(){
       // Guncel F/K var ama tarihsel karsilastirma yok (yeterli 2023-sonrasi yil yok)
       const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
       html += `<div class="sr-deger-satir">` +
-        `<span>${s.kod}${azSirket}</span>` +
+        isimHucre +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div></div>` +
         `<div class="mono num" style="text-align:right;font-size:11.5px;color:var(--ink-faint);line-height:1.6;">` +
           `<div><b>F/K</b> ${s.fk_guncel_medyan}</div>` +
@@ -655,7 +765,7 @@ function srCizDeger(){
       // F/K HIC hesaplanamiyor (zarar/veri yok) - ama PD/DD ve PD/Satislar hala dolu olabilir
       const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
       html += `<div class="sr-deger-satir">` +
-        `<span>${s.kod}${azSirket}</span>` +
+        isimHucre +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div></div>` +
         `<div class="mono num" style="text-align:right;font-size:11.5px;color:var(--ink-faint);line-height:1.6;">` +
           `<div>${s.hesaplanamiyor_nedeni || 'F/K hesaplanamıyor'}</div>` +
@@ -677,7 +787,13 @@ function srCizDeger(){
 /* ============ TÜM SEKTÖRLER TABLOSU ============ */
 function srCizTablo(){
   const kap = document.getElementById("tablo-icerik");
-  const liste = srFiltrelenmisListe().slice().sort((a,b) => (b[SR_PERIYOT]||-999) - (a[SR_PERIYOT]||-999));
+  let liste = srFiltrelenmisListe().slice();
+  // Tabloya OZEL evre filtresi (ustteki genel filtreden bagimsiz)
+  if(SR_TABLO_EVRE !== "tumu") liste = liste.filter(s => s.evre === SR_TABLO_EVRE);
+  // Siralama: "dusen" = en YUKSEK getiriden en dusuge (varsayilan),
+  // "yukselen" = en DUSUKTEN en yuksege. (b-a) zaten azalan sirali verir.
+  const yon = (SR_TABLO_SIRALA === "yukselen") ? -1 : 1;
+  liste.sort((a,b) => yon * ((b[SR_PERIYOT] ?? -999) - (a[SR_PERIYOT] ?? -999)));
   if(!liste.length){ kap.innerHTML = '<div class="gnc-durum-kutu">Eşleşen sektör yok.</div>'; return; }
 
   let html = '<table class="gnc-tablo"><thead><tr>' +
@@ -704,28 +820,45 @@ function srCizTablo(){
 function srCizKatki(){
   const kap = document.getElementById("katki-icerik");
   let gunBaslik = "";
-  let kaynakListesi;
-  if(SR_SECILI_GUN){
-    const gunKaydi = SR_GUNLUK_ARSIV?.gunler?.[SR_SECILI_GUN];
+  let liste = [];
+
+  if(SR_KATKI_GUN){
+    // GECMIS GUN: arsivdeki HAZIR katki degerlerini kullan
+    const gunKaydi = SR_GUNLUK_ARSIV?.gunler?.[SR_KATKI_GUN];
     const katkiKaynagi = gunKaydi?.katki || {};
-    kaynakListesi = Object.keys(katkiKaynagi).map(kod => Object.assign({ kod }, katkiKaynagi[kod]));
-    gunBaslik = `<div style="font-size:11px;color:var(--copper-dark);font-weight:600;margin-bottom:10px;">📅 ${gncTarihKisa(SR_SECILI_GUN)} tarihli arşivlenmiş görünüm (canlı değil)</div>`;
-  } else {
-    kaynakListesi = srFiltrelenmisListe();
+    liste = Object.keys(katkiKaynagi).map(kod => {
+      const v = katkiKaynagi[kod];
+      // Arsivde HAZIR (sunucuda hesaplanmis) katki degeri kullanilir.
+      // Cok eski arsiv kayitlarinda bu alan olmayabilir - o gun icin
+      // veri gosterilmez (JS'te formul tutmuyoruz - guvenlik).
+      return Object.assign({ kod }, v, { katki: v[`katki_${SR_PERIYOT}`] });
+    }).filter(s => s.katki !== null && s.katki !== undefined);
+    gunBaslik = `<div style="font-size:11px;color:var(--copper-dark);font-weight:600;margin-bottom:10px;">📅 ${gncTarihKisa(SR_KATKI_GUN)} tarihli arşivlenmiş görünüm (canlı değil)</div>`;
+  } else if(SR_TURETILMIS && SR_TURETILMIS.endekse_katki){
+    // BUGUN: katki SUNUCUDA (Python) hesaplandi - JS'te formul YOK (guvenlik).
+    const kaynak = SR_TURETILMIS.endekse_katki;
+    liste = Object.keys(kaynak).map(kod => {
+      const v = kaynak[kod];
+      return Object.assign({ kod }, v, { katki: v[`katki_${SR_PERIYOT}`] });
+    }).filter(s => s.katki !== null && s.katki !== undefined);
   }
-  let liste = kaynakListesi
-    .filter(s => s.agirlik !== null && s.agirlik !== undefined && s[SR_PERIYOT] !== null && s[SR_PERIYOT] !== undefined)
-    .map(s => Object.assign({}, s, { katki: (s.agirlik/100) * s[SR_PERIYOT] }));
+
+  // Ust filtreler (evre + arama) her iki durumda da uygulanir
+  if(SR_EVRE_FILTRE !== "tumu") liste = liste.filter(s => SR_ROTASYON.find(r => r.kod === s.kod)?.evre === SR_EVRE_FILTRE);
+  if(SR_ARAMA.trim()){
+    const q = SR_ARAMA.trim().toLocaleLowerCase("tr-TR");
+    liste = liste.filter(s => (s.ad||"").toLocaleLowerCase("tr-TR").includes(q) || s.kod.toLocaleLowerCase("tr-TR").includes(q));
+  }
 
   if(!liste.length){
-    kap.innerHTML = gunBaslik + '<div class="gnc-durum-kutu">' + (SR_SECILI_GUN ? "Bu gün için arşivlenmiş katkı verisi yok." : "Ağırlık verisi henüz yok (halka açıklık oranı doğrulaması bekleniyor). Bu panel ağırlık verisi gelince aktif olacak.") + '</div>';
+    kap.innerHTML = gunBaslik + '<div class="gnc-durum-kutu">' + (SR_KATKI_GUN ? "Bu gün için arşivlenmiş katkı verisi yok." : "Endekse katkı verisi henüz yok. rotasyon-hesapla workflow'unun çalışması gerekir.") + '</div>';
     return;
   }
   liste.sort((a,b) => b.katki - a.katki);
   const maxAbs = Math.max(...liste.map(s => Math.abs(s.katki)), 0.01);
   const periyotAd = { g1: "Bugün", h1: "Bu hafta", a1: "Bu ay" }[SR_PERIYOT];
 
-  let html = '<div class="sr-eksen"><span>← Endeksi aşağı çekti</span><span>0</span><span>Endeksi yukarı taşıdı →</span></div>';
+  let html = '<div class="sr-eksen-katki"><span></span><div class="sr-eksen-orta"><span>← Endeksi aşağı çekti</span><span>0</span><span>Endeksi yukarı taşıdı →</span></div><span></span></div>';
   liste.forEach(s => {
     const genislikYuzde = Math.min(50, Math.abs(s.katki) / maxAbs * 50);
     const pozitif = s.katki >= 0;
@@ -780,11 +913,33 @@ function srCizGunluk(){
   });
 
   if(toplamSayfa > 1){
-    html += '<div style="display:flex;gap:6px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">';
-    for(let i=1; i<=toplamSayfa; i++){
-      const aktif = i === SR_GUNLUK_SAYFA;
-      html += `<button onclick="srGunlukSayfaGit(${i})" style="width:28px;height:28px;border-radius:6px;border:1px solid ${aktif?'var(--ink)':'var(--line)'};background:${aktif?'var(--ink)':'var(--surface-raised)'};color:${aktif?'#fff':'var(--ink-soft)'};font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;font-weight:${aktif?'700':'400'};">${i}</button>`;
+    // PENCERELI SAYFALAMA: 40+ sayfa olsa bile sadece ~7 buton gosterilir
+    // (1 ... 18 19 [20] 21 22 ... 40). VERI KIRPILMAZ - sadece BUTONLAR
+    // kirpiliyor, tum gecmis her zaman erisilebilir kaliyor.
+    const btnStil = (aktif) => `width:30px;height:30px;border-radius:6px;border:1px solid ${aktif?'var(--ink)':'var(--line)'};background:${aktif?'var(--ink)':'var(--surface-raised)'};color:${aktif?'#fff':'var(--ink-soft)'};font-family:'IBM Plex Mono',monospace;font-size:11.5px;cursor:pointer;font-weight:${aktif?'700':'400'};flex-shrink:0;`;
+    const btn = (i) => `<button onclick="srGunlukSayfaGit(${i})" style="${btnStil(i===SR_GUNLUK_SAYFA)}">${i}</button>`;
+    const nokta = () => `<span style="color:var(--ink-faint);font-size:11px;align-self:center;">…</span>`;
+
+    let sayfaNolar = [];
+    if(toplamSayfa <= 7){
+      for(let i=1;i<=toplamSayfa;i++) sayfaNolar.push(i);
+    } else {
+      sayfaNolar.push(1);
+      let bas = Math.max(2, SR_GUNLUK_SAYFA - 1);
+      let son = Math.min(toplamSayfa - 1, SR_GUNLUK_SAYFA + 1);
+      if(SR_GUNLUK_SAYFA <= 3){ bas = 2; son = 4; }
+      if(SR_GUNLUK_SAYFA >= toplamSayfa - 2){ bas = toplamSayfa - 3; son = toplamSayfa - 1; }
+      if(bas > 2) sayfaNolar.push("...");
+      for(let i=bas;i<=son;i++) sayfaNolar.push(i);
+      if(son < toplamSayfa - 1) sayfaNolar.push("...");
+      sayfaNolar.push(toplamSayfa);
     }
+
+    html += '<div style="display:flex;gap:5px;justify-content:center;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap;">';
+    if(SR_GUNLUK_SAYFA > 1) html += `<button onclick="srGunlukSayfaGit(${SR_GUNLUK_SAYFA-1})" style="${btnStil(false)}">‹</button>`;
+    sayfaNolar.forEach(n => { html += (n === "...") ? nokta() : btn(n); });
+    if(SR_GUNLUK_SAYFA < toplamSayfa) html += `<button onclick="srGunlukSayfaGit(${SR_GUNLUK_SAYFA+1})" style="${btnStil(false)}">›</button>`;
+    html += `<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-faint);margin-left:8px;">${liste.length} kayıt</span>`;
     html += '</div>';
   }
 
@@ -799,18 +954,27 @@ function srGunlukSayfaGit(sayfaNo){
 /* ============ ISI HARİTASI (yıllık) ============ */
 function srCizIsi(){
   const kap = document.getElementById("isi-icerik");
-  if(!SR_ISI || !SR_ISI.sektorler){ kap.innerHTML = '<div class="gnc-durum-kutu">Isı haritası verisi henüz yok.</div>'; return; }
+  // GUVENLIK (13 Tem 2026): Bilesik getiri hesabi ARTIK JS'te DEGIL, SUNUCUDA
+  // (rotasyon_turetilmis_hesapla.py) yapiliyor. Tarayiciya sadece SONUC iniyor.
+  const kaynak = SR_TURETILMIS?.isi_haritasi?.[SR_ISI_PERIYOT];
+  if(!kaynak || !Object.keys(kaynak).length){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Isı haritası verisi henüz yok. rotasyon-hesapla workflow\'unun çalışması gerekir.</div>';
+    return;
+  }
+  const sutunlar = (SR_ISI_PERIYOT === "ceyreklik" ? SR_TURETILMIS.ceyrekler : SR_TURETILMIS.yillar) || [];
+  if(!sutunlar.length){ kap.innerHTML = '<div class="gnc-durum-kutu">Dönem verisi yok.</div>'; return; }
 
-  // sektor_gecmis.json her sektor icin aylik getiri dizisi tutuyor (mevcut isiCiz mantigiyla ayni kaynak).
-  // Yillik toplam getiriyi aylik bilesik getiriden turetiyoruz.
-  const filtre = SR_EVRE_FILTRE !== "tumu" ? SR_ROTASYON.filter(s => s.evre === SR_EVRE_FILTRE).map(s => s.kod) : null;
-  const kodlar = Object.keys(SR_ISI.sektorler).filter(k => k !== "XU100" && (!filtre || filtre.includes(k)));
+  // Ust filtreler (evre + arama)
+  const evreHarita = {};
+  SR_ROTASYON.forEach(r => { evreHarita[r.kod] = r.evre; });
+  let kodlar = Object.keys(kaynak).filter(k => k !== "XU100");
+  if(SR_EVRE_FILTRE !== "tumu") kodlar = kodlar.filter(k => evreHarita[k] === SR_EVRE_FILTRE);
+  if(SR_ARAMA.trim()){
+    const q = SR_ARAMA.trim().toLocaleLowerCase("tr-TR");
+    kodlar = kodlar.filter(k => (kaynak[k].ad||k).toLocaleLowerCase("tr-TR").includes(q) || k.toLocaleLowerCase("tr-TR").includes(q));
+  }
   if(!kodlar.length){ kap.innerHTML = '<div class="gnc-durum-kutu">Eşleşen sektör yok.</div>'; return; }
 
-  // NOT (13 Tem 2026): sektor_gecmis_cek.py 10 yillik veri cekiyor (proje notlarina
-  // gore) - 2020 keyfi bir sinirdi, gercek veri siniri degil. 2016'ya genisletildi.
-  // Bir yil icin veri yoksa kod zaten "-" gosteriyor (asagida), bozulma riski yok.
-  const yillar = ["2016","2017","2018","2019","2020","2021","2022","2023","2024","2025","2026"];
   function renkSec(g){
     if(g === null || g === undefined) return { bg: "var(--surface)", tx: "var(--ink-faint)" };
     if(g >= 60) return { bg: "#124B3F", tx: "#fff" };
@@ -822,23 +986,17 @@ function srCizIsi(){
   }
 
   let html = '<table class="sr-isi-tablo"><thead><tr><th style="text-align:left;">Sektör</th>';
-  yillar.forEach(y => html += `<th>${y === "2026" ? "2026 (YBB)" : y}</th>`);
+  sutunlar.forEach(d => html += `<th>${d}</th>`);
   html += '</tr></thead><tbody>';
 
   kodlar.forEach(kod => {
-    const aylik = SR_ISI.sektorler[kod].aylik || [];
-    const ad = SR_ISI.sektorler[kod].ad || kod;
+    const ad = kaynak[kod].ad || kod;
+    const getiriler = kaynak[kod].getiriler || {};
     html += `<tr><td class="ad">${ad}</td>`;
-    yillar.forEach(y => {
-      const buYilAylari = aylik.filter(a => a.ay && a.ay.startsWith(y));
-      let getiri = null;
-      if(buYilAylari.length){
-        let carpim = 1;
-        buYilAylari.forEach(a => carpim *= (1 + (a.getiri||0)/100));
-        getiri = (carpim - 1) * 100;
-      }
-      const renk = renkSec(getiri);
-      html += `<td style="background:${renk.bg};color:${renk.tx};font-weight:600;">${getiri===null?'—':(getiri>=0?'+':'')+getiri.toFixed(1)+'%'}</td>`;
+    sutunlar.forEach(d => {
+      const g = getiriler[d];
+      const renk = renkSec(g === undefined ? null : g);
+      html += `<td style="background:${renk.bg};color:${renk.tx};font-weight:600;">${(g===undefined||g===null)?'—':(g>=0?'+':'')+g.toFixed(1)+'%'}</td>`;
     });
     html += '</tr>';
   });
@@ -859,8 +1017,25 @@ function pngIndirmeButonlariEkle(){
     btn.addEventListener("click", async () => {
       if(btn.classList.contains("yukleniyor")) return;
       btn.classList.add("yukleniyor");
+      // MADDE 7: Mobilde indirilen PNG "yarim" kaliyordu (dar ekran genisligi).
+      // Cozum: render ANINDA karti gecici olarak MASAUSTU genisligine (1100px)
+      // zorluyoruz, PNG alindiktan sonra ESKI HALINE geri donduruyoruz.
+      // Kullanici bu degisikligi goremez (islem milisaniyeler surer).
+      const MASAUSTU_GENISLIK = 1100;
+      const eskiStil = { width: kart.style.width, minWidth: kart.style.minWidth, maxWidth: kart.style.maxWidth };
+      const mobilMi = window.innerWidth < MASAUSTU_GENISLIK;
       try {
-        const canvas = await html2canvas(kart, { backgroundColor: "#F8FAF6", scale: 2 });
+        if(mobilMi){
+          kart.style.width = MASAUSTU_GENISLIK + "px";
+          kart.style.minWidth = MASAUSTU_GENISLIK + "px";
+          kart.style.maxWidth = "none";
+        }
+        const canvas = await html2canvas(kart, {
+          backgroundColor: "#F8FAF6",
+          scale: 2,
+          windowWidth: mobilMi ? MASAUSTU_GENISLIK : undefined,
+          width: mobilMi ? MASAUSTU_GENISLIK : undefined,
+        });
         canvas.toBlob(blob => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
@@ -876,6 +1051,13 @@ function pngIndirmeButonlariEkle(){
         console.error("PNG indirme hatası:", e);
         alert("PNG indirilemedi, tekrar dener misin?");
       } finally {
+        // KRITIK: hata olsa BILE gecici masaustu genisligini geri al -
+        // yoksa kart mobilde 1100px'te TAKILI kalir ve sayfa bozulur.
+        if(mobilMi){
+          kart.style.width = eskiStil.width;
+          kart.style.minWidth = eskiStil.minWidth;
+          kart.style.maxWidth = eskiStil.maxWidth;
+        }
         btn.classList.remove("yukleniyor");
       }
     });
