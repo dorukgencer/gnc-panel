@@ -1,0 +1,37 @@
+name: Makro Ortam haftalik veri guncelle
+
+on:
+  schedule:
+    - cron: "30 6 * * 1"  # Pazartesi 06:30 UTC - haftalik "donem" mantigina uygun
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veri-makro-haftalik
+  cancel-in-progress: false
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kutuphaneleri yukle
+        run: pip install requests
+      - name: Haftalik makro verisi cek
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python makro_haftalik_cek.py
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/makro_haftalik.json
+          git commit -m "Makro Ortam haftalik verisi guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          git pull --rebase --autostash origin main
+          git push
