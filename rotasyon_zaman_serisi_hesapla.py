@@ -27,7 +27,11 @@ sys.path.insert(0, str(KLASOR))
 import rotasyon_hesapla as rh
 
 HEDEF = KLASOR / "gnc-panel" / "rotasyon_zaman_serisi.json"
-GOSTERILECEK_HAFTA_SAYISI = 52  # ~1 yil - cubugun kapsayacagi gecmis
+GOSTERILECEK_HAFTA_SAYISI = None  # NONE = elimizdeki TUM gecmis (13 Tem 2026'da
+# 52 haftaya (kayan pencere) sinirliydi, eskiler kayboluyordu - artik sinirsiz,
+# her calistiginda mevcut TUM endeks_gecmis verisinden yeniden uretiliyor, bu
+# da zaman gectikce otomatik "birikmis" gibi davranmasini saglar (state
+# yonetimi gerekmez, veri arttikca kapsanan aralik da buyur).
 
 
 def hafta_tarihine_cevir(hafta_tuple):
@@ -79,10 +83,11 @@ def main():
 
     # Ortak tarih ekseni: TUM sektorlerde bulunan (yeterli gecmisi olan) haftalar
     tum_tarihler = sorted(set(t for liste in sektor_x_serileri.values() for t, _ in liste))
-    # Son GOSTERILECEK_HAFTA_SAYISI kadarini al (+ Y_PENCERE_HAFTA kadar fazladan,
-    # cunku momentum hesaplamak icin bir onceki 4 haftaya da erisim gerekiyor)
-    gerekli_gecmis = GOSTERILECEK_HAFTA_SAYISI + rh.Y_PENCERE_HAFTA
-    tarih_penceresi = tum_tarihler[-gerekli_gecmis:] if len(tum_tarihler) > gerekli_gecmis else tum_tarihler
+    if GOSTERILECEK_HAFTA_SAYISI is None:
+        tarih_penceresi = tum_tarihler  # SINIRSIZ - elimizdeki tum gecmis
+    else:
+        gerekli_gecmis = GOSTERILECEK_HAFTA_SAYISI + rh.Y_PENCERE_HAFTA
+        tarih_penceresi = tum_tarihler[-gerekli_gecmis:] if len(tum_tarihler) > gerekli_gecmis else tum_tarihler
 
     # Her sektor icin tarih->x haritasi (hizli erisim icin)
     sektor_x_harita = {kod: dict(liste) for kod, liste in sektor_x_serileri.items()}

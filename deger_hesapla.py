@@ -172,7 +172,7 @@ def main():
             negatif_epsli_sirket_sayisi[sektor] = negatif_epsli_sirket_sayisi.get(sektor, 0) + 1
 
         yillik_fk_listesi = []
-        for donem, eps in eps_yillik[:5]:
+        for donem, eps in eps_yillik[:10]:
             yil = donem[:4]
             fiyat = yil_sonu_fiyat.get(yil)
             if fiyat and eps and eps > 0:
@@ -239,9 +239,11 @@ def main():
             "F/K = Fiyat / Hisse Başına Kazanç (EPS), en son açıklanan YILLIK (/12) dönem kullanılır. "
             "PD/DD = Piyasa Değeri / Özkaynaklar, en son açıklanan (herhangi bir çeyrek) dönem kullanılır. "
             "Sektör değerleri, sektördeki şirketlerin medyanıdır. Negatif/sıfır kârlı şirketler F/K'ye "
-            "dahil edilmez. 5 yıllık ortalama, her şirketin son 5 yılının yıl-sonu fiyat/EPS oranlarının "
-            "kendi içindeki ortalaması alınıp, sektör genelinde medyanlanmasıyla bulunur. "
-            "Sapma % = (güncel F/K - 5 yıllık ortalama F/K) / 5 yıllık ortalama F/K × 100. "
+            "dahil edilmez. Tarihsel ortalama, her şirketin bulunabilen EN FAZLA 10 yılının (veri "
+            "yoksa daha azının) yıl-sonu fiyat/EPS oranlarının kendi içindeki ortalaması alınıp, "
+            "sektör genelinde medyanlanmasıyla bulunur - şirket ne kadar eski veriye sahipse o kadar "
+            "yıl kullanılır, en az 2 yıl gerekir. "
+            "Sapma % = (güncel F/K - tarihsel ortalama F/K) / tarihsel ortalama F/K × 100. "
             "Tek başına alım-satım sinyali değildir, eğitim ve araştırma amaçlıdır."
         ),
         "sektorler": sonuc,
