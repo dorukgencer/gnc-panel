@@ -13,6 +13,14 @@ Bu script:
 3) Hemen ardindan hisseleri gruplar halinde ceker (mevcut mantik).
 4) Her iki dosyayi da ayni calismanin sonunda, ayni timestamp ile yazar.
 
+DEGISIKLIK (13 Tem 2026): HAO_PD (halka aciklik oranina gore DUZELTILMIS
+piyasa degeri) artik ayri bir "hao_pd" alani olarak da yakalaniyor. Onceden
+pd_k = kolon_bul(df, ["PD", "PD_TL", "HAO_PD", "HG_PD"]) sirasinda "PD" ilk
+sirada oldugu icin HAO_PD'ye hic sira gelmiyordu, sessizce hic kullanilmiyordu.
+Simdi "pd" (ham, PD/DD gibi TOPLAM piyasa degeri gerektiren hesaplar icin) ve
+"hao_pd" (sektor AGIRLIGI gibi halka-acik-kisim gerektiren hesaplar icin)
+AYRI alanlar olarak tutuluyor - biri digerinin yerini almiyor, ikisi de var.
+
 Onceki iki script (sektor_cek.py, hisse_veri_cek.py) artik KULLANILMIYOR;
 workflow bu dosyayi cagirir.
 """
@@ -174,7 +182,6 @@ def sektor_calistir(now_iso):
                 taze_sayi += 1
         print(f"  toplu cekim: {taze_sayi}/{len(kodlar)} endeks tamam")
 
-    # Toplu cekimde eksik kalanlar icin tek tek retry (dayaniklilik)
     eksikler = [k for k in kodlar if k not in bulunanlar]
     if eksikler:
         print(f"  {len(eksikler)} endeks tek tek deneniyor...")
@@ -192,7 +199,6 @@ def sektor_calistir(now_iso):
                     taze_sayi += 1
                     print(f"  {kod:6s} tek tek tamam")
                     continue
-            # taze gelmedi -> eski koru
             if kod in eski:
                 korunan = dict(eski[kod])
                 korunan["ad"] = ad
@@ -256,7 +262,7 @@ def hisse_grup_cek(kodlar, baslangic, bitis):
     return None
 
 
-def hisse_isle(df, kod, kod_k, kap_k, tar_k, hac_k, pd_k):
+def hisse_isle(df, kod, kod_k, kap_k, tar_k, hac_k, pd_k, hao_pd_k):
     if not kod_k:
         return None
     alt = df[df[kod_k] == kod].sort_values(tar_k)
@@ -272,7 +278,13 @@ def hisse_isle(df, kod, kod_k, kap_k, tar_k, hac_k, pd_k):
         "g1": yuzde(son, geri(1)),
         "h1": yuzde(son, geri(5)),
         "a1": yuzde(son, geri(21)),
+        # pd = HAM (halka aciklik duzeltmesi yapilmamis) TOPLAM piyasa degeri.
+        # PD/DD gibi "toplam ozkaynak/toplam piyasa degeri" hesaplarinda kullanilir.
         "pd": float(alt[pd_k].iloc[-1]) if pd_k and not pd.isna(alt[pd_k].iloc[-1]) else None,
+        # hao_pd = halka aciklik oranina gore DUZELTILMIS piyasa degeri (12 Tem 2026'da
+        # PD'den GERCEKTEN farkli oldugu dogrulandi - teshis_hao_pd.py ile). Sektor
+        # AGIRLIGI (Rotasyon Saati baloncuk boyutu, Endekse Katki) icin bu kullanilmali.
+        "hao_pd": float(alt[hao_pd_k].iloc[-1]) if hao_pd_k and not pd.isna(alt[hao_pd_k].iloc[-1]) else None,
         "hacim": float(alt[hac_k].iloc[-1]) if hac_k and not pd.isna(alt[hac_k].iloc[-1]) else None,
     }
 
@@ -301,10 +313,11 @@ def hisse_calistir(now_iso):
         kap_k = kolon_bul(df, ["HGDG_KAPANIS"])
         tar_k = kolon_bul(df, ["HGDG_TARIH"])
         hac_k = kolon_bul(df, ["HGDG_HACIM", "HG_HACIM", "DOLAR_HACIM"])
-        pd_k = kolon_bul(df, ["PD", "PD_TL", "HAO_PD", "HG_PD"])
+        pd_k = kolon_bul(df, ["PD", "PD_TL", "HG_PD"])
+        hao_pd_k = kolon_bul(df, ["HAO_PD"])
         grup_sonuc = {}
         for kod in parca:
-            v = hisse_isle(df, kod, kod_k, kap_k, tar_k, hac_k, pd_k)
+            v = hisse_isle(df, kod, kod_k, kap_k, tar_k, hac_k, pd_k, hao_pd_k)
             if v is not None:
                 grup_sonuc[kod] = v
         return parca, grup_sonuc
@@ -333,7 +346,7 @@ def hisse_calistir(now_iso):
                 sonuc[kod] = eski[kod]
                 korunan += 1
             else:
-                sonuc[kod] = {"fiyat": None, "g1": None, "h1": None, "a1": None, "pd": None, "hacim": None}
+                sonuc[kod] = {"fiyat": None, "g1": None, "h1": None, "a1": None, "pd": None, "hao_pd": None, "hacim": None}
 
     if taze_sayi == 0:
         print("Hisse: hic taze veri gelmedi. Mevcut dosya KORUNUYOR (yazilmadi).")
@@ -346,7 +359,6 @@ def hisse_calistir(now_iso):
 
 
 def main():
-    # TEK zaman damgasi: hem sektor hem hisse dosyasi bunu tasir.
     now_iso = datetime.now(timezone.utc).isoformat()
     print(f"Calisma zamani (ortak damga): {now_iso}\n")
 
