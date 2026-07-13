@@ -31,6 +31,14 @@ HEDEF = KLASOR / "gnc-panel" / "degerleme_gecmis.json"
 EPS_KALEMI = "Hisse Başına Kazanç"
 OZKAYNAK_KALEMI = "Özkaynaklar"
 BANKA_OZKAYNAK_KALEMI = "XVI. ÖZKAYNAKLAR"
+# Yatirim ortakligi/fon benzeri sektorler: bunlarda "net kar" cogunlukla
+# portfoydeki menkul kiymetlerin PIYASA DEGERI dalgalanmasindan gelir - gercek
+# operasyonel performans degil. F/K bu yapida ANLAMSIZ olur (XYORT'ta test
+# edildi: sapma %1272 cikti - veri hatasi degil, yanlis metrik kullanimi).
+# Finans dunyasinda bu tur yapilar icin standart olcut F/K degil PD/DD'dir
+# (NAV'a gore iskonto/prim). Bu yuzden F/K karsilastirmasindan HARIC
+# TUTULUYOR, PD/DD zaten ayrica hesaplaniyor ve birincil olcut olarak kalıyor.
+FON_BENZERI_SEKTORLER = {"XYORT", "XGYO"}
 # PD/Satislar icin - F/K'nin aksine ZARAR eden sirketleri de KAPSAR (hasilat
 # hemen hic negatif/sifir olmaz), F/K'deki "500 F/K vs 10 F/K" gibi asiri
 # saciklik sorununu da yasamaz (kazanc kalemlerinden cok daha az oynak).
@@ -303,7 +311,7 @@ def main():
 
         if etkin_son_eps and etkin_son_eps > 0:
             fk = guncel_fiyat / etkin_son_eps
-            if 0 < fk < 150:
+            if 0 < fk < 150 and sektor not in FON_BENZERI_SEKTORLER:
                 sektor_fk_guncel.setdefault(sektor, []).append(fk)
                 guncel_islenen += 1
         elif etkin_son_eps is not None and etkin_son_eps <= 0:
@@ -351,7 +359,7 @@ def main():
         else:
             yillik_fk_listesi = []
 
-        if len(yillik_fk_listesi) >= 1:
+        if len(yillik_fk_listesi) >= 1 and sektor not in FON_BENZERI_SEKTORLER:
             # DUZELTME (13 Tem 2026): artik CAPE zaten TEK bir deger (sirketin
             # kendi coklu-yil REEL EPS ortalamasindan turetilen TEK F/K) -
             # ayrica ortalama/medyan almaya gerek yok, dogrudan sektor listesine ekleniyor.
@@ -394,13 +402,21 @@ def main():
 
         if len(guncel_liste) < 1:
             zarar_sayisi = negatif_epsli_sirket_sayisi.get(sektor, 0)
+            if sektor in FON_BENZERI_SEKTORLER:
+                neden = (
+                    "Bu sektör (yatırım ortaklığı) F/K karşılaştırmasına dahil edilmez - "
+                    "bu tür yapılarda kâr, portföydeki menkul kıymetlerin piyasa değeri "
+                    "dalgalanmasından gelir, gerçek operasyonel performanstan değil. "
+                    "Standart ölçüt PD/DD'dir (NAV'a göre iskonto/prim), aşağıda mevcuttur."
+                )
+            elif zarar_sayisi > 0:
+                neden = f"Bu sektördeki {zarar_sayisi} şirket şu an zarar ediyor, pozitif kârlı şirket yok."
+            else:
+                neden = "Bu sektör için finansal veri henüz yok."
             girdi = {
                 "fk_guncel_medyan": None,
                 "sirket_sayisi_guncel": 0,
-                "hesaplanamiyor_nedeni": (
-                    f"Bu sektördeki {zarar_sayisi} şirket şu an zarar ediyor, pozitif kârlı şirket yok."
-                    if zarar_sayisi > 0 else "Bu sektör için finansal veri henüz yok."
-                ),
+                "hesaplanamiyor_nedeni": neden,
             }
             # ONEMLI: F/K hesaplanamasa bile PD/DD ve PD/Satislar HALA
             # hesaplanabilir olabilir - ikisi de zarar eden sirketleri
@@ -464,6 +480,9 @@ def main():
             "Bu adımlar sayesinde 2023 öncesine de gidilebiliyor (sabit yıl sınırı yok). "
             "Net Dönem Kârı kalemi bulunamayan (adı eşleşmeyen) şirketler bu karşılaştırmaya "
             "katılamaz - bu, veri eksikliğidir, aykırı değer dışlaması değildir. "
+            "XYORT ve XGYO (yatırım ortaklığı benzeri sektörler) F/K karşılaştırmasına HİÇ "
+            "dahil edilmez - bu yapılarda kâr, portföyün piyasa değeri dalgalanmasından gelir, "
+            "F/K anlamsız olur; standart ölçüt PD/DD'dir (NAV'a göre iskonto/prim). "
             "Kesin yüzde yerine kaba bir bant (Ucuz/Nötr/Pahalı, ±%30 eşiğiyle) esas alınmalıdır; "
             "yüzdenin kendisi referans amaçlıdır, tek başına hassas bir ölçüm olarak okunmamalıdır. "
             "F/K = Fiyat / Hisse Başına Kazanç (EPS), en son açıklanan YILLIK (/12) dönem kullanılır. "
