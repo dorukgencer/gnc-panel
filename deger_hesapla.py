@@ -36,6 +36,59 @@ BANKA_OZKAYNAK_KALEMI = "XVI. ÖZKAYNAKLAR"
 # saciklik sorununu da yasamaz (kazanc kalemlerinden cok daha az oynak).
 # Sektore gore isim degisebilir (banka vs sanayi) - birden fazla aday deneriz.
 HASILAT_KALEM_ADAYLARI = ["Hasılat", "Satış Gelirleri", "Esas Faaliyet Gelirleri"]
+# Net kar/zarar icin - ADIM ADIM DOGRULANMIS BOLUNME DUZELTMESI icin sart:
+# ayni sirketin FARKLI kaynaklarinda bile bu kalemin adi degisebiliyor (KAP
+# gelir tablosunda "Net Dönem Kârı (Zararı)", bilanço/özkaynak bölümünde
+# "Dönem Net Kar/Zararı" gördük - 13 Tem 2026'da TRALT ornekleriyle
+# dogrulandi). Birden fazla aday deniyoruz, HASILAT_KALEM_ADAYLARI'ndaki
+# ayni mantik.
+NET_KAR_KALEM_ADAYLARI = ["Net Dönem Kârı (Zararı)", "Dönem Net Kar/Zararı", "Net Dönem Karı", "Dönem Kârı (Zararı)", "Net Dönem Karı (Zararı)"]
+
+
+def tufe_yillik_endeks():
+    """deflator.json'daki HAM TUFE endeks serisinden (reel_getiri_cek.py'nin
+    zaten urettigi, TP.FG.J0/2003=100) her yilin ARALIK ayi endeks degerini
+    cikarir -> {"2016": 412.3, ..., "2025": 2891.7} gibi.
+    Bu, Shiller CAPE mantiginin (her yilin karini TUFE ile BUGUNE tasiyip
+    OYLE ortalamak) temelini olusturur - "2023 oncesine hic gitme" gibi kaba
+    bir sinir yerine, enflasyonun kendisini duzeltiyoruz.
+    NOT: Bu SADECE enflasyon karsilastirilabilirligini duzeltir - eger bir
+    sirkette AYRICA bedelsiz sermaye artirimi (hisse bolunmesi) da olduysa
+    (TRALT'ta gordugumuz ~20 kat EPS sicramasi gibi), TUFE duzeltmesi TEK
+    BASINA bunu COZMEZ - o ayri bir mekanizma (bolunme tespiti) gerektirir,
+    burada YOK."""
+    try:
+        veri = json.loads((KLASOR / "gnc-panel" / "deflator.json").read_text(encoding="utf-8"))
+        seri = veri.get("deflatorler", {}).get("tufe", {}).get("seri", [])
+    except Exception:
+        return {}
+    if not seri:
+        return {}
+    yillik = {}
+    for nokta in seri:
+        tarih = nokta.get("tarih", "")
+        deger = nokta.get("deger")
+        if deger is None or "-" not in tarih:
+            continue
+        yil, ay = tarih.split("-")[0], tarih.split("-")[1]
+        if ay == "12":
+            yillik[yil] = deger
+        elif yil not in yillik:
+            # o yilin Aralik'i yoksa (henuz aciklanmadiysa - orn. cari yil),
+            # o yil icin bulunan EN SON ayi gecici olarak kullan.
+            yillik[yil] = deger
+    return yillik
+
+
+def deflator_hesapla(tufe_endeksleri, hedef_yil, baz_yil):
+    """hedef_yil'deki 1 TL'nin, baz_yil (genelde en yeni yil) TL'si
+    cinsinden karsiligini dondurur. Ornek: 2020'de kazanilan 1 TL, eger
+    TUFE 2020'den 2025'e 6 kat arttiysa, 2025 TL'si cinsinden ~6 TL eder."""
+    tufe_hedef = tufe_endeksleri.get(hedef_yil)
+    tufe_baz = tufe_endeksleri.get(baz_yil)
+    if not tufe_hedef or not tufe_baz:
+        return None
+    return tufe_baz / tufe_hedef
 
 
 def banka_kodlari():
@@ -103,6 +156,22 @@ def yillik_donemler(degerler):
     return sorted(yillik.items(), key=lambda x: x[0], reverse=True)
 
 
+def net_kar_yillik(kalemler):
+    """NET_KAR_KALEM_ADAYLARI'ndan ilk BULUNAN kalemin TUM yillik (/12)
+    serisini doner - yillik_donemler ile ayni format: [(donem, deger), ...]
+    yeniden eskiye. Bolunme duzeltmesi icin gerekli: net kar (TOPLAM), EPS'in
+    aksine hisse sayisi degisikliginden ETKILENMEZ - bu yuzden "gecmis yilin
+    net karini BUGUNKU hisse sayisina bolersek" hisse bolunmesi otomatik
+    duzelir, ayrica tespit/hariç tutma gerekmez."""
+    for aday in NET_KAR_KALEM_ADAYLARI:
+        degerler = kalem_bul(kalemler, aday)
+        if degerler:
+            yillik = yillik_donemler(degerler)
+            if yillik:
+                return yillik
+    return []
+
+
 def son_yillik_hasilat(kalemler):
     """EPS ile AYNI mantik: en son ACIKLANAN YILLIK (/12) hasilat donemi.
     Ceyreklik degil yillik kullaniyoruz ki mevsimsellik (bir sektorun Q4'u
@@ -159,6 +228,17 @@ def main():
     bankalar = banka_kodlari()
     tum_sektor_kodlari = set()          # sektor haritasinda GORULEN her sektor (veri olsun olmasin)
     negatif_epsli_sirket_sayisi = {}    # sektor -> kac sirket zarar ediyor (aciklama icin)
+    supheli_bolunmeler = []             # KALICI liste - bolunme supheli sirketler, sadece log'da kaybolmasin
+
+    # TUFE ile REEL (enflasyondan arindirilmis) tarihsel F/K - Shiller CAPE
+    # mantigi. tufe_endeksleri bos donerse (deflator.json henuz yoksa) eski
+    # (2023 siniri) yontem otomatik devreye girer - pipeline kirilmaz.
+    tufe_endeksleri = tufe_yillik_endeks()
+    tufe_baz_yil = max(tufe_endeksleri.keys()) if tufe_endeksleri else None
+    if tufe_baz_yil:
+        print(f"TUFE ile reel F/K duzeltmesi aktif, baz yil: {tufe_baz_yil}")
+    else:
+        print("UYARI: deflator.json'dan TUFE okunamadi - reel duzeltme YAPILAMIYOR, eski (2023 siniri) yontem kullanilacak.")
 
     for dosya in dosyalar:
         kod = dosya.stem
@@ -191,40 +271,65 @@ def main():
         elif son_eps is not None and son_eps <= 0:
             negatif_epsli_sirket_sayisi[sektor] = negatif_epsli_sirket_sayisi.get(sektor, 0) + 1
 
-        # DUZELTME (13 Tem 2026): Turkiye'de 31.12.2023 ve sonrasi mali tablolar
-        # TMS 29 (enflasyon muhasebesi) geregi ZORUNLU olarak TUFE ile bugunun
-        # satin alma gucune yeniden ifade ediliyor - 2023 ONCESI rakamlar ise
-        # DUZELTILMEMIS, o zamanki NOMINAL haliyle duruyor. Bu ikisini ayni
-        # ortalamada karistirmak KARSILASTIRILAMAZ degerleri karsilastirmak
-        # demek - "10 yila cikaralim, daha saglam olsun" denemesi bu yuzden
-        # sapma degerlerini %700'lere tasidi (fizyolojik olarak imkansiz).
-        # Once "sirketin kendi serisinde aykiri deger" filtresi denendi ama bu
-        # YANLIS yillari eliyordu (dogru/yeni yillari degil), sorunu kotulestirdi -
-        # KALDIRILDI. Dogru cozum: 2023 ONCESINE HIC GITMEMEK, cunku o sinirin
-        # iki yakasi zaten karsilastirilabilir degil.
-        TMS29_SINIR_YIL = "2023"
-        yillik_fk_listesi = []
-        for donem, eps in eps_yillik:
-            yil = donem[:4]
-            if yil < TMS29_SINIR_YIL:
-                continue
-            fiyat = yil_sonu_fiyat.get(yil)
-            if fiyat and eps and eps > 0:
-                fk_o_yil = fiyat / eps
-                # DUZELTME (13 Tem 2026): tavan 500'den 150'ye indirildi - 150 uzeri
-                # F/K zaten pratikte "anlamsiz pahali" sayilir, o araligi veriye dahil
-                # etmenin tek etkisi ortalamayi yapay sekilde sismesi.
-                if 0 < fk_o_yil < 150:
-                    yillik_fk_listesi.append(fk_o_yil)
+        # DUZELTME (13 Tem 2026, IKINCI VERSIYON): Onceki versiyon, bolunme
+        # supheli sirketleri TAMAMEN DISLIYORDU - Doruk hakli olarak itiraz
+        # etti: "dislamak olmaz, ayak uydurmamiz lazim". Gercek/kesin cozum:
+        # HER YILIN KENDI EPS'i yerine, HER YILIN NET KARINI (TOPLAM - hisse
+        # sayisindan ETKILENMEZ) BUGUNKU hisse sayisina boluyoruz. Boylece
+        # gecmiste kac kere bolunme/bedelsiz sermaye artirimi olmus olursa
+        # olsun, TUM yillar ayni (bugunku) hisse sayisi paydasinda -
+        # otomatik duzelir, TESPIT ya da DISLAMA gerekmez.
+        #   guncel_hisse_sayisi = guncel_net_kar / guncel_eps  (ikisi de ayni
+        #                          donemden, ayni HAM raporlanmis degerler)
+        #   normalize_eps(yil)  = net_kar(yil) / guncel_hisse_sayisi
+        # Sonra bu normalize EPS'i TUFE ile bugune tasiyip (Shiller CAPE)
+        # ortalaniyor - iki duzeltme UST USTE: once hisse sayisi, sonra enflasyon.
+        net_kar_serisi = net_kar_yillik(kalemler)
+        net_kar_harita = dict(net_kar_serisi)
+        guncel_net_kar = net_kar_harita.get(son_donem)
 
-        if len(yillik_fk_listesi) >= 2:
-            # DUZELTME (13 Tem 2026): duz aritmetik ORTALAMA yerine MEDYAN - bir
-            # sirketin 2-3 yillik kendi serisinde TEK bir yil aykiri cikarsa (orn.
-            # [10, 12, 490]) aritmetik ortalama (170.7) o tek yildan asiri etkilenir,
-            # medyan (12) etkilenmez. "Bir sirket 500 FK, digeri 10 FK olunca
-            # ortalama bozuluyor" sikayeti - bu, sirketin KENDI serisinde de
-            # medyan kullanarak azaltilir (sektor capinda zaten medyan kullaniliyordu).
-            sirket_ortalama = statistics.median(yillik_fk_listesi)
+        real_eps_listesi = []
+        if guncel_net_kar and son_eps and son_eps > 0:
+            guncel_hisse_sayisi = guncel_net_kar / son_eps
+            if guncel_hisse_sayisi > 0:
+                for donem, eps in eps_yillik:
+                    yil = donem[:4]
+                    net_kar_o_yil = net_kar_harita.get(donem)
+                    if net_kar_o_yil is None:
+                        continue  # o yil icin net kar verisi yoksa (kalem adi eslesmedi vs) atla
+                    normalize_eps = net_kar_o_yil / guncel_hisse_sayisi
+                    if normalize_eps <= 0:
+                        continue  # o yil zarar - F/K'ye katilmaz (mevcut kuralla tutarli)
+                    if tufe_baz_yil:
+                        deflator = deflator_hesapla(tufe_endeksleri, yil, tufe_baz_yil)
+                        if deflator:
+                            real_eps_listesi.append(normalize_eps * deflator)
+                    elif yil >= "2023":
+                        # TUFE yoksa eski (2023 siniri, duzeltmesiz) yonteme don -
+                        # ama YINE DE hisse-sayisi normalizasyonu uygulanmis halde
+                        real_eps_listesi.append(normalize_eps)
+        else:
+            print(f"  {kod} ({sektor}): net kar verisi bulunamadi (kalem adi eslesmedi) - hisse-sayisi normalizasyonu YAPILAMADI, bu sirket tarihsel karsilastirmaya KATILAMIYOR")
+            supheli_bolunmeler.append({
+                "kod": kod, "sektor": sektor,
+                "not": "Net Dönem Kârı kalemi bulunamadı (aday isimler eşleşmedi) - hisse-sayısı normalizasyonu yapılamadı.",
+            })
+
+        if len(real_eps_listesi) >= 2 and guncel_fiyat:
+            ortalama_reel_eps = statistics.median(real_eps_listesi)
+            cape_fk = guncel_fiyat / ortalama_reel_eps
+            if 0 < cape_fk < 150:
+                yillik_fk_listesi = [cape_fk]
+            else:
+                yillik_fk_listesi = []
+        else:
+            yillik_fk_listesi = []
+
+        if len(yillik_fk_listesi) >= 1:
+            # DUZELTME (13 Tem 2026): artik CAPE zaten TEK bir deger (sirketin
+            # kendi coklu-yil REEL EPS ortalamasindan turetilen TEK F/K) -
+            # ayrica ortalama/medyan almaya gerek yok, dogrudan sektor listesine ekleniyor.
+            sirket_ortalama = yillik_fk_listesi[0]
             sektor_fk_5yil.setdefault(sektor, []).append(sirket_ortalama)
             besyil_islenen += 1
 
@@ -317,35 +422,44 @@ def main():
         "guncelleme": datetime.now(timezone.utc).isoformat(),
         "durum": "deneysel",
         "not": (
-            "DENEYSEL/BETA: Tarihsel F/K karşılaştırması şu an SADECE 2023-2025'i (TMS 29 enflasyon "
-            "muhasebesi geçişi öncesi rakamlar karşılaştırılamaz olduğu için) kapsıyor - bu, güvenilir "
-            "bir 'tarihsel ortalama' için istatistiksel olarak KISA bir pencere. Bu yüzden kesin yüzde "
-            "yerine kaba bir bant (Ucuz/Nötr/Pahalı, ±%30 eşiğiyle) esas alınmalı; yüzdenin kendisi "
-            "referans amaçlıdır, tek başına hassas bir ölçüm olarak okunmamalıdır. Zaman geçtikçe "
-            "(2026, 2027...) pencere büyüyecek ve güvenilirlik artacaktır. "
+            "DENEYSEL/BETA: Tarihsel F/K karşılaştırması iki kademeli düzeltmeyle hesaplanıyor. "
+            "1) HİSSE SAYISI NORMALİZASYONU: her yılın EPS'i yerine, o yılın TOPLAM Net Dönem "
+            "Kârı, BUGÜNKÜ hisse sayısına (güncel net kâr / güncel EPS'ten geriye hesaplanır) "
+            "bölünür. Toplam kâr hisse sayısından etkilenmediği için, bu adım geçmişte kaç kez "
+            "bedelsiz sermaye artırımı/hisse bölünmesi olduysa olsun otomatik düzelir - artık "
+            "şüpheli şirketleri DIŞLAMIYORUZ, matematiksel olarak DÜZELTİYORUZ (13 Tem 2026'da "
+            "gerçek bir bölünme senaryosuyla test edildi: hesaplanan hisse sayısı çarpanı testteki "
+            "gerçek değerle birebir eşleşti). "
+            "2) TÜFE İLE REEL DEĞER (Shiller CAPE): normalize edilmiş EPS'ler TÜFE ile bugünün "
+            "TL'sine taşınır (TP.FG.J0), şirketin kendi yılları arasındaki medyanı alınır, bugünkü "
+            "fiyat bu medyana bölünür - S&P 500 için Robert Shiller'ın kullandığı yöntemin aynısı. "
+            "Bu iki adım sayesinde 2023 öncesine de gidilebiliyor (sabit yıl sınırı yok). "
+            "Net Dönem Kârı kalemi bulunamayan (adı eşleşmeyen) şirketler bu karşılaştırmaya "
+            "katılamaz - bu, veri eksikliğidir, aykırı değer dışlaması değildir. "
+            "Kesin yüzde yerine kaba bir bant (Ucuz/Nötr/Pahalı, ±%30 eşiğiyle) esas alınmalıdır; "
+            "yüzdenin kendisi referans amaçlıdır, tek başına hassas bir ölçüm olarak okunmamalıdır. "
             "F/K = Fiyat / Hisse Başına Kazanç (EPS), en son açıklanan YILLIK (/12) dönem kullanılır. "
             "PD/DD = Piyasa Değeri / Özkaynaklar, en son açıklanan (herhangi bir çeyrek) dönem kullanılır. "
             "PD/Satışlar = Piyasa Değeri / en son açıklanan YILLIK Hasılat. F/K ve PD/DD'nin aksine "
             "zarar eden şirketleri de kapsar (hasılat kâr gibi sıfıra/negatife düşmez) ve F/K'nin "
             "yaşadığı aşırı saçıklığı (bir şirket F/K 10, diğeri F/K 500 gibi) çok daha az yaşar - "
             "F/K hesaplanamayan sektörlerde bile PD/DD ve PD/Satışlar hâlâ dolu olabilir. "
-            "Sektör değerleri, sektördeki şirketlerin medyanıdır (hem her şirketin kendi çok-yıllık "
-            "F/K'sinde hem sektör genelinde) - tek bir aykırı yılın/şirketin ortalamayı sürüklemesini "
-            "azaltmak için. Negatif/sıfır kârlı şirketler F/K'ye dahil edilmez. Tarihsel ortalama "
-            "SADECE en az 3 şirketle hesaplanabiliyorsa gösterilir (2 şirketle 'medyan' istatistiksel "
-            "olarak neredeyse ortalamaya eşitleşir, aykırı değere karşı korumasız kalır). "
-            "31.12.2023 ve sonrası mali tablolar TMS 29 gereği TÜFE ile bugünün satın alma gücüne "
-            "yeniden ifade edilirken, 2023 öncesi rakamlar düzeltilmemiş nominal haliyle kalıyor; "
-            "bu iki dönem karşılaştırılabilir olmadığı için 2023 öncesine gidilmiyor. "
-            "Sapma % = (güncel F/K - tarihsel ortalama F/K) / tarihsel ortalama F/K × 100. "
+            "Sektör değerleri, sektördeki şirketlerin medyanıdır. Negatif/sıfır kârlı şirketler F/K'ye "
+            "dahil edilmez. Tarihsel ortalama SADECE en az 3 şirketle hesaplanabiliyorsa gösterilir "
+            "(2 şirketle 'medyan' istatistiksel olarak neredeyse ortalamaya eşitleşir, aykırı değere "
+            "karşı korumasız kalır). "
+            "Sapma % = (güncel F/K - CAPE F/K) / CAPE F/K × 100. "
             "Tek başına alım-satım sinyali değildir, eğitim ve araştırma amaçlıdır."
         ),
         "sektorler": sonuc,
+        "supheli_bolunmeler": supheli_bolunmeler,
     }
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
 
     print(f"\nTamamlandi: {len(sonuc)} sektor -> {HEDEF}")
     print(f"  Guncel F/K icin islenen sirket: {guncel_islenen}, 5-yillik icin: {besyil_islenen}, PD/DD icin: {pd_dd_islenen}, PD/Satislar icin: {pd_satis_islenen}")
+    if supheli_bolunmeler:
+        print(f"  UYARI: {len(supheli_bolunmeler)} sirket bolunme supheliyle dislandi (detaylar degerleme_gecmis.json'da 'supheli_bolunmeler' alaninda ve panelde gorunur olacak)")
     for sek, veri in sorted(sonuc.items(), key=lambda x: (x[1]["fk_guncel_medyan"] is None, x[1]["fk_guncel_medyan"] or 0)):
         if veri["fk_guncel_medyan"] is None:
             print(f"  {sek:8s} F/K=HESAPLANAMIYOR ({veri.get('hesaplanamiyor_nedeni','-')})")
