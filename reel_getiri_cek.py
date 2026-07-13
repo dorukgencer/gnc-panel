@@ -18,6 +18,7 @@ degiskeninden okunur (GitHub Actions secret) - borsapy bu ismi otomatik tanir.
 
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -78,17 +79,32 @@ def _yahoo_aylik_cek(sembol, session, crumb):
     params = {"range": "20y", "interval": "1mo"}
     if crumb:
         params["crumb"] = crumb
-    try:
-        r = session.get(url, params=params, timeout=30)
-        if r.status_code != 200:
-            print(f"  {sembol}: cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+    veri = None
+    for deneme in range(3):
+        try:
+            r = session.get(url, params=params, timeout=30)
+            if r.status_code == 429:
+                bekle = 5 * (deneme + 1)
+                print(f"  {sembol}: 429 (rate limit), {bekle}sn bekleyip tekrar denenecek ({deneme+1}/3)")
+                time.sleep(bekle)
+                continue
+            if r.status_code != 200:
+                print(f"  {sembol}: cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+                return []
+            veri = r.json()
+            break
+        except Exception as e:
+            print(f"  {sembol}: cekilemedi ({e})")
             return []
-        data = r.json()
-        result = data["chart"]["result"][0]
+    if veri is None:
+        print(f"  {sembol}: 3 denemede de basarisiz (rate limit devam ediyor)")
+        return []
+    try:
+        result = veri["chart"]["result"][0]
         zamanlar = result["timestamp"]
         kapanislar = result["indicators"]["quote"][0]["close"]
     except Exception as e:
-        print(f"  {sembol}: cekilemedi ({e})")
+        print(f"  {sembol}: yanit ayristirilamadi ({e})")
         return []
 
     tekil = {}
@@ -229,20 +245,11 @@ def main():
     # likit, standart) cekilir; gram altin TL kendimiz hesaplariz.
     print("Yahoo Finance'ten USD/TRY ve ons altin cekiliyor...")
     session, crumb = _yahoo_kimlik()
-    yahoo_sonuc = {}
-    with ThreadPoolExecutor(max_workers=2) as havuz:
-        gelecekler = {
-            havuz.submit(_yahoo_aylik_cek, "TRY=X", session, crumb): "usdtry",
-            havuz.submit(_yahoo_aylik_cek, "XAUUSD=X", session, crumb): "xau",
-        }
-        for gelecek in as_completed(gelecekler):
-            anahtar = gelecekler[gelecek]
-            try:
-                yahoo_sonuc[anahtar] = gelecek.result()
-            except Exception as e:
-                print(f"  {anahtar}: hata {str(e)[:60]}")
-                yahoo_sonuc[anahtar] = []
-    usdtry_seri, xau_seri = yahoo_sonuc["usdtry"], yahoo_sonuc["xau"]
+    # Sirali cekiyoruz (paralel degil) - 2 sembol bile olsa, ayni IP'den ust uste
+    # istekler rate limit tetikleyebiliyor (makro_cek.py'de 4 sembolde dogrulandi).
+    usdtry_seri = _yahoo_aylik_cek("TRY=X", session, crumb)
+    time.sleep(3)
+    xau_seri = _yahoo_aylik_cek("XAUUSD=X", session, crumb)
 
     usd = usdtry_seri  # USD/TRY serisinin kendisi zaten "usd" olarak kullanilan sey
     usdtry_map = {s["tarih"]: s["deger"] for s in usdtry_seri}
