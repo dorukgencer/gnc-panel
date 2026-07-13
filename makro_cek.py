@@ -15,21 +15,28 @@ eklenmelidir - Netlify'daki ile ayni key kullanilabilir).
 
 import json
 import os
-import time
 import urllib.request
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import requests
-
 KLASOR = Path(__file__).parent
 HEDEF = KLASOR / "gnc-panel" / "makro_gecmis.json"
 
 # FRED seri kodlari - hepsi ucretsiz, dogrulanmis:
 SERILER = {
+    # NOT (13 Tem 2026): dxy_genis, GERCEK ICE DXY DEGILDIR - FED'in "genis" 26
+    # para birimli endeksi, farkli olcekte. Once bunun yerine Yahoo'dan gercek
+    # DXY'yi cekmeyi denedik ama Yahoo, GitHub Actions'in IP'sini ILK ISTEKTE
+    # BILE 429 (Too Many Requests) ile engelledi - bekleme/retry ile cozulmedi,
+    # muhtemelen IP bazli toptan engelleme. Guvenilir bir gercek-DXY kaynagi
+    # bulana kadar bu YAKLASIK deger kullaniliyor - sayfada "gerçek DXY" diye
+    # SUNULMAMALI, acikca "FED genis endeksi" diye etiketlenmeli.
     "dxy_genis":  {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (FED, geniş - 26 para birimi)", "birim": "endeks (2006=100)"},
+    "us10y":      {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
+    "vix":        {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
+    "nasdaq":     {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
     "tr10y":      {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%", "devre_disi": True},  # HTTP 400 - FRED'de bu seri gecerli degil (12 Tem 2026'da dogrulandi), guvenilir alternatif bulunamadi
     "tufe":       {"kod": "CPALTT01TRM659N",  "ad": "Türkiye TÜFE (yıllık %)", "birim": "%"},
     "buyume":     {"kod": "TURLOLITOAASTSAM", "ad": "Türkiye Öncü Gösterge Endeksi (OECD)", "birim": "endeks"},
@@ -40,9 +47,8 @@ SERILER = {
     "tr_rezerv":  {"kod": "TRESEGTRM052N",    "ad": "Türkiye Toplam Rezerv (altın hariç, IMF/FRED)", "birim": "belirsiz - dogrula (bkz. asagidaki UYARI)"},
     "hy_oas":     {"kod": "BAMLH0A0HYM2",     "ad": "ABD Yüksek Getirili Kredi Spreadi (HY OAS)", "birim": "%", "not": "FRED bu seriyi Nisan 2026'dan itibaren sadece son 3 yilla sinirlandirdi"},
 }
-# NOT: DXY, US10Y, VIX, Nasdaq artik FRED'den DEGIL, YAHOO'dan cekiliyor
-# (asagida yahoo_gunluk_fiyatlar()) - FRED'de aylik kisitliydi, Yahoo gunluk
-# veriyor ve DXY'de zaten FRED'in "genis" endeksi ile karisan sorun yasamistik.
+# YAHOO ARTIK KULLANILMIYOR (13 Tem 2026) - GitHub Actions'ta 429 ile
+# engellendi, ILK istekte bile - bekleme/retry cozmedi. Tum seriler FRED'den.
 
 
 def _key():
@@ -50,102 +56,6 @@ def _key():
     if not k:
         raise SystemExit("FRED_API_KEY ortam degiskeni bulunamadi (GitHub secret olarak ekle).")
     return k
-
-
-_YAHOO_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-
-
-def _yahoo_kimlik():
-    """Yahoo Finance cerez+crumb al (reel_getiri_cek.py'deki AYNI, kanitlanmis mantik).
-    TESHIS: crumb alinamazsa DURUM KODU ve ilk 150 karakteri loglar - GitHub Actions'in
-    IP'sinin engellenip engellenmedigini gormek icin (bilinen bir Yahoo davranisi)."""
-    session = requests.Session()
-    session.headers.update({"User-Agent": _YAHOO_UA})
-    try:
-        session.get("https://fc.yahoo.com/", timeout=15)
-    except Exception as e:
-        print(f"    [TESHIS] fc.yahoo.com cerez istegi hata: {e}")
-    crumb = None
-    try:
-        r = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", timeout=15)
-        if r.status_code == 200 and "<" not in r.text:
-            crumb = r.text.strip()
-        else:
-            print(f"    [TESHIS] crumb alinamadi - durum kodu: {r.status_code}, ilk 150 karakter: {r.text[:150]!r}")
-    except Exception as e:
-        print(f"    [TESHIS] crumb istegi hata: {e}")
-    return session, crumb
-
-
-def yahoo_aylik_endeks_cek(sembol, ad, session, crumb, olcek_kontrolu=None):
-    """Yahoo Finance'ten herhangi bir endeks/gosterge sembolunu AYLIK ozetlenmis
-    ceker (ay icindeki son islem gununun kapanisi).
-
-    ONEMLI: session/crumb DISARIDAN (main() icinde BIR KEZ alinip) verilir -
-    her sembol icin AYRI kimlik istegi YAPMIYORUZ. Once bunu paralel yapiyorduk
-    (4 sembol x kendi kimligi = saniyeler icinde 12 istek), Yahoo bunu "Too Many
-    Requests" (429) ile engelledi - dogrulandi (13 Tem 2026 log'u). Simdi TEK
-    kimlik + SIRALI istek + 429'da RETRY var.
-
-    olcek_kontrolu: (deger) -> deger  seklinde opsiyonel bir fonksiyon."""
-    params = {"range": "20y", "interval": "1mo"}
-    if crumb:
-        params["crumb"] = crumb
-    veri = None
-    for deneme in range(3):
-        try:
-            r = session.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}", params=params, timeout=30)
-            if r.status_code == 429:
-                bekle = 5 * (deneme + 1)
-                print(f"  {sembol} ({ad}): 429 (rate limit), {bekle}sn bekleyip tekrar denenecek ({deneme+1}/3)")
-                time.sleep(bekle)
-                continue
-            if r.status_code != 200:
-                print(f"  {sembol} ({ad}): cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
-                return []
-            veri = r.json()
-            break
-        except Exception as e:
-            print(f"  {sembol} ({ad}): cekilemedi ({e})")
-            return []
-    if veri is None:
-        print(f"  {sembol} ({ad}): 3 denemede de basarisiz (rate limit devam ediyor)")
-        return []
-    try:
-        result = veri["chart"]["result"][0]
-        zamanlar = result["timestamp"]
-        kapanislar = result["indicators"]["quote"][0]["close"]
-    except Exception as e:
-        print(f"  {sembol} ({ad}): yanit ayristirilamadi ({e})")
-        return []
-    from datetime import timezone as _tz
-    tekil = {}
-    for t, c in zip(zamanlar, kapanislar):
-        if c is None:
-            continue
-        ay = datetime.fromtimestamp(t, tz=_tz.utc).strftime("%Y-%m")
-        tekil[ay] = float(c)
-    duzeltme_uygulandi = False
-    if olcek_kontrolu:
-        for ay in list(tekil.keys()):
-            yeni = olcek_kontrolu(tekil[ay])
-            if yeni != tekil[ay]:
-                duzeltme_uygulandi = True
-            tekil[ay] = yeni
-    seri = [{"tarih": t, "deger": round(d, 4)} for t, d in tekil.items()]
-    seri.sort(key=lambda x: x["tarih"], reverse=True)
-    uyari = " [OLCEK DUZELTMESI UYGULANDI - kontrol et!]" if duzeltme_uygulandi else ""
-    print(f"  {sembol} ({ad}): {len(seri)} aylik gozlem (son: {seri[0]['tarih'] if seri else '-'}, deger: {seri[0]['deger'] if seri else '-'}){uyari}")
-    return seri
-
-
-def _tnx_olcek_kontrolu(deger):
-    """^TNX'in Yahoo'daki gosterim sayfasi degeri DOGRUDAN yuzde olarak
-    gosteriyor (orn 4.569 = %4.569) - 12 Tem 2026'da dogrulandi. Ama ham
-    chart API'sinin bunu farkli olcekte donma ihtimaline karsi: gercekci
-    ABD 10Y getirisi hicbir zaman %15'i gecmez (modern tarihte), eger
-    deger 15'ten buyukse x10 olcekli gelmis demektir, 10'a boluyoruz."""
-    return deger / 10 if deger > 15 else deger
 
 
 def fred_cek(seri_kod, api_key, baslangic):
@@ -186,7 +96,7 @@ def main():
 
     print("FRED makro serileri cekiliyor...")
     cikti_seriler = {}
-    with ThreadPoolExecutor(max_workers=11) as havuz:
+    with ThreadPoolExecutor(max_workers=13) as havuz:
         gelecekler = {havuz.submit(fred_cek, tanim["kod"], api_key, baslangic): (anahtar, tanim) for anahtar, tanim in SERILER.items() if not tanim.get("devre_disi")}
         for gelecek in as_completed(gelecekler):
             anahtar, tanim = gelecekler[gelecek]
@@ -202,28 +112,7 @@ def main():
                 "seri": seri,
             }
 
-    # Yahoo: TEK kimlik, SIRALI istekler (paralel + kendi-kendine-kimlik
-    # kombinasyonu 429'a sebep oldu - 13 Tem 2026'da dogrulandi).
-    print("Yahoo'dan DXY/US10Y/VIX/Nasdaq cekiliyor (tek kimlik, sirali)...")
-    yahoo_session, yahoo_crumb = _yahoo_kimlik()
-    yahoo_hedefler = [
-        ("dxy", "DX-Y.NYB", "Dolar Endeksi (ICE DXY, gerçek - 6 para birimi)", "endeks", None),
-        ("us10y", "^TNX", "ABD 10Y Tahvil (Yahoo)", "%", _tnx_olcek_kontrolu),
-        ("vix", "^VIX", "VIX (Volatilite Endeksi)", "endeks", None),
-        ("nasdaq", "^IXIC", "Nasdaq Composite", "endeks", None),
-    ]
-    for i, (anahtar, sembol, ad, birim, olcek_fn) in enumerate(yahoo_hedefler):
-        if i > 0:
-            time.sleep(3)  # ardisik istekler arasi nazik bekleme - rate limit'i tetiklememek icin
-        seri = yahoo_aylik_endeks_cek(sembol, ad, yahoo_session, yahoo_crumb, olcek_fn)
-        cikti_seriler[anahtar] = {"ad": ad, "seri_kod": f"Yahoo:{sembol}", "birim": birim, "seri": seri}
-
-    if cikti_seriler.get("dxy", {}).get("seri"):
-        print(f"    [KONTROL] Gercek DXY icin gercekci aralik ~95-108 olmali.")
-    if cikti_seriler.get("us10y", {}).get("seri"):
-        print(f"    [KONTROL] ABD 10Y icin gercekci aralik ~%2-6 olmali (10+ ise olcek hatasi).")
-
-    aktif_seri_sayisi = sum(1 for tanim in SERILER.values() if not tanim.get("devre_disi")) + 4  # +4 = Yahoo DXY/US10Y/VIX/Nasdaq
+    aktif_seri_sayisi = sum(1 for tanim in SERILER.values() if not tanim.get("devre_disi"))
     bos_olanlar = [k for k, v in cikti_seriler.items() if not v["seri"]]
     if len(bos_olanlar) == aktif_seri_sayisi:
         # TOPLAM basarisizlik: sessizce return etmek yerine gercek hata firlat.
