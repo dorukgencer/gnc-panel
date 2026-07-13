@@ -22,10 +22,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Kutuphaneleri yukle
-        run: pip install requests
+        run: pip install borsapy pandas
       - name: Haftalik makro verisi cek
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
         run: python makro_haftalik_cek.py
       - name: Kaydet
         run: |
