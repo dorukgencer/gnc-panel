@@ -31,6 +31,11 @@ HEDEF = KLASOR / "gnc-panel" / "degerleme_gecmis.json"
 EPS_KALEMI = "Hisse Başına Kazanç"
 OZKAYNAK_KALEMI = "Özkaynaklar"
 BANKA_OZKAYNAK_KALEMI = "XVI. ÖZKAYNAKLAR"
+# PD/Satislar icin - F/K'nin aksine ZARAR eden sirketleri de KAPSAR (hasilat
+# hemen hic negatif/sifir olmaz), F/K'deki "500 F/K vs 10 F/K" gibi asiri
+# saciklik sorununu da yasamaz (kazanc kalemlerinden cok daha az oynak).
+# Sektore gore isim degisebilir (banka vs sanayi) - birden fazla aday deneriz.
+HASILAT_KALEM_ADAYLARI = ["Hasılat", "Satış Gelirleri", "Esas Faaliyet Gelirleri"]
 
 
 def banka_kodlari():
@@ -98,6 +103,19 @@ def yillik_donemler(degerler):
     return sorted(yillik.items(), key=lambda x: x[0], reverse=True)
 
 
+def son_yillik_hasilat(kalemler):
+    """EPS ile AYNI mantik: en son ACIKLANAN YILLIK (/12) hasilat donemi.
+    Ceyreklik degil yillik kullaniyoruz ki mevsimsellik (bir sektorun Q4'u
+    hep guclu olabilir mesela) F/K ile ayni tutarlilikta karsilastirilsin."""
+    for aday in HASILAT_KALEM_ADAYLARI:
+        degerler = kalem_bul(kalemler, aday)
+        if degerler:
+            yillik = yillik_donemler(degerler)
+            if yillik:
+                return yillik[0][1]  # en yeni yillik donemin degeri
+    return None
+
+
 def fiyat_serisi_yukle(kod):
     yol = GECMIS_KLASOR / f"{kod}.json"
     if not yol.exists():
@@ -132,9 +150,11 @@ def main():
     sektor_fk_guncel = {}
     sektor_fk_5yil = {}
     sektor_pd_dd = {}
+    sektor_pd_satis = {}
     guncel_islenen = 0
     besyil_islenen = 0
     pd_dd_islenen = 0
+    pd_satis_islenen = 0
     pd_harita = pd_haritasi()
     bankalar = banka_kodlari()
     tum_sektor_kodlari = set()          # sektor haritasinda GORULEN her sektor (veri olsun olmasin)
@@ -165,39 +185,46 @@ def main():
         son_donem, son_eps = eps_yillik[0]
         if son_eps and son_eps > 0:
             fk = guncel_fiyat / son_eps
-            if 0 < fk < 500:
+            if 0 < fk < 150:
                 sektor_fk_guncel.setdefault(sektor, []).append(fk)
                 guncel_islenen += 1
         elif son_eps is not None and son_eps <= 0:
             negatif_epsli_sirket_sayisi[sektor] = negatif_epsli_sirket_sayisi.get(sektor, 0) + 1
 
+        # DUZELTME (13 Tem 2026): Turkiye'de 31.12.2023 ve sonrasi mali tablolar
+        # TMS 29 (enflasyon muhasebesi) geregi ZORUNLU olarak TUFE ile bugunun
+        # satin alma gucune yeniden ifade ediliyor - 2023 ONCESI rakamlar ise
+        # DUZELTILMEMIS, o zamanki NOMINAL haliyle duruyor. Bu ikisini ayni
+        # ortalamada karistirmak KARSILASTIRILAMAZ degerleri karsilastirmak
+        # demek - "10 yila cikaralim, daha saglam olsun" denemesi bu yuzden
+        # sapma degerlerini %700'lere tasidi (fizyolojik olarak imkansiz).
+        # Once "sirketin kendi serisinde aykiri deger" filtresi denendi ama bu
+        # YANLIS yillari eliyordu (dogru/yeni yillari degil), sorunu kotulestirdi -
+        # KALDIRILDI. Dogru cozum: 2023 ONCESINE HIC GITMEMEK, cunku o sinirin
+        # iki yakasi zaten karsilastirilabilir degil.
+        TMS29_SINIR_YIL = "2023"
         yillik_fk_listesi = []
-        for donem, eps in eps_yillik[:10]:
+        for donem, eps in eps_yillik:
             yil = donem[:4]
+            if yil < TMS29_SINIR_YIL:
+                continue
             fiyat = yil_sonu_fiyat.get(yil)
             if fiyat and eps and eps > 0:
                 fk_o_yil = fiyat / eps
-                if 0 < fk_o_yil < 500:
+                # DUZELTME (13 Tem 2026): tavan 500'den 150'ye indirildi - 150 uzeri
+                # F/K zaten pratikte "anlamsiz pahali" sayilir, o araligi veriye dahil
+                # etmenin tek etkisi ortalamayi yapay sekilde sismesi.
+                if 0 < fk_o_yil < 150:
                     yillik_fk_listesi.append(fk_o_yil)
 
-        # SAVUNMA (13 Tem 2026): 10 yila cikarinca bazi sektorlerde (XMADN,
-        # XMANA, XKMYA...) sapma %700'lere kadar cikti - fizyolojik olarak
-        # mantiksiz. Suphe: BIST'te sik gorulen "bedelsiz sermaye artirimi"
-        # (hisse bolunmesi) - eger gecmis fiyat bolunme-duzeltmeli geliyorsa
-        # ama o donemki EPS duzeltmesiz geliyorsa, eski yillarin F/K'si yapay
-        # sekilde sisip sirketin KENDI ortalamasini bozuyor. KESIN dogrulanana
-        # kadar, sirketin KENDI serisi icinde medyandan asiri sapan (4 kattan
-        # fazla/az) yillari o SIRKET icin DISLIYORUZ - hala supheli olabilir
-        # ama en azindan tek bir bozuk yilin sektor medyanini surklemesini
-        # onler.
-        if len(yillik_fk_listesi) >= 3:
-            kendi_medyan = statistics.median(yillik_fk_listesi)
-            temiz_liste = [f for f in yillik_fk_listesi if kendi_medyan/4 <= f <= kendi_medyan*4]
-            if len(temiz_liste) >= 2:
-                yillik_fk_listesi = temiz_liste
-
         if len(yillik_fk_listesi) >= 2:
-            sirket_ortalama = sum(yillik_fk_listesi) / len(yillik_fk_listesi)
+            # DUZELTME (13 Tem 2026): duz aritmetik ORTALAMA yerine MEDYAN - bir
+            # sirketin 2-3 yillik kendi serisinde TEK bir yil aykiri cikarsa (orn.
+            # [10, 12, 490]) aritmetik ortalama (170.7) o tek yildan asiri etkilenir,
+            # medyan (12) etkilenmez. "Bir sirket 500 FK, digeri 10 FK olunca
+            # ortalama bozuluyor" sikayeti - bu, sirketin KENDI serisinde de
+            # medyan kullanarak azaltilir (sektor capinda zaten medyan kullaniliyordu).
+            sirket_ortalama = statistics.median(yillik_fk_listesi)
             sektor_fk_5yil.setdefault(sektor, []).append(sirket_ortalama)
             besyil_islenen += 1
 
@@ -210,8 +237,19 @@ def main():
                 sektor_pd_dd.setdefault(sektor, []).append(pddd)
                 pd_dd_islenen += 1
 
-    if not sektor_fk_guncel:
-        raise SystemExit("Hicbir sektor icin guncel F/K hesaplanamadi. EPS kalem adi degismis olabilir.")
+        # PD/Satislar = Piyasa Degeri / Hasilat - F/K'nin aksine ZARAR eden
+        # sirketleri de KAPSAR (hasilat kazanc gibi sifira/negatife dusmez),
+        # F/K'deki asiri saciklik sorununu da cok daha az yasar. son_eps'in
+        # pozitif olma sarti YOK - bu metrigin butun amaci bu.
+        hasilat = son_yillik_hasilat(kalemler)
+        if pd_guncel and hasilat and hasilat > 0:
+            pd_satis = pd_guncel / hasilat
+            if 0 < pd_satis < 100:
+                sektor_pd_satis.setdefault(sektor, []).append(pd_satis)
+                pd_satis_islenen += 1
+
+    if not sektor_fk_guncel and not sektor_pd_dd and not sektor_pd_satis:
+        raise SystemExit("Hicbir sektor icin HICBIR metrik (F/K, PD/DD, PD/Satislar) hesaplanamadi. Kalem adlari degismis olabilir.")
 
     sonuc = {}
     # ONEMLI: sadece F/K hesaplanabilen sektorler degil, sektor haritasinda GORULEN
@@ -220,9 +258,12 @@ def main():
     for sektor in tum_sektor_kodlari:
         guncel_liste = sektor_fk_guncel.get(sektor, [])
         besyil_liste = sektor_fk_5yil.get(sektor, [])
+        pddd_liste = sektor_pd_dd.get(sektor, [])
+        pd_satis_liste = sektor_pd_satis.get(sektor, [])
+
         if len(guncel_liste) < 1:
             zarar_sayisi = negatif_epsli_sirket_sayisi.get(sektor, 0)
-            sonuc[sektor] = {
+            girdi = {
                 "fk_guncel_medyan": None,
                 "sirket_sayisi_guncel": 0,
                 "hesaplanamiyor_nedeni": (
@@ -230,7 +271,16 @@ def main():
                     if zarar_sayisi > 0 else "Bu sektör için finansal veri henüz yok."
                 ),
             }
+            # ONEMLI: F/K hesaplanamasa bile PD/DD ve PD/Satislar HALA
+            # hesaplanabilir olabilir - ikisi de zarar eden sirketleri
+            # KAPSAR, bu yuzden ayni "continue" ile atlanmamali.
+            if len(pddd_liste) >= 1:
+                girdi["pd_dd_medyan"] = round(statistics.median(pddd_liste), 2)
+            if len(pd_satis_liste) >= 1:
+                girdi["pd_satis_medyan"] = round(statistics.median(pd_satis_liste), 2)
+            sonuc[sektor] = girdi
             continue
+
         girdi = {
             "fk_guncel_medyan": round(statistics.median(guncel_liste), 2),
             "sirket_sayisi_guncel": len(guncel_liste),
@@ -245,9 +295,10 @@ def main():
             # kontrol ediliyordu, bu deligi kapatiyoruz.
             if len(besyil_liste) < 3:
                 girdi["guven_dusuk"] = True
-        pddd_liste = sektor_pd_dd.get(sektor, [])
         if len(pddd_liste) >= 1:
             girdi["pd_dd_medyan"] = round(statistics.median(pddd_liste), 2)
+        if len(pd_satis_liste) >= 1:
+            girdi["pd_satis_medyan"] = round(statistics.median(pd_satis_liste), 2)
         sonuc[sektor] = girdi
 
     cikti = {
@@ -255,13 +306,17 @@ def main():
         "not": (
             "F/K = Fiyat / Hisse Başına Kazanç (EPS), en son açıklanan YILLIK (/12) dönem kullanılır. "
             "PD/DD = Piyasa Değeri / Özkaynaklar, en son açıklanan (herhangi bir çeyrek) dönem kullanılır. "
+            "PD/Satışlar = Piyasa Değeri / en son açıklanan YILLIK Hasılat. F/K ve PD/DD'nin aksine "
+            "zarar eden şirketleri de kapsar (hasılat kâr gibi sıfıra/negatife düşmez) ve F/K'nin "
+            "yaşadığı aşırı saçıklığı (bir şirket F/K 10, diğeri F/K 500 gibi) çok daha az yaşar - "
+            "F/K hesaplanamayan sektörlerde bile PD/DD ve PD/Satışlar hâlâ dolu olabilir. "
             "Sektör değerleri, sektördeki şirketlerin medyanıdır. Negatif/sıfır kârlı şirketler F/K'ye "
-            "dahil edilmez. Tarihsel ortalama, her şirketin bulunabilen EN FAZLA 10 yılının (veri "
-            "yoksa daha azının) yıl-sonu fiyat/EPS oranlarının kendi içindeki ortalaması alınıp, "
-            "sektör genelinde medyanlanmasıyla bulunur - şirket ne kadar eski veriye sahipse o kadar "
-            "yıl kullanılır, en az 2 yıl gerekir. Bir şirketin KENDİ serisinde medyanından 4 kattan "
-            "fazla sapan yıllar (muhtemelen bölünme/bedelsiz sermaye artırımı kaynaklı veri "
-            "uyumsuzluğu) otomatik dışlanır. "
+            "dahil edilmez. Tarihsel ortalama, SADECE 2023 ve sonrası mali yıllardan hesaplanır - "
+            "31.12.2023 ve sonrası mali tablolar TMS 29 (enflasyon muhasebesi) gereği TÜFE ile bugünün "
+            "satın alma gücüne yeniden ifade edilirken, 2023 öncesi rakamlar düzeltilmemiş nominal "
+            "haliyle kalıyor; bu iki dönem birbiriyle karşılaştırılabilir olmadığı için 2023 öncesine "
+            "gidilmiyor. En az 2 yıl (2023, 2024, 2025) gerekir, bu yüzden bazı sektörlerde henüz "
+            "yeterli veri olmayabilir. "
             "Sapma % = (güncel F/K - tarihsel ortalama F/K) / tarihsel ortalama F/K × 100. "
             "Tek başına alım-satım sinyali değildir, eğitim ve araştırma amaçlıdır."
         ),
@@ -270,7 +325,7 @@ def main():
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
 
     print(f"\nTamamlandi: {len(sonuc)} sektor -> {HEDEF}")
-    print(f"  Guncel F/K icin islenen sirket: {guncel_islenen}, 5-yillik icin: {besyil_islenen}, PD/DD icin: {pd_dd_islenen}")
+    print(f"  Guncel F/K icin islenen sirket: {guncel_islenen}, 5-yillik icin: {besyil_islenen}, PD/DD icin: {pd_dd_islenen}, PD/Satislar icin: {pd_satis_islenen}")
     for sek, veri in sorted(sonuc.items(), key=lambda x: (x[1]["fk_guncel_medyan"] is None, x[1]["fk_guncel_medyan"] or 0)):
         if veri["fk_guncel_medyan"] is None:
             print(f"  {sek:8s} F/K=HESAPLANAMIYOR ({veri.get('hesaplanamiyor_nedeni','-')})")
