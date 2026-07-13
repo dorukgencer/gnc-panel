@@ -151,13 +151,14 @@ def bubble_yaricap(weight):
 
 
 def sektor_agirliklari():
-    """sektor_verisi.json'dan (varsa) GERCEK (halka aciklik duzeltmeli) agirliklari
-    okur. Eger bu veri henuz gelmemisse (HAO_PD teshisi bekleniyor), sektor_hisse_veri.json'daki
-    HAM piyasa degerlerinden (duzeltmesiz) YAKLASIK bir agirlik hesaplar - boylece
-    Endekse Katki ve baloncuk boyutu, gercek veri gelene kadar tamamen bos kalmaz.
-    Bu YAKLASIK deger, gercek HAO_PD-duzeltmeli agirliktan onemli olcude sapabilir
-    (bazi sektorlerde halka aciklik cok dusuk oldugu icin ham PD sisirilmis olabilir) -
-    cagiran taraf (rotasyon sayfasi) bunu acikca 'yaklasik' diye etiketlemeli."""
+    """Agirlik icin 3 kademeli oncelik:
+    1. sektor_verisi.json'da dogrudan bir 'agirlik' alani varsa (ileride eklenebilir) onu kullan.
+    2. sektor_hisse_veri.json'daki 'hao_pd' (halka aciklik oranina gore DUZELTILMIS
+       piyasa degeri, 12 Tem 2026'da PD'den gercekten farkli oldugu dogrulandi) alanindan
+       sektor bazinda toplayip normalize eder - bu GERCEK agirliktir, yaklasik degil.
+    3. hao_pd de yoksa, HAM 'pd' alanindan (duzeltmesiz) yaklasik hesaplar - SADECE bu
+       kademede sonuc 'yaklasik' olarak isaretlenir.
+    Donus: (agirlik_sozlugu, yaklasik_mi)"""
     try:
         veri = json.loads((KLASOR / "gnc-panel" / "sektor_verisi.json").read_text(encoding="utf-8"))
         gercek = {e["kod"]: e.get("agirlik") for e in veri.get("endeksler", []) if e.get("tip") == "sektor"}
@@ -165,9 +166,8 @@ def sektor_agirliklari():
         gercek = {}
 
     if any(v is not None for v in gercek.values()):
-        return gercek, False  # gercek veri var, yaklasik degil
+        return gercek, False  # dogrudan gercek veri var
 
-    # Yaklasik hesaba dus
     try:
         hisse_veri = json.loads((KLASOR / "gnc-panel" / "sektor_hisse_veri.json").read_text(encoding="utf-8"))
         sektor_harita = json.loads((KLASOR / "gnc-panel" / "sektor_hisseler.json").read_text(encoding="utf-8"))
@@ -176,20 +176,21 @@ def sektor_agirliklari():
             for h in hisseler:
                 kod_to_sektor[h["kod"]] = sektor_kod
 
-        sektor_pd_toplam = {}
-        genel_toplam = 0.0
-        for kod, v in hisse_veri.get("hisseler", {}).items():
-            pd = v.get("pd") if isinstance(v, dict) else None
-            sektor = kod_to_sektor.get(kod)
-            if pd and sektor:
-                sektor_pd_toplam[sektor] = sektor_pd_toplam.get(sektor, 0.0) + pd
-                genel_toplam += pd
+        # Once HAO_PD (gercek, halka aciklik duzeltmeli) dene
+        for alan, yaklasik_mi in [("hao_pd", False), ("pd", True)]:
+            sektor_toplam = {}
+            genel_toplam = 0.0
+            for kod, v in hisse_veri.get("hisseler", {}).items():
+                deger = v.get(alan) if isinstance(v, dict) else None
+                sektor = kod_to_sektor.get(kod)
+                if deger and sektor:
+                    sektor_toplam[sektor] = sektor_toplam.get(sektor, 0.0) + deger
+                    genel_toplam += deger
+            if genel_toplam:
+                sonuc = {kod: round(toplam / genel_toplam * 100, 2) for kod, toplam in sektor_toplam.items()}
+                return sonuc, yaklasik_mi
 
-        if not genel_toplam:
-            return {}, False
-
-        yaklasik = {kod: round(toplam / genel_toplam * 100, 2) for kod, toplam in sektor_pd_toplam.items()}
-        return yaklasik, True  # yaklasik oldugunu isaretle
+        return {}, False
     except Exception:
         return {}, False
 
