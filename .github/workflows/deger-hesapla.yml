@@ -1,8 +1,13 @@
-name: Sektor F/K degerleme hesapla (haftalik)
+name: Sektor F/K degerleme hesapla + gunluk arsiv
 
 on:
   schedule:
-    - cron: "30 5 * * 1"  # Pazartesi 05:30 UTC - rotasyon hesabindan hemen sonra
+    # Hafta ici her gun 15:30 UTC (18:30 TR) - borsa kapanisindan (18:00 TR)
+    # 30 dk sonra, piyasa_cek.py'nin son calismasi kesinlesmis olur.
+    # ONCEDEN sadece Pazartesi (haftalik) calisiyordu - ama F/K, GUNLUK degisen
+    # fiyata bagli oldugu icin gunluk arsiv (5 gun geriye gitme ozelligi)
+    # anlamli olsun diye artik hafta ici her gun calisiyor.
+    - cron: "30 15 * * 1-5"
   workflow_dispatch: {}
 
 permissions:
@@ -23,11 +28,13 @@ jobs:
           python-version: "3.12"
       - name: F/K hesapla (yeni veri cekmez, mevcut finansal+fiyat verisinden)
         run: python deger_hesapla.py
+      - name: Bugunun Endekse Katki + Degerleme durumunu arsivle (5 gun geriye gitme ozelligi icin)
+        run: python gunluk_arsiv.py
       - name: Kaydet
         run: |
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add gnc-panel/degerleme_gecmis.json
-          git commit -m "Sektor F/K degerlemesi guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          git add gnc-panel/degerleme_gecmis.json gnc-panel/gunluk_arsiv.json
+          git commit -m "Sektor F/K degerlemesi ve gunluk arsiv guncellendi" || { echo "Degisiklik yok"; exit 0; }
           git pull --rebase --autostash origin main
           git push
