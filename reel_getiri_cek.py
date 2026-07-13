@@ -50,19 +50,24 @@ _YAHOO_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 
 def _yahoo_kimlik():
     """Yahoo Finance cerez+crumb al (sektor.js/kuresel.js'teki AYNI mantik,
     Python tarafinda). Ons altin (XAUUSD=X) ve USD/TRY (TRY=X) icin kullanilir -
-    Turkiye kaynagina guven sinirli oldugu icin bu ikisi artik global/Yahoo'dan."""
+    Turkiye kaynagina guven sinirli oldugu icin bu ikisi artik global/Yahoo'dan.
+    TESHIS: basarisizlik durumunda durum kodu ve ham yaniti loglar (GitHub Actions'in
+    IP'sinin Yahoo tarafindan engellenip engellenmedigini gormek icin)."""
     session = requests.Session()
     session.headers.update({"User-Agent": _YAHOO_UA})
     try:
         session.get("https://fc.yahoo.com/", timeout=15)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"    [TESHIS] fc.yahoo.com cerez istegi hata: {e}")
     crumb = None
     try:
         r = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", timeout=15)
         if r.status_code == 200 and "<" not in r.text:
             crumb = r.text.strip()
-    except Exception:
+        else:
+            print(f"    [TESHIS] crumb alinamadi - durum kodu: {r.status_code}, ilk 150 karakter: {r.text[:150]!r}")
+    except Exception as e:
+        print(f"    [TESHIS] crumb istegi hata: {e}")
         pass
     return session, crumb
 
@@ -75,6 +80,9 @@ def _yahoo_aylik_cek(sembol, session, crumb):
         params["crumb"] = crumb
     try:
         r = session.get(url, params=params, timeout=30)
+        if r.status_code != 200:
+            print(f"  {sembol}: cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+            return []
         data = r.json()
         result = data["chart"]["result"][0]
         zamanlar = result["timestamp"]
