@@ -15,6 +15,7 @@ eklenmelidir - Netlify'daki ile ayni key kullanilabilir).
 
 import json
 import os
+import time
 import urllib.request
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -76,30 +77,46 @@ def _yahoo_kimlik():
     return session, crumb
 
 
-def yahoo_aylik_endeks_cek(sembol, ad, olcek_kontrolu=None):
+def yahoo_aylik_endeks_cek(sembol, ad, session, crumb, olcek_kontrolu=None):
     """Yahoo Finance'ten herhangi bir endeks/gosterge sembolunu AYLIK ozetlenmis
-    ceker (ay icindeki son islem gununun kapanisi). gercek_dxy_cek'in
-    genellestirilmis hali - DXY, US10Y, VIX, Nasdaq hepsi bunu kullanir.
+    ceker (ay icindeki son islem gununun kapanisi).
 
-    olcek_kontrolu: (deger) -> deger  seklinde opsiyonel bir fonksiyon.
-    Ornegin ^TNX icin "eger deger 15'ten buyukse muhtemelen x10 olcekli,
-    10'a bol" gibi bir SAVUNMA amacli duzeltme icin kullanilir - ciplak
-    gozle mantiksiz gorunen degerleri SESSIZCE degil, LOGLAYARAK duzeltir."""
-    session, crumb = _yahoo_kimlik()
+    ONEMLI: session/crumb DISARIDAN (main() icinde BIR KEZ alinip) verilir -
+    her sembol icin AYRI kimlik istegi YAPMIYORUZ. Once bunu paralel yapiyorduk
+    (4 sembol x kendi kimligi = saniyeler icinde 12 istek), Yahoo bunu "Too Many
+    Requests" (429) ile engelledi - dogrulandi (13 Tem 2026 log'u). Simdi TEK
+    kimlik + SIRALI istek + 429'da RETRY var.
+
+    olcek_kontrolu: (deger) -> deger  seklinde opsiyonel bir fonksiyon."""
     params = {"range": "20y", "interval": "1mo"}
     if crumb:
         params["crumb"] = crumb
-    try:
-        r = session.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}", params=params, timeout=30)
-        if r.status_code != 200:
-            print(f"  {sembol} ({ad}): cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+    veri = None
+    for deneme in range(3):
+        try:
+            r = session.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sembol}", params=params, timeout=30)
+            if r.status_code == 429:
+                bekle = 5 * (deneme + 1)
+                print(f"  {sembol} ({ad}): 429 (rate limit), {bekle}sn bekleyip tekrar denenecek ({deneme+1}/3)")
+                time.sleep(bekle)
+                continue
+            if r.status_code != 200:
+                print(f"  {sembol} ({ad}): cekilemedi - HTTP {r.status_code}, ilk 200 karakter: {r.text[:200]!r}")
+                return []
+            veri = r.json()
+            break
+        except Exception as e:
+            print(f"  {sembol} ({ad}): cekilemedi ({e})")
             return []
-        data = r.json()
-        result = data["chart"]["result"][0]
+    if veri is None:
+        print(f"  {sembol} ({ad}): 3 denemede de basarisiz (rate limit devam ediyor)")
+        return []
+    try:
+        result = veri["chart"]["result"][0]
         zamanlar = result["timestamp"]
         kapanislar = result["indicators"]["quote"][0]["close"]
     except Exception as e:
-        print(f"  {sembol} ({ad}): cekilemedi ({e})")
+        print(f"  {sembol} ({ad}): yanit ayristirilamadi ({e})")
         return []
     from datetime import timezone as _tz
     tekil = {}
@@ -167,16 +184,10 @@ def main():
     api_key = _key()
     baslangic = (datetime.now() - timedelta(days=365 * 20)).strftime("%Y-%m-%d")
 
-    print("FRED makro serileri cekiliyor (+ Yahoo'dan DXY/US10Y/VIX/Nasdaq)...")
+    print("FRED makro serileri cekiliyor...")
     cikti_seriler = {}
-    with ThreadPoolExecutor(max_workers=15) as havuz:
+    with ThreadPoolExecutor(max_workers=11) as havuz:
         gelecekler = {havuz.submit(fred_cek, tanim["kod"], api_key, baslangic): (anahtar, tanim) for anahtar, tanim in SERILER.items() if not tanim.get("devre_disi")}
-        yahoo_gelecekler = {
-            havuz.submit(yahoo_aylik_endeks_cek, "DX-Y.NYB", "Dolar Endeksi (ICE DXY, gerçek)"): "dxy",
-            havuz.submit(yahoo_aylik_endeks_cek, "^TNX", "ABD 10Y Tahvil", _tnx_olcek_kontrolu): "us10y",
-            havuz.submit(yahoo_aylik_endeks_cek, "^VIX", "VIX (Volatilite Endeksi)"): "vix",
-            havuz.submit(yahoo_aylik_endeks_cek, "^IXIC", "Nasdaq Composite"): "nasdaq",
-        }
         for gelecek in as_completed(gelecekler):
             anahtar, tanim = gelecekler[gelecek]
             try:
@@ -190,25 +201,27 @@ def main():
                 "birim": tanim["birim"],
                 "seri": seri,
             }
-        yahoo_birimler = {"dxy": "endeks", "us10y": "%", "vix": "endeks", "nasdaq": "endeks"}
-        yahoo_adlar = {"dxy": "Dolar Endeksi (ICE DXY, gerçek - 6 para birimi)", "us10y": "ABD 10Y Tahvil (Yahoo)", "vix": "VIX (Volatilite Endeksi)", "nasdaq": "Nasdaq Composite"}
-        for gelecek in as_completed(yahoo_gelecekler):
-            anahtar = yahoo_gelecekler[gelecek]
-            try:
-                seri = gelecek.result()
-            except Exception as e:
-                print(f"  Yahoo {anahtar}: hata {str(e)[:60]}")
-                seri = []
-            cikti_seriler[anahtar] = {
-                "ad": yahoo_adlar[anahtar],
-                "seri_kod": f"Yahoo",
-                "birim": yahoo_birimler[anahtar],
-                "seri": seri,
-            }
-        if cikti_seriler.get("dxy", {}).get("seri"):
-            print(f"    [KONTROL] Gercek DXY icin gercekci aralik ~95-108 olmali.")
-        if cikti_seriler.get("us10y", {}).get("seri"):
-            print(f"    [KONTROL] ABD 10Y icin gercekci aralik ~%2-6 olmali (10+ ise olcek hatasi).")
+
+    # Yahoo: TEK kimlik, SIRALI istekler (paralel + kendi-kendine-kimlik
+    # kombinasyonu 429'a sebep oldu - 13 Tem 2026'da dogrulandi).
+    print("Yahoo'dan DXY/US10Y/VIX/Nasdaq cekiliyor (tek kimlik, sirali)...")
+    yahoo_session, yahoo_crumb = _yahoo_kimlik()
+    yahoo_hedefler = [
+        ("dxy", "DX-Y.NYB", "Dolar Endeksi (ICE DXY, gerçek - 6 para birimi)", "endeks", None),
+        ("us10y", "^TNX", "ABD 10Y Tahvil (Yahoo)", "%", _tnx_olcek_kontrolu),
+        ("vix", "^VIX", "VIX (Volatilite Endeksi)", "endeks", None),
+        ("nasdaq", "^IXIC", "Nasdaq Composite", "endeks", None),
+    ]
+    for i, (anahtar, sembol, ad, birim, olcek_fn) in enumerate(yahoo_hedefler):
+        if i > 0:
+            time.sleep(3)  # ardisik istekler arasi nazik bekleme - rate limit'i tetiklememek icin
+        seri = yahoo_aylik_endeks_cek(sembol, ad, yahoo_session, yahoo_crumb, olcek_fn)
+        cikti_seriler[anahtar] = {"ad": ad, "seri_kod": f"Yahoo:{sembol}", "birim": birim, "seri": seri}
+
+    if cikti_seriler.get("dxy", {}).get("seri"):
+        print(f"    [KONTROL] Gercek DXY icin gercekci aralik ~95-108 olmali.")
+    if cikti_seriler.get("us10y", {}).get("seri"):
+        print(f"    [KONTROL] ABD 10Y icin gercekci aralik ~%2-6 olmali (10+ ise olcek hatasi).")
 
     aktif_seri_sayisi = sum(1 for tanim in SERILER.values() if not tanim.get("devre_disi")) + 4  # +4 = Yahoo DXY/US10Y/VIX/Nasdaq
     bos_olanlar = [k for k, v in cikti_seriler.items() if not v["seri"]]
