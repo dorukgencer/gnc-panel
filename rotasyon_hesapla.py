@@ -278,19 +278,9 @@ def main():
         "guncelleme": datetime.now(timezone.utc).isoformat(),
         "agirlik_yaklasik_mi": agirlik_yaklasik_mi,
         "not": (
-            "GNC Insight'in kendi sadelestirilmis rotasyon metodolojisi - "
-            "resmi/akademik RRG (Relative Rotation Graph) formulu degildir. "
-            f"X ekseni: {X_PENCERE_HAFTA} haftalik goreli guc (XU100'e gore yuzde puan fark). "
-            f"Y ekseni: bu farkin son {Y_PENCERE_HAFTA} haftadaki degisimi (momentum). "
-            "Grafikteki KONUM, ham puan degil, sektorler arasi SIRALAMAYA (rank) gore "
-            "olceklenmistir - boylece farklar kucuk olsa bile baloncuklar ceyrek alanini "
-            "tam kullanir. x_goreli_guc_13hf / y_momentum_4hf alanlari HAM puan degeridir. "
-            + ("AGIRLIK ALANI HENUZ HALKA ACIKLIK DUZELTMESI YAPILMAMIS HAM PIYASA DEGERINDEN "
-               "YAKLASIK HESAPLANMISTIR - HAO_PD verisi gelince gercek degerle degisecektir. "
-               if agirlik_yaklasik_mi else "") +
-            "Egitim ve arastirma amaclidir, yatirim tavsiyesi degildir."
+            "GNC Insight'in kendi sadelestirilmis rotasyon okumasi. Egitim ve "
+            "arastirma amaclidir, yatirim tavsiyesi degildir."
         ),
-        "parametreler": {"x_pencere_hafta": X_PENCERE_HAFTA, "y_pencere_hafta": Y_PENCERE_HAFTA, "trail_geri_hafta": TRAIL_GERI_HAFTA},
         "sektorler": sonuc,
     }
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
