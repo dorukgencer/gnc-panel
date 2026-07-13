@@ -25,6 +25,13 @@
   .ob-cetvel-uc { display: flex; justify-content: space-between; margin-top: 8px; }
   .ob-cetvel-uc span { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); }
   .ob-katmanlar { display: flex; gap: 0; margin-top: 20px; border-top: 1px solid var(--line); }
+  @media (max-width: 640px) {
+    .ob-katmanlar { flex-direction: column; }
+    .ob-katman { border-right: none !important; border-bottom: 1px solid var(--line); padding: 12px 0 12px 0 !important; }
+    .ob-katman:last-child { border-bottom: none; }
+    .ob-skor { text-align: left !important; margin-top: 10px; }
+    .ob-top { flex-direction: column; }
+  }
   .ob-katman { flex: 1; padding: 12px 16px 0 0; border-right: 1px solid var(--line); }
   .ob-katman:last-child { border-right: none; }
   .ob-katman:not(:first-child) { padding-left: 16px; }
@@ -33,13 +40,19 @@
   .ob-katman .ldesc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
 
   /* --- Sektör Rotasyonu özet şeridi --- */
-  .rot-serit { display: flex; align-items: center; gap: 20px; background: var(--surface-raised); border: 1px solid var(--line); padding: 14px 22px; margin-bottom: 22px; }
-  .rot-serit svg { flex-shrink: 0; }
-  .rot-serit .metin { flex: 1; }
-  .rot-serit .baslik { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
-  .rot-serit .not { font-size: 12px; color: var(--ink-soft); }
+  .rot-serit { display: flex; align-items: center; gap: 20px; background: var(--surface-raised); border: 1px solid var(--line); padding: 14px 22px; margin-bottom: 22px; flex-wrap: wrap; }
+  .rot-serit .rs-chart { flex-shrink: 0; }
+  .rot-serit .rs-body { flex: 1; min-width: 180px; }
+  .rot-serit .rs-eyebrow { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+  .rot-serit .rs-title { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .rot-serit .rs-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
   .rot-serit .git-btn { flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--copper-dark); border: 1px solid var(--copper-dark); padding: 8px 14px; white-space: nowrap; }
   .rot-serit .git-btn:hover { background: var(--copper-dark); color: #fff; text-decoration: none; }
+  @media (max-width: 560px) {
+    .rot-serit { flex-direction: column; align-items: flex-start; padding: 16px; }
+    .rot-serit .rs-body { min-width: 0; width: 100%; }
+    .rot-serit .git-btn { width: 100%; text-align: center; }
+  }
 
   /* --- 4 sütun: TEK BLOK, ic cizgilerle bolunmus (tasarim mockup'iyla birebir) --- */
   .pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); margin-bottom: 22px; }
@@ -344,14 +357,14 @@ function gaKuresel(makro){
 function gaTurkiye(faiz, deflator, makro){
   const kap = document.getElementById("turkiye-icerik");
   const faizSon = faiz && faiz.seri ? gaSonDeger(faiz.seri) : null;
-  const tufeYillik = makro && makro.seriler && makro.seriler.tufe ? gaSonDeger(makro.seriler.tufe.seri) : null;
+  const tufeYillik = deflator && deflator.deflatorler && deflator.deflatorler.tufe ? deflator.deflatorler.tufe["1y"] : null;
   const usdtry = deflator && deflator.deflatorler && deflator.deflatorler.usd ? deflator.deflatorler.usd.son : null;
   const rezerv = makro && makro.seriler && makro.seriler.tr_rezerv ? gaSonDeger(makro.seriler.tr_rezerv.seri) : null;
   kap.innerHTML = gaLedgerTablo(
     gaLedgerSatir("TCMB politika faizi", faizSon!==null ? faizSon.toFixed(2) + "%" : "—") +
     gaLedgerSatir("TÜFE (yıllık)", tufeYillik!==null ? tufeYillik.toFixed(1) + "%" : "—") +
     gaLedgerSatir("USD/TRY (dönem sonu)", usdtry!==null ? usdtry.toFixed(2) : "—") +
-    gaLedgerSatir("TCMB rezervi", rezerv!==null ? gncSayiKisalt(rezerv*1e6) + "$ (doğrulanıyor)" : "—")
+    gaLedgerSatir("TCMB rezervi (altın hariç)", rezerv!==null ? "$" + (rezerv/1000).toFixed(1) + " Mr" : "—")
   );
 }
 
