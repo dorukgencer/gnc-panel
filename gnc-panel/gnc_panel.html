@@ -341,12 +341,16 @@ function gaKuresel(makro){
   const kap = document.getElementById("kuresel-icerik");
   if(!makro || !makro.seriler){ kap.innerHTML = '<div class="gnc-durum-kutu">Makro veri henüz yok.</div>'; return; }
   const s = makro.seriler;
-  const dxy = gaSonDeger(s.dxy?.seri);
+  // NOT (13 Tem 2026): Gercek ICE DXY icin Yahoo Finance denendi ama GitHub
+  // Actions'in IP'sini surekli engelledi (429). Guvenilir bir alternatif
+  // bulunana kadar FED'in "genis" dolar endeksi (DTWEXBGS) kullaniliyor -
+  // bu GERCEK DXY DEGIL, farkli bir olcekte (tipik ~115-125 araligi).
+  const dxyGenis = gaSonDeger(s.dxy_genis?.seri);
   const fedLikidite = s.fed_net_likidite ? s.fed_net_likidite.seri[0] : null;
   const reelFaiz = gaSonDeger(s.us_reel_faiz?.seri);
   const vix = gaSonDeger(s.vix?.seri);
   kap.innerHTML = gaLedgerTablo(
-    gaLedgerSatir("DXY (Dolar Endeksi)", dxy!==null ? dxy.toFixed(1) : "—") +
+    gaLedgerSatir("Dolar Endeksi (FED, geniş)", dxyGenis!==null ? dxyGenis.toFixed(1) : "—") +
     gaLedgerSatir("FED net likidite", fedLikidite ? "$" + fedLikidite.deger_trilyon_usd.toFixed(2) + " Tr" : "—", "up") +
     gaLedgerSatir("ABD 10Y reel faiz", reelFaiz!==null ? reelFaiz.toFixed(2) + "%" : "—") +
     gaLedgerSatir("VIX", vix!==null ? vix.toFixed(1) : "—")
@@ -400,16 +404,19 @@ async function gaKripto(kriptoGlobal, etf){
 function gaBist(sektorVerisi, xu100Ma){
   const kap = document.getElementById("bist-icerik");
   let seviye = null, haftalik = null;
+  let enIyiSektor = null, enIyiDeger = null;
   if(sektorVerisi && sektorVerisi.endeksler){
     const xu = sektorVerisi.endeksler.find(e => e.kod === "XU100");
     if(xu){ seviye = xu.son_deger; haftalik = xu.h1; }
+    sektorVerisi.endeksler.filter(e => e.tip === "sektor" && e.h1 !== null && e.h1 !== undefined).forEach(e => {
+      if(enIyiDeger === null || e.h1 > enIyiDeger){ enIyiDeger = e.h1; enIyiSektor = e.ad; }
+    });
   }
-  const maMesafe = xu100Ma ? xu100Ma.mesafe_yuzde : null;
   kap.innerHTML = gaLedgerTablo(
     gaLedgerSatir("BIST100 (dönem sonu)", seviye!==null ? Math.round(seviye).toLocaleString("tr-TR") : "—") +
     gaLedgerSatir("Haftalık değişim", haftalik!==null ? gncYuzde(haftalik) : "—", haftalik!==null ? (haftalik>=0?"up":"down") : null) +
     gaLedgerSatir("Yabancı net akış (haftalık)", "— (kaynak araştırılıyor)") +
-    gaLedgerSatir("200 günlük ort. mesafe", maMesafe!==null ? gncYuzde(maMesafe) : "—")
+    gaLedgerSatir("Öne çıkan sektör (haftalık)", enIyiSektor!==null ? enIyiSektor + " (" + gncYuzde(enIyiDeger) + ")" : "—", enIyiDeger!==null ? "up" : null)
   );
 }
 
@@ -420,8 +427,21 @@ function gaTakvim(takvim){
     kap.innerHTML = '<div class="gnc-durum-kutu">Takvim verisi henüz yok.</div>';
     return;
   }
+  // Sadece BUGUNDEN itibaren 7 GUN icindeki etkinlikler - Ana Sayfa'nin
+  // "dönemsel/haftalık" felsefesine uygun. Tam takvim ayrı sayfada olacak.
+  const bugun = new Date();
+  bugun.setHours(0,0,0,0);
+  const yediGunSonra = new Date(bugun.getTime() + 7*24*60*60*1000);
+  const yakinEtkinlikler = takvim.gelecek.filter(e => {
+    const tarih = new Date(e.tarih);
+    return tarih >= bugun && tarih <= yediGunSonra;
+  });
+  if(!yakinEtkinlikler.length){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Önümüzdeki 7 gün içinde planlı etkinlik yok.</div>';
+    return;
+  }
   let html = "";
-  takvim.gelecek.slice(0, 6).forEach(e => {
+  yakinEtkinlikler.forEach(e => {
     html += `<div class="cal-item">` +
       `<div class="cal-date">${gncTarihKisa(e.tarih)}</div>` +
       `<div><div class="cal-title">${e.baslik}</div><div class="cal-tag">${e.etki} etki</div></div>` +
@@ -454,10 +474,14 @@ function gaOneCikan(oneCikan){
    ayarlanmistir (haftalik veri 2 gun eskiyse "eski" degil "taze" sayilir). */
 const VSP_KAYNAKLAR = [
   { ad: "BIST verisi (sektor_verisi)", dosya: "sektor_verisi.json", esik_saat: 24 },
+  { ad: "BIST hisse verisi (HAO_PD)",  dosya: "sektor_hisse_veri.json", esik_saat: 24 },
   { ad: "TÜFE/USD/Altın (deflator)",   dosya: "deflator.json",       esik_saat: 40*24 },
   { ad: "TCMB faizi",                  dosya: "faiz_gecmis.json",    esik_saat: 40*24 },
   { ad: "Makro (FRED)",                dosya: "makro_gecmis.json",   esik_saat: 48 },
+  { ad: "Makro haftalık (Makro Ortam)", dosya: "makro_haftalik.json", esik_saat: 10*24 },
   { ad: "Sektör Rotasyonu",            dosya: "rotasyon_gecmis.json",esik_saat: 10*24 },
+  { ad: "Rotasyon Değişim Günlüğü",    dosya: "rotasyon_degisim_log.json", esik_saat: 10*24 },
+  { ad: "Rotasyon Zaman Serisi",       dosya: "rotasyon_zaman_serisi.json", esik_saat: 10*24 },
   { ad: "F/K Değerleme",               dosya: "degerleme_gecmis.json",esik_saat: 10*24 },
   { ad: "Kripto ETF akışı",            dosya: "kripto_etf.json",     esik_saat: 48 },
   { ad: "Kripto global (BTC dom.)",    dosya: "kripto_global.json",  esik_saat: 24 },
