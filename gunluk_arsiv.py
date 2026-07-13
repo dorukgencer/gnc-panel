@@ -42,15 +42,32 @@ def main():
     except Exception:
         agirlik_harita = {}
 
+    # DUZELTME (13 Tem 2026): katki artik rotasyon_turetilmis.json'dan (SUNUCUDA
+    # hesaplanmis HAZIR deger) okunuyor - boylece arsiv ile canli gorunum AYNI
+    # hesabi kullanir, tutarsizlik olmaz. O dosya yoksa ham veriden turetilir.
+    turetilmis = None
+    try:
+        turetilmis = json.loads((KLASOR / "gnc-panel" / "rotasyon_turetilmis.json").read_text(encoding="utf-8"))
+    except Exception:
+        pass
+
     katki_gunu = {}
-    for e in sektor_verisi.get("endeksler", []):
-        if e.get("tip") != "sektor":
-            continue
-        katki_gunu[e["kod"]] = {
-            "ad": e.get("ad"),
-            "g1": e.get("g1"), "h1": e.get("h1"), "a1": e.get("a1"),
-            "agirlik": agirlik_harita.get(e["kod"]),
-        }
+    if turetilmis and turetilmis.get("endekse_katki"):
+        katki_gunu = dict(turetilmis["endekse_katki"])
+        print(f"  katki: rotasyon_turetilmis.json'dan {len(katki_gunu)} sektor (hazir degerler)")
+    else:
+        for e in sektor_verisi.get("endeksler", []):
+            if e.get("tip") != "sektor":
+                continue
+            agirlik = agirlik_harita.get(e["kod"])
+            girdi = {"ad": e.get("ad"), "agirlik": agirlik}
+            if agirlik is not None:
+                for p_ in ("g1", "h1", "a1"):
+                    g = e.get(p_)
+                    if g is not None:
+                        girdi[f"katki_{p_}"] = round((agirlik / 100.0) * g, 4)
+            katki_gunu[e["kod"]] = girdi
+        print(f"  katki: rotasyon_turetilmis.json yok, ham veriden turetildi ({len(katki_gunu)} sektor)")
 
     # --- Degerleme icin: degerleme_gecmis.json'u OLDUGU GIBI kopyala ---
     deger_gunu = {}
