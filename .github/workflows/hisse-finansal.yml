@@ -21,9 +21,10 @@ concurrency:
 jobs:
   guncelle:
     runs-on: ubuntu-latest
-    # EKLENDI: guvenlik agi. Script artik paralel (~45-60 dk beklenir) ama
-    # bir sorun cikip sonsuz beklerse butceyi tek basina bitirmesin diye sinir.
-    timeout-minutes: 90
+    # EKLENDI: guvenlik agi, 240 dk (4 saat) - eski sinirsiz davranisa yakin
+    # birakildi, ilk birkac calistirmada GERCEK suреyi gozlemleyip (Actions
+    # log'undan) sonra bu sayiyi gercek sureye gore asagi cekecegiz.
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
