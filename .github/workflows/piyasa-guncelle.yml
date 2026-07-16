@@ -2,10 +2,10 @@ name: Piyasa guncelle (sektor + hisse, TEK RUN)
 
 on:
   schedule:
-    # Hafta ici her 10 dk, TR 10:00-18:00 (UTC 07-15). Sektor ve hisse
-    # ARTIK TEK SCRIPT'TE (piyasa_cek.py) ve ayni zaman damgasiyla yazilir;
-    # boylece endeks ve icindeki hisseler HER ZAMAN ayni ana ait olur.
-    - cron: "*/10 7-15 * * 1-5"
+    # DEGISTI (dakika butcesi icin): 10 dk -> 30 dk. Panel "donemsel okuma"
+    # icin tasarlandi, gun ici 10 dk hassasiyete ihtiyac yok - 30 dk'da bir
+    # yeterince taze. Hafta ici TR 10:00-18:00 (UTC 07-15).
+    - cron: "*/30 7-15 * * 1-5"
   workflow_dispatch: {}
 
 permissions:
@@ -18,12 +18,13 @@ concurrency:
 jobs:
   guncelle:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
       - name: Kutuphaneleri yukle
         run: pip install isyatirimhisse pandas
       - name: Piyasa verisini cek (sektor + hisse, ayni anda)
