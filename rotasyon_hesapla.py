@@ -158,7 +158,22 @@ def sektor_agirliklari():
        sektor bazinda toplayip normalize eder - bu GERCEK agirliktir, yaklasik degil.
     3. hao_pd de yoksa, HAM 'pd' alanindan (duzeltmesiz) yaklasik hesaplar - SADECE bu
        kademede sonuc 'yaklasik' olarak isaretlenir.
-    Donus: (agirlik_sozlugu, yaklasik_mi)"""
+    Donus: (agirlik_sozlugu, yaklasik_mi)
+
+    GUVENLIK (19 Tem 2026 - Teknoloji sektorunun %37 gibi mantik disi bir agirlikla
+    ciktigi tespit edildi, kok neden HENUZ KESIN degil - olasi aday: XUTEK bir script'te
+    ("ana_grup", piyasa_cek.py) baska bir script'te ("sektor", sektor_hisseler_cek.py /
+    endeks_gecmis_cek.py) FARKLI siniflandiriliyor, bu tutarsizlik bir hisse-sektor
+    esleme hatasina yol acmis olabilir. KESIN teshis icin canli sektor_hisseler.json +
+    sektor_hisse_veri.json gerekiyor - burada SADECE belirti gizlenmesin diye bir
+    ust sinir/uyari ekleniyor, kok neden AYRICA arastirilmali.):
+    Gercek BIST'te tek bir sektorun agirligi tarihsel olarak ~20-25%'i asmadi
+    (en agir sektor genelde Bankacilik/Sinai gruplari). Bu sinirin UZERINDE bir
+    deger hesaplanirsa, veri SESSIZCE panele gitmez - once GURULTULU sekilde
+    loglanir, boylece Actions log'unda hemen fark edilir (18:00'de piyasa
+    kapandiktan sonra sessizce yanlis veri birikmesin diye)."""
+    MANTIKSAL_UST_SINIR = 30.0  # yuzde - bu deger asilirsa UYARI (veri yine de yazilir, ama GORULEBILIR sekilde isaretlenir)
+
     try:
         veri = json.loads((KLASOR / "gnc-panel" / "sektor_verisi.json").read_text(encoding="utf-8"))
         gercek = {e["kod"]: e.get("agirlik") for e in veri.get("endeksler", []) if e.get("tip") == "sektor"}
@@ -174,6 +189,13 @@ def sektor_agirliklari():
         kod_to_sektor = {}
         for sektor_kod, hisseler in sektor_harita.get("hisseler", {}).items():
             for h in hisseler:
+                if h["kod"] in kod_to_sektor and kod_to_sektor[h["kod"]] != sektor_kod:
+                    # GUVENLIK: bir hisse BIRDEN FAZLA sektor listesinde varsa
+                    # (orn. ASELS hem XUTEK hem baska bir listede) sessizce
+                    # UZERINE YAZMAK yerine logla - bu tam da agirlik
+                    # sismesine yol acabilecek turden bir veri tutarsizligi.
+                    print(f"  [UYARI] {h['kod']} birden fazla sektorde listeleniyor: "
+                          f"once {kod_to_sektor[h['kod']]}, simdi {sektor_kod} (SONUNCU kazanir)")
                 kod_to_sektor[h["kod"]] = sektor_kod
 
         # Once HAO_PD (gercek, halka aciklik duzeltmeli) dene
@@ -188,6 +210,14 @@ def sektor_agirliklari():
                     genel_toplam += deger
             if genel_toplam:
                 sonuc = {kod: round(toplam / genel_toplam * 100, 2) for kod, toplam in sektor_toplam.items()}
+                # GUVENLIK: mantik disi buyuk agirliklari GURULTULU logla (veri
+                # YAZILIR ama Actions log'unda acikca gorulur - sessiz hata yok).
+                for kod, agirlik in sonuc.items():
+                    if agirlik > MANTIKSAL_UST_SINIR:
+                        print(f"  [CIDDI UYARI] {kod} agirligi %{agirlik} - tarihsel olarak "
+                              f"mantik disi buyuk (ust sinir: %{MANTIKSAL_UST_SINIR}). "
+                              f"Muhtemel veri hatasi - sektor_hisseler.json'da bu sektore "
+                              f"yanlislikla buyuk bir hisse eslenmis olabilir, ELLE kontrol et.")
                 return sonuc, yaklasik_mi
 
         return {}, False
@@ -283,6 +313,39 @@ def main():
         ),
         "sektorler": sonuc,
     }
+
+    # GUVENLIK (19 Tem 2026 - endeks_gecmis'te AYNI GUN icinde bazi sektorler
+    # yeterli gecmisi kaybedip "atlanan" listesine dusebiliyor, orn. Is Yatirim
+    # kesintisi sirasinda kismi veri gelirse. Bu durumda YENI dosya, ONCEKI
+    # dosyadan CIDDI sekilde daha az sektor icerirse (orn. 20 -> 8), ESKI
+    # (daha tam) veri SESSIZCE ustune yazilmiyor - "eski veri korundu" deseni
+    # (piyasa_cek.py/sektor_hisseler_cek.py'de zaten kullanilan AYNI ilke).
+    # Boylece "Bugun" gorunumu, arsivlenmis gecmis gunlerden DAHA AZ sektor
+    # gostermeye BASLAMAZ - Doruk'un 19 Tem'de fark ettigi sorunun tekrarini
+    # onler. Esik: yeni sektor sayisi, eskinin %60'inin ALTINDAYSA reddedilir.
+    REGRESYON_ESIGI = 0.6
+    if HEDEF.exists():
+        try:
+            eski = json.loads(HEDEF.read_text(encoding="utf-8"))
+            eski_sayi = len(eski.get("sektorler", []))
+            if eski_sayi > 0 and len(sonuc) < eski_sayi * REGRESYON_ESIGI:
+                # raise SystemExit KULLANILDI (sessiz return DEGIL) - boylece bu
+                # Actions adimi KIRMIZI X ile basarisiz gorunur, log'a bakmadan
+                # da fark edilir. Diger scriptlerdeki AYNI desen (makro_cek.py
+                # "HICBIR seri gelmedi" gibi) - toplam basarisizlikta GURULTULU
+                # ol, kismi basarisizlikta sessiz "eski veri korundu" yeterli.
+                raise SystemExit(
+                    f"CIDDI UYARI: Yeni hesap sadece {len(sonuc)} sektor icin sonuc uretti, "
+                    f"onceki dosyada {eski_sayi} sektor vardi (%{round(len(sonuc)/eski_sayi*100)}). "
+                    f"Muhtemelen veri kaynagi (Is Yatirim) kismen kesintideydi. ESKI (daha tam) veri "
+                    f"KORUNUYOR, bu calismanin ciktisi yazilmadi. Kok nedeni duzelttikten sonra "
+                    f"tekrar calistir (endeks-gecmis.yml -> rotasyon-hesapla.yml sirasiyla)."
+                )
+        except SystemExit:
+            raise
+        except Exception as e:
+            print(f"  Onceki dosya karsilastirilamadi ({e}), yine de yaziliyor.")
+
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
 
     print(f"Tamamlandi: {len(sonuc)} sektor -> {HEDEF}")
