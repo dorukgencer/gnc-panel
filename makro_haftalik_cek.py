@@ -47,6 +47,7 @@ HEDEF = KLASOR / "gnc-panel" / "makro_haftalik.json"
 
 FRED_SERILER = {
     "us10y_nominal":  "DGS10",
+    "us10y_real_resmi": "DFII10",  # Hazine'nin resmi TIPS-bazli reel getirisi (dogrudan, hesaplamaya gerek yok)
     "vix":            "VIXCLS",
     "dxy_genis":      "DTWEXBGS",  # GERCEK ICE DXY DEGIL - bkz. dosya basi aciklama
     "breakeven":      "T10YIE",    # us10y_real'i hesaplamak icin ara deger, ciktiya dahil edilmez
@@ -191,11 +192,17 @@ def main():
     series["dxy_genis"] = haftalik_orneklemeye_indirge(fred_ham.get("dxy_genis", []), hedef_tarihler)
     series["usdtry"] = haftalik_orneklemeye_indirge(usdtry_ham, hedef_tarihler)
 
-    breakeven_hf = haftalik_orneklemeye_indirge(fred_ham.get("breakeven", []), hedef_tarihler)
-    series["us10y_real"] = [
-        round(a - b, 3) if a is not None and b is not None else None
-        for a, b in zip(series["us10y_nominal"], breakeven_hf)
-    ]
+    # ONCELIK: DFII10 (Hazine'nin resmi TIPS reel getirisi). Gelmezse
+    # DGS10 - Breakeven YAKLASIK yontemine yedekte dus.
+    us10y_real_resmi_hf = haftalik_orneklemeye_indirge(fred_ham.get("us10y_real_resmi", []), hedef_tarihler)
+    if any(v is not None for v in us10y_real_resmi_hf):
+        series["us10y_real"] = us10y_real_resmi_hf
+    else:
+        breakeven_hf = haftalik_orneklemeye_indirge(fred_ham.get("breakeven", []), hedef_tarihler)
+        series["us10y_real"] = [
+            round(a - b, 3) if a is not None and b is not None else None
+            for a, b in zip(series["us10y_nominal"], breakeven_hf)
+        ]
 
     walcl_hf = haftalik_orneklemeye_indirge(fred_ham.get("fed_walcl", []), hedef_tarihler)
     tga_hf = haftalik_orneklemeye_indirge(fred_ham.get("fed_tga", []), hedef_tarihler)
