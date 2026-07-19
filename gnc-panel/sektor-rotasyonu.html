@@ -56,7 +56,7 @@
   .sr-gunluk-satir:last-child { border-bottom: none; }
   .sr-gunluk-tarih { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-faint); width: 42px; flex-shrink: 0; padding-top: 2px; }
 
-  .sr-katki-satir { display: grid; grid-template-columns: 130px 1fr 70px; align-items: center; gap: 10px; padding: 6px 0; font-size: 12px; }
+  .sr-katki-satir { display: grid; grid-template-columns: 130px 1fr 110px 70px; align-items: center; gap: 10px; padding: 6px 0; font-size: 12px; }
   .sr-katki-bar-track { position: relative; height: 16px; background: var(--line); border-radius: 3px; }
   .sr-katki-bar-orta { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--ink-faint); }
   .sr-katki-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
@@ -64,9 +64,15 @@
   .sr-katki-bar.negatif { right: 50%; background: var(--down); }
   .sr-katki-bar.ucuz { right: 50%; background: var(--up); }
   .sr-katki-bar.pahali { left: 50%; background: var(--down); }
+  .sr-katki-agirlik { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-faint); text-align: right; white-space: nowrap; }
 
-  .sr-deger-satir { display: grid; grid-template-columns: 150px 0.7fr 230px; align-items: center; gap: 10px; padding: 8px 0; font-size: 12px; }
-  .sr-eksen-deger { display: grid; grid-template-columns: 150px 0.7fr 230px; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-deger-satir { display: grid; grid-template-columns: 170px minmax(140px,320px) 1fr; align-items: center; gap: 16px; padding: 10px 0; font-size: 12px; border-bottom: 1px dashed var(--line); }
+  .sr-deger-satir:last-of-type { border-bottom: none; }
+  .sr-eksen-deger { display: grid; grid-template-columns: 170px minmax(140px,320px) 1fr; gap: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-deger-metrikler { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; row-gap: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; }
+  .sr-deger-metrikler .dm-etiket { color: var(--ink-faint); font-size: 9.5px; text-transform: uppercase; letter-spacing: .03em; margin-right: 5px; }
+  .sr-deger-metrikler .dm-sapma { grid-column: 1 / 3; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line); font-size: 13px; font-weight: 700; }
+  .sr-deger-metrikler .dm-not { grid-column: 1 / 3; font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; color: var(--ink-faint); }
   .sr-detay-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 16px; height: 16px; border-radius: 4px;
@@ -74,11 +80,12 @@
     color: var(--ink-faint); font-size: 10px; text-decoration: none; flex-shrink: 0;
   }
   .sr-detay-btn:hover { background: var(--copper-dark); border-color: var(--copper-dark); color: #fff; text-decoration: none; }
-  .sr-eksen-katki { display: grid; grid-template-columns: 130px 1fr 70px; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .sr-eksen-katki { display: grid; grid-template-columns: 130px 1fr 110px 70px; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-faint); margin-bottom: 10px; }
   .sr-eksen-orta { display: flex; justify-content: space-between; }
   @media (max-width: 800px) {
     .sr-katki-satir, .sr-deger-satir { grid-template-columns: 1fr; gap: 3px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
     .sr-katki-satir .sr-katki-bar-track, .sr-deger-satir .sr-katki-bar-track { order: 2; }
+    .sr-katki-agirlik { text-align: left; }
   }
 
   .sr-isi-tablo { border-collapse: collapse; font-size: 11.5px; width: 100%; }
@@ -268,6 +275,7 @@
             <p>Her sektörün BIST100'ün toplam hareketine ne kadar katkı yaptığını gösterir. Formül basittir: <b>ağırlık × getiri</b>.</p>
             <ul>
               <li>%3 yükselen ama %1 ağırlıklı bir sektörün etkisi düşüktür; %1 yükselen ama %25 ağırlıklı Bankacılık'ın etkisi çok daha büyük olabilir.</li>
+              <li>Sağdaki % değer, sektörün BIST100 içindeki güncel ağırlığıdır (katkı puanından bağımsız, ham pay).</li>
               <li>Tüm Sektörler tablosundaki Günlük/Haftalık/Aylık düğmesi bu paneli de günceller.</li>
               <li>Bu panel, Genel Bakış sayfasındaki toplam BIST100 değişiminin <b>hangi sektörlerden geldiğini</b> açıklar.</li>
             </ul>
@@ -377,14 +385,15 @@ async function srBaslat(){
   gunSeciciKur("katki-gun-secici", (g) => { SR_KATKI_GUN = g; srCizKatki(); });
   gunSeciciKur("deger-gun-secici", (g) => { SR_DEGER_GUN = g; srCizDeger(); });
 
-  // MADDE 8: Her bolumun VERI ZAMANI - hangi dosyadan beslendigini ve
-  // o dosyanin ne zaman uretildigini acikca gosterir.
-  veriZamaniYaz("saat-veri-zaman", rotasyon && rotasyon.guncelleme);
-  veriZamaniYaz("gunluk-veri-zaman", gunluk && gunluk.guncelleme);
-  veriZamaniYaz("tablo-veri-zaman", sektorVerisi && sektorVerisi.guncelleme);
-  veriZamaniYaz("deger-veri-zaman", deger && deger.guncelleme);
-  veriZamaniYaz("katki-veri-zaman", (turetilmis && turetilmis.guncelleme) || (sektorVerisi && sektorVerisi.guncelleme));
-  veriZamaniYaz("isi-veri-zaman", (turetilmis && turetilmis.guncelleme) || (isi && isi.guncelleme));
+  // Her bolumun VERI ZAMANI - hangi dosyadan beslendigini ve
+  // o dosyanin ne zaman uretildigini acikca gosterir. (Fonksiyon artik
+  // ortak.js'te - gncVeriZamani - Genel Bakis sayfasiyla PAYLASILIYOR.)
+  gncVeriZamani("saat-veri-zaman", rotasyon && rotasyon.guncelleme);
+  gncVeriZamani("gunluk-veri-zaman", gunluk && gunluk.guncelleme);
+  gncVeriZamani("tablo-veri-zaman", sektorVerisi && sektorVerisi.guncelleme);
+  gncVeriZamani("deger-veri-zaman", deger && deger.guncelleme);
+  gncVeriZamani("katki-veri-zaman", (turetilmis && turetilmis.guncelleme) || (sektorVerisi && sektorVerisi.guncelleme));
+  gncVeriZamani("isi-veri-zaman", (turetilmis && turetilmis.guncelleme) || (isi && isi.guncelleme));
 
   // Donem etiketi: rotasyon verisinin guncelleme tarihinden turet
   try{
@@ -418,20 +427,6 @@ function srFiltrelenmisListe(){
 }
 
 /* ============ GÜN SEÇİCİ (Endekse Katkı + Değerleme için 5 gün geriye) ============ */
-function veriZamaniYaz(elemanId, isoTarih){
-  const el = document.getElementById(elemanId);
-  if(!el) return;
-  if(!isoTarih){ el.textContent = "Veri zamanı bilinmiyor"; return; }
-  try {
-    const d = new Date(isoTarih);
-    const gun = String(d.getDate()).padStart(2,'0');
-    const ay = String(d.getMonth()+1).padStart(2,'0');
-    const saat = String(d.getHours()).padStart(2,'0');
-    const dk = String(d.getMinutes()).padStart(2,'0');
-    el.textContent = `Veri güncellenme: ${gun}.${ay}.${d.getFullYear()} ${saat}:${dk}`;
-  } catch(e){ el.textContent = "Veri zamanı okunamadı"; }
-}
-
 /* Gun secici - PARAMETRELI: her panel (Endekse Katki, Degerleme) KENDI
    secicisini kurar, biri digerini ETKILEMEZ (Doruk'un istegi).
    geriCagir(gun) -> secilen gun ("YYYY-MM-DD") ya da null (bugun). */
@@ -723,53 +718,60 @@ function srCizDeger(){
   let html = '<div class="sr-eksen-deger"><span></span><div class="sr-eksen-orta"><span>← Ucuz</span><span>Tarihsel Ortalama</span><span>Pahalı →</span></div><span></span></div>';
   liste.forEach(s => {
     const azSirket = s.guven_dusuk ? ' <span style="color:var(--ink-faint);font-weight:400;">(az şirket)</span>' : '';
-    // MADDE 5: sektor ADI da gorunsun (sadece kod anlasilmiyordu). Ad
-    // rotasyon verisinden geliyor - kod ustte, ad altinda kucuk punto.
+    // sektor ADI da gorunsun (sadece kod anlasilmiyordu). Ad rotasyon
+    // verisinden geliyor - kod ustte, ad altinda kucuk punto.
     const sektorAd = SR_ROTASYON.find(r => r.kod === s.kod)?.ad || "";
-    // MADDE 9: sektor detay sayfasina git (sayfa henuz yok - hazir olunca
-    // bu link calisacak, simdilik ayni sektorler sayfasina yonlendiriyor).
+    // sektor detay sayfasina git (sayfa henuz yok - hazir olunca bu link
+    // calisacak, simdilik ayni sektorler sayfasina yonlendiriyor).
     const isimHucre = `<div>` +
       `<div style="display:flex;align-items:center;gap:4px;"><span style="font-weight:600;">${s.kod}</span>${azSirket}` +
         `<a href="sektorler.html?sektor=${s.kod}" title="${sektorAd || s.kod} sektöründeki hisseleri gör" class="sr-detay-btn">→</a>` +
       `</div>` +
       (sektorAd ? `<div style="font-size:10px;color:var(--ink-faint);line-height:1.3;margin-top:1px;">${sektorAd}</div>` : '') +
     `</div>`;
-    const pdSatisParca = s.pd_satis_medyan!==undefined ? `<b>PD/Satışlar</b> ${s.pd_satis_medyan}` : '';
+
+    // YENIDEN DUZENLENDI: metrikler artik dikey siralama yerine 2 sutunlu
+    // kompakt bir grid'de (sr-deger-metrikler) - sag tarafta bosluk kalmasin
+    // diye grid genisligi de yeniden ayarlandi (bkz. <style>).
     if(s.sapma_yuzde !== undefined){
       const genislikYuzde = Math.min(50, Math.abs(s.sapma_yuzde) / maxAbs * 50);
       const pahali = s.sapma_yuzde >= 0;
-      const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
+      const pdddHucre = s.pd_dd_medyan!==undefined ? `<div><span class="dm-etiket">PD/DD</span>${s.pd_dd_medyan}</div>` : '<div></div>';
+      const pdSatisHucre = s.pd_satis_medyan!==undefined ? `<div><span class="dm-etiket">PD/Satış</span>${s.pd_satis_medyan}</div>` : '<div></div>';
       html += `<div class="sr-deger-satir">` +
         isimHucre +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div>` +
           `<div class="sr-katki-bar ${pahali?'pahali':'ucuz'}" style="width:${genislikYuzde}%"></div></div>` +
-        `<div class="mono num" style="text-align:right;font-size:11.5px;line-height:1.6;">` +
-          `<div><b>F/K</b> ${s.fk_guncel_medyan} &nbsp;·&nbsp; <b>ort.</b> ${s.fk_5yil_ortalama_medyan}</div>` +
-          `<div>${pdddSatir}${pdddSatir&&pdSatisParca?' &nbsp;·&nbsp; ':''}${pdSatisParca}</div>` +
-          `<div><strong class="${gncYon(-s.sapma_yuzde)}" style="font-size:12.5px;"><b>Sapma</b> ${s.sapma_yuzde>=0?'+':''}${s.sapma_yuzde}%</strong></div>` +
+        `<div class="sr-deger-metrikler">` +
+          `<div><span class="dm-etiket">F/K</span>${s.fk_guncel_medyan}</div>` +
+          `<div><span class="dm-etiket">Ort.</span>${s.fk_5yil_ortalama_medyan}</div>` +
+          pdddHucre + pdSatisHucre +
+          `<div class="dm-sapma ${gncYon(-s.sapma_yuzde)}">Sapma ${s.sapma_yuzde>=0?'+':''}${s.sapma_yuzde}%</div>` +
         `</div>` +
       `</div>`;
     } else if(s.fk_guncel_medyan !== null && s.fk_guncel_medyan !== undefined){
       // Guncel F/K var ama tarihsel karsilastirma yok (yeterli 2023-sonrasi yil yok)
-      const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
+      const pdddHucre = s.pd_dd_medyan!==undefined ? `<div><span class="dm-etiket">PD/DD</span>${s.pd_dd_medyan}</div>` : '<div></div>';
+      const pdSatisHucre = s.pd_satis_medyan!==undefined ? `<div><span class="dm-etiket">PD/Satış</span>${s.pd_satis_medyan}</div>` : '<div></div>';
       html += `<div class="sr-deger-satir">` +
         isimHucre +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div></div>` +
-        `<div class="mono num" style="text-align:right;font-size:11.5px;color:var(--ink-faint);line-height:1.6;">` +
-          `<div><b>F/K</b> ${s.fk_guncel_medyan}</div>` +
-          `<div>${pdddSatir}${pdddSatir&&pdSatisParca?' &nbsp;·&nbsp; ':''}${pdSatisParca}</div>` +
-          `<div>Tarihsel karşılaştırma için yeterli yıl yok</div>` +
+        `<div class="sr-deger-metrikler">` +
+          `<div><span class="dm-etiket">F/K</span>${s.fk_guncel_medyan}</div><div></div>` +
+          pdddHucre + pdSatisHucre +
+          `<div class="dm-not">Tarihsel karşılaştırma için yeterli yıl yok</div>` +
         `</div>` +
       `</div>`;
     } else {
       // F/K HIC hesaplanamiyor (zarar/veri yok) - ama PD/DD ve PD/Satislar hala dolu olabilir
-      const pdddSatir = s.pd_dd_medyan!==undefined ? `<b>PD/DD</b> ${s.pd_dd_medyan}` : '';
+      const pdddHucre = s.pd_dd_medyan!==undefined ? `<div><span class="dm-etiket">PD/DD</span>${s.pd_dd_medyan}</div>` : '<div></div>';
+      const pdSatisHucre = s.pd_satis_medyan!==undefined ? `<div><span class="dm-etiket">PD/Satış</span>${s.pd_satis_medyan}</div>` : '<div></div>';
       html += `<div class="sr-deger-satir">` +
         isimHucre +
         `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div></div>` +
-        `<div class="mono num" style="text-align:right;font-size:11.5px;color:var(--ink-faint);line-height:1.6;">` +
-          `<div>${s.hesaplanamiyor_nedeni || 'F/K hesaplanamıyor'}</div>` +
-          `<div>${pdddSatir}${pdddSatir&&pdSatisParca?' &nbsp;·&nbsp; ':''}${pdSatisParca}</div>` +
+        `<div class="sr-deger-metrikler">` +
+          pdddHucre + pdSatisHucre +
+          `<div class="dm-not">${s.hesaplanamiyor_nedeni || 'F/K hesaplanamıyor'}</div>` +
         `</div>` +
       `</div>`;
     }
@@ -858,14 +860,22 @@ function srCizKatki(){
   const maxAbs = Math.max(...liste.map(s => Math.abs(s.katki)), 0.01);
   const periyotAd = { g1: "Bugün", h1: "Bu hafta", a1: "Bu ay" }[SR_PERIYOT];
 
-  let html = '<div class="sr-eksen-katki"><span></span><div class="sr-eksen-orta"><span>← Endeksi aşağı çekti</span><span>0</span><span>Endeksi yukarı taşıdı →</span></div><span></span></div>';
+  // BASLIK SATIRINA agirlik sutunu eklendi
+  let html = '<div class="sr-eksen-katki"><span></span><div class="sr-eksen-orta"><span>← Endeksi aşağı çekti</span><span>0</span><span>Endeksi yukarı taşıdı →</span></div><span style="text-align:right;">Ağırlık</span><span></span></div>';
   liste.forEach(s => {
     const genislikYuzde = Math.min(50, Math.abs(s.katki) / maxAbs * 50);
     const pozitif = s.katki >= 0;
+    // AGIRLIK GOSTERIMI EKLENDI: her satirin sag tarafinda, katki puanindan
+    // (pp) BAGIMSIZ olarak sektorun BIST100 icindeki HAM agirlik yuzdesi
+    // gorunur. Veri zaten rotasyon_turetilmis.json'daki her sektor kaydinda
+    // vardi (endekse_katki_hesapla() "agirlik" alanini zaten yaziyordu),
+    // sadece ekranda gosterilmiyordu - Doruk'un istegi.
+    const agirlikMetni = (s.agirlik !== null && s.agirlik !== undefined) ? s.agirlik.toFixed(1) + '%' : '—';
     html += `<div class="sr-katki-satir">` +
       `<span>${s.ad}</span>` +
       `<div class="sr-katki-bar-track"><div class="sr-katki-bar-orta"></div>` +
         `<div class="sr-katki-bar ${pozitif?'pozitif':'negatif'}" style="width:${genislikYuzde}%"></div></div>` +
+      `<span class="sr-katki-agirlik">${agirlikMetni}</span>` +
       `<span class="mono num ${gncYon(s.katki)}">${s.katki>=0?'+':''}${s.katki.toFixed(2)} pp</span>` +
     `</div>`;
   });
@@ -1017,18 +1027,28 @@ function pngIndirmeButonlariEkle(){
     btn.addEventListener("click", async () => {
       if(btn.classList.contains("yukleniyor")) return;
       btn.classList.add("yukleniyor");
-      // MADDE 7: Mobilde indirilen PNG "yarim" kaliyordu (dar ekran genisligi).
+      // Mobilde indirilen PNG "yarim" kaliyordu (dar ekran genisligi).
       // Cozum: render ANINDA karti gecici olarak MASAUSTU genisligine (1100px)
       // zorluyoruz, PNG alindiktan sonra ESKI HALINE geri donduruyoruz.
       // Kullanici bu degisikligi goremez (islem milisaniyeler surer).
+      // EKLENDI: genislik degisiminden SONRA, html2canvas cagrilmadan ONCE
+      // iki animasyon karesi (rAF) bekleniyor - boylece tarayicinin YENI
+      // genislige gore YENIDEN DIZILIMI (reflow/layout) GERCEKTEN bitirdigi
+      // garanti edilir. Onceki halde stil degisimiyle html2canvas cagrisi
+      // AYNI ANDA (senkron) oluyordu - cogu tarayicida sorun cikmiyordu ama
+      // yavas cihazlarda/karmasik SVG'lerde (Rotasyon Saati grafigi gibi)
+      // yeniden dizilim tamamlanmadan yakalama basliyor olabilirdi, bu da
+      // "yarim/kirpik" ciktinin bir baska olasi nedeniydi.
       const MASAUSTU_GENISLIK = 1100;
       const eskiStil = { width: kart.style.width, minWidth: kart.style.minWidth, maxWidth: kart.style.maxWidth };
       const mobilMi = window.innerWidth < MASAUSTU_GENISLIK;
+      const ikiKareBekle = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       try {
         if(mobilMi){
           kart.style.width = MASAUSTU_GENISLIK + "px";
           kart.style.minWidth = MASAUSTU_GENISLIK + "px";
           kart.style.maxWidth = "none";
+          await ikiKareBekle();
         }
         const canvas = await html2canvas(kart, {
           backgroundColor: "#F8FAF6",
