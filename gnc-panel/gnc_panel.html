@@ -106,6 +106,11 @@
   .vsp-nokta.eski { background: var(--ochre); }
   .vsp-nokta.cok-eski { background: var(--brick); }
   .vsp-nokta.yok { background: var(--ink-faint); }
+
+  /* Pillar/alt-kart veri-zamani: sr-veri-zaman (ortak.css) ile ayni gorsel
+     dil ama sag hizali degil, kart icine daha az dikey bosluk birakiyor -
+     4 sutunlu yogun bir sayfada sr-veri-zaman'in ust bosluğu fazla geliyordu. */
+  .pillar .sr-veri-zaman, .lower-col .sr-veri-zaman { margin-top: 8px; padding-top: 6px; font-size: 9.5px; }
 </style>
 </head>
 <body>
@@ -146,21 +151,25 @@
           <div class="pillar-head"><span class="pillar-title font-display">Küresel Likidite</span><a class="pillar-link" href="makro-ortam.html">Detay →</a></div>
           <div class="pillar-note" id="kuresel-not">Dolar, ABD reel faizi ve FED'in net likiditesi — risk iştahının küresel arka planı.</div>
           <div id="kuresel-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+          <div class="sr-veri-zaman" id="kuresel-veri-zaman"></div>
         </div>
         <div class="pillar">
           <div class="pillar-head"><span class="pillar-title font-display">Türkiye Makro</span><a class="pillar-link" href="makro-ortam.html">Detay →</a></div>
           <div class="pillar-note">TCMB faizi, enflasyon ve kur — yerel ortamın temel göstergeleri.</div>
           <div id="turkiye-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+          <div class="sr-veri-zaman" id="turkiye-veri-zaman"></div>
         </div>
         <div class="pillar">
           <div class="pillar-head"><span class="pillar-title font-display">Kripto Ortamı</span><a class="pillar-link" href="kripto-ortam.html">Detay →</a></div>
           <div class="pillar-note">BTC fiyatı, dominans ve ETF akışları — kripto risk iştahının nabzı.</div>
           <div id="kripto-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+          <div class="sr-veri-zaman" id="kripto-veri-zaman"></div>
         </div>
         <div class="pillar">
           <div class="pillar-head"><span class="pillar-title font-display">BIST Görünümü</span><a class="pillar-link" href="bist-gorunumu.html">Detay →</a></div>
           <div class="pillar-note">XU100 seviyesi ve teknik konumu — yerel piyasanın anlık durumu.</div>
           <div id="bist-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+          <div class="sr-veri-zaman" id="bist-veri-zaman"></div>
         </div>
       </div>
 
@@ -169,6 +178,7 @@
         <div class="lower-col">
           <div class="section-title font-display">Makro Takvim <a href="takvim.html">Tümü →</a></div>
           <div id="takvim-icerik"><div class="gnc-durum-kutu">Yükleniyor…</div></div>
+          <div class="sr-veri-zaman" id="takvim-veri-zaman"></div>
         </div>
         <div class="lower-col">
           <div class="section-title font-display">Bu Haftanın Öne Çıkanları <a href="raporlar.html">Tüm notlar →</a></div>
@@ -214,6 +224,28 @@ async function anaSayfaBaslat(){
   gaTakvim(takvim);
   gaOneCikan(oneCikan);
   gaVeriSagligi();
+
+  // Her sutunun/kartin ALTINA "Veri guncellenme" zamani (Doruk'un istegi:
+  // "her veri icin ne zaman guncellendigini yazmamiz kesin olarak sart").
+  // Birden fazla kaynaktan beslenen kartlarda (Turkiye Makro, Kripto,
+  // BIST) EN ESKI kaynagin zamani gosterilir - kullaniciyi "her sey taze"
+  // diye yanlis rahatlatmamak icin.
+  gncVeriZamani("kuresel-veri-zaman", makro && makro.guncelleme);
+  gncVeriZamani("turkiye-veri-zaman", gncEnEskiTarih(
+    faiz && faiz.guncelleme, deflator && deflator.guncelleme, makro && makro.guncelleme
+  ));
+  gncVeriZamani("kripto-veri-zaman", gncEnEskiTarih(
+    kriptoGlobal && kriptoGlobal.guncelleme, etf && etf.guncelleme
+  ));
+  gncVeriZamani("bist-veri-zaman", gncEnEskiTarih(
+    sektorVerisi && sektorVerisi.guncelleme, xu100Ma && xu100Ma.guncelleme
+  ));
+  gncVeriZamani("takvim-veri-zaman", takvim && takvim.guncelleme);
+  // NOT: "Bu Haftanin One Cikanlari" kartina bilerek zaman etiketi EKLENMEDI -
+  // bu dosya (one_cikanlar.json) otomatik cekilmiyor, ELLE yaziliyor
+  // (editoryal not). Bir "guncelleme" alani olmayabilir, "veri zamani
+  // bilinmiyor" yazmak burada yanlis sinyal verir (otomatik veri kaynagi
+  // degil, kasitli olarak elle girilen bir not).
 }
 
 function gaSonDeger(seri){
@@ -347,6 +379,9 @@ function gaKuresel(makro){
   // bu GERCEK DXY DEGIL, farkli bir olcekte (tipik ~115-125 araligi).
   const dxyGenis = gaSonDeger(s.dxy_genis?.seri);
   const fedLikidite = s.fed_net_likidite ? s.fed_net_likidite.seri[0] : null;
+  // 19 Tem 2026: reel faiz artik ONCELIKLE DFII10'dan (Hazine'nin resmi TIPS
+  // getirisi) geliyor - us_reel_faiz alani makro_cek.py tarafindan hazir
+  // dolduruluyor, burada hangi yontemden geldigini JS bilmesine gerek yok.
   const reelFaiz = gaSonDeger(s.us_reel_faiz?.seri);
   const vix = gaSonDeger(s.vix?.seri);
   kap.innerHTML = gaLedgerTablo(
