@@ -35,6 +35,7 @@ SERILER = {
     # SUNULMAMALI, acikca "FED genis endeksi" diye etiketlenmeli.
     "dxy_genis":  {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (FED, geniş - 26 para birimi)", "birim": "endeks (2006=100)"},
     "us10y":      {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
+    "us10y_reel": {"kod": "DFII10",           "ad": "ABD 10Y Reel Getiri (TIPS, resmi)", "birim": "%"},
     "vix":        {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
     "nasdaq":     {"kod": "NASDAQCOM",        "ad": "Nasdaq Composite",        "birim": "endeks"},
     "tr10y":      {"kod": "IRLTLT01TRM156N",  "ad": "Türkiye 10Y Tahvil",      "birim": "%", "devre_disi": True},  # HTTP 400 - FRED'de bu seri gecerli degil (12 Tem 2026'da dogrulandi), guvenilir alternatif bulunamadi
@@ -122,19 +123,32 @@ def main():
         # yaratmasin diye sessiz UYARI olarak kaliyor (asagida).
         raise SystemExit("HICBIR seri gelmedi (FRED tamamen erisilemez oldu ya da API key gecersiz). Dosya yazilmadi, mevcut korunuyor.")
 
-    # ABD 10Y reel faiz = US10Y - Breakeven enflasyon (ikisi de aylik, ayni aylari eslestir)
-    us10y_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("us10y", {}).get("seri", [])}
-    breakeven_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("breakeven", {}).get("seri", [])}
-    ortak_aylar = sorted(set(us10y_map) & set(breakeven_map), reverse=True)
-    reel_faiz_seri = [{"tarih": ay, "deger": round(us10y_map[ay] - breakeven_map[ay], 3)} for ay in ortak_aylar]
-    if reel_faiz_seri:
+    # ABD 10Y reel faiz: ONCELIK DFII10 (Hazine'nin RESMI TIPS-bazli reel getiri
+    # serisi - hesaplamaya gerek yok, dogrudan yayinlanan gercek deger). DFII10
+    # herhangi bir sebeple gelmezse (FRED erisim sorunu vb.) DGS10 - Breakeven
+    # enflasyon YAKLASIK hesabina yedekte dusuluyor - iki yontem de ayni "reel
+    # faiz" kavramini olcuyor ama DFII10 resmi, digeri turetilmis/yaklasik.
+    if cikti_seriler.get("us10y_reel", {}).get("seri"):
         cikti_seriler["us_reel_faiz"] = {
-            "ad": "ABD 10Y Reel Faiz (US10Y - Breakeven)",
-            "seri_kod": "hesaplanmis: DGS10 - T10YIE",
+            "ad": "ABD 10Y Reel Faiz (DFII10, resmi TIPS getirisi)",
+            "seri_kod": "DFII10",
             "birim": "%",
-            "seri": reel_faiz_seri,
+            "seri": cikti_seriler["us10y_reel"]["seri"],
         }
-        print(f"  ABD 10Y reel faiz (hesaplanmis): {len(reel_faiz_seri)} aylik gozlem")
+        print(f"  ABD 10Y reel faiz: DFII10 (resmi) kullanildi, {len(cikti_seriler['us10y_reel']['seri'])} aylik gozlem")
+    else:
+        us10y_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("us10y", {}).get("seri", [])}
+        breakeven_map = {s["tarih"]: s["deger"] for s in cikti_seriler.get("breakeven", {}).get("seri", [])}
+        ortak_aylar = sorted(set(us10y_map) & set(breakeven_map), reverse=True)
+        reel_faiz_seri = [{"tarih": ay, "deger": round(us10y_map[ay] - breakeven_map[ay], 3)} for ay in ortak_aylar]
+        if reel_faiz_seri:
+            cikti_seriler["us_reel_faiz"] = {
+                "ad": "ABD 10Y Reel Faiz (YAKLASIK: DGS10 - Breakeven, DFII10 gelmedigi icin yedek yontem)",
+                "seri_kod": "hesaplanmis: DGS10 - T10YIE",
+                "birim": "%",
+                "seri": reel_faiz_seri,
+            }
+            print(f"  ABD 10Y reel faiz (YEDEK yontem, DFII10 gelmedi): {len(reel_faiz_seri)} aylik gozlem")
 
     # Fed net likidite = WALCL - WTREGEN - RRPONTSYD*1000
     # KRITIK: WALCL ve WTREGEN milyon $ cinsinden, RRPONTSYD MILYAR $ cinsinden geliyor
