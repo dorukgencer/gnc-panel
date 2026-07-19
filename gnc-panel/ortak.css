@@ -237,6 +237,15 @@ a:hover { text-decoration: underline; }
   margin-top: 10px; line-height: 1.6;
 }
 
+/* ---------- Veri güncellenme zamanı (kart altı, paylaşılan) ---------- */
+.sr-veri-zaman {
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--ink-faint);
+  text-align: right;
+}
+
 /* ---------- Basit tablo ---------- */
 table.gnc-tablo { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 12.5px; }
 table.gnc-tablo thead th {
