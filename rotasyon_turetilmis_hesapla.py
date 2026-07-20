@@ -119,6 +119,52 @@ def isi_haritasi_hesapla():
     )
 
 
+def gecmis_yil_tutarlilik_kontrolu(yeni_isi, eski_hedef_yolu):
+    """GUVENLIK (19 Tem 2026 - Doruk'un fark ettigi anormallik: Fin. Kiralama
+    Faktoring'in 2026 (devam eden yil) bileşik getirisi birkaç gun icinde
+    ~%460'tan ~%300'e degisti. Bu, ICINDE BULUNULAN yil icin bir olcude
+    beklenebilir (yeni ay verisi eklendikce degisir), AMA TAMAMLANMIS
+    (gecmis) yillarin ayni sekilde degismesi GERCEK bir veri/hesap hatasi
+    olurdu - o yillar donmus olmali. Bu fonksiyon TAMAMLANMIS yillari
+    (icinde bulunulan yil HARIC) onceki calismayla karsilastirir, fark
+    varsa GURULTULU uyarir - boylece boyle bir anormallik sessizce
+    birikmez, Actions log'unda hemen gorulur."""
+    try:
+        eski = json.loads(eski_hedef_yolu.read_text(encoding="utf-8"))
+    except Exception:
+        return  # ilk calistirma ya da eski dosya okunamiyor - karsilastirma yapilamaz, sorun degil
+
+    eski_yillik = eski.get("isi_haritasi", {}).get("yillik", {})
+    if not eski_yillik:
+        return
+
+    bu_yil = str(datetime.now(timezone.utc).year)
+    TOLERANS_PUAN = 3.0  # yuzde puan - yuvarlama farkindan buyuk, gercek degisimden kucuk bir esik
+    uyari_sayisi = 0
+
+    for kod, eski_veri in eski_yillik.items():
+        yeni_veri = yeni_isi.get("yillik", {}).get(kod, {})
+        eski_getiriler = eski_veri.get("getiriler", {})
+        yeni_getiriler = yeni_veri.get("getiriler", {})
+        for yil, eski_deger in eski_getiriler.items():
+            if yil == bu_yil:
+                continue  # devam eden yil icin degisim BEKLENEN/NORMAL, atla
+            yeni_deger = yeni_getiriler.get(yil)
+            if yeni_deger is None or eski_deger is None:
+                continue
+            if abs(yeni_deger - eski_deger) > TOLERANS_PUAN:
+                print(f"  [CIDDI UYARI] {kod} ({eski_veri.get('ad', kod)}) - {yil} yili TAMAMLANMIS "
+                      f"bir yil olmasina ragmen getirisi degisti: %{eski_deger} -> %{yeni_deger} "
+                      f"(fark: {round(yeni_deger - eski_deger, 1)} puan). Gecmis yillar DONMUS olmali - "
+                      f"bu, sektor_gecmis.json'un yanlis/eksik veriyle YENIDEN yazildigina isaret "
+                      f"ediyor olabilir (orn. Is Yatirim kesintisi sirasinda kismi veri gelmis olabilir). "
+                      f"ELLE kontrol et, sektor_gecmis_cek.py'nin son calismasini incele.")
+                uyari_sayisi += 1
+
+    if uyari_sayisi:
+        print(f"  Toplam {uyari_sayisi} tamamlanmis yil-sektor kombinasyonunda beklenmedik degisim tespit edildi.")
+
+
 def main():
     print("Endekse Katki hesaplaniyor...")
     katki, agirlik_yaklasik_mi = endekse_katki_hesapla()
@@ -130,6 +176,9 @@ def main():
 
     if not katki and not isi:
         raise SystemExit("Ne katki ne isi haritasi hesaplanabildi - girdi dosyalari eksik olabilir.")
+
+    print("Gecmis yillarin tutarliligi kontrol ediliyor (tamamlanmis yillar donmus mu)...")
+    gecmis_yil_tutarlilik_kontrolu(isi, HEDEF)
 
     cikti = {
         "guncelleme": datetime.now(timezone.utc).isoformat(),
