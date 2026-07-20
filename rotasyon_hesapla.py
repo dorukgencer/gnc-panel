@@ -201,23 +201,64 @@ def sektor_agirliklari():
         # Once HAO_PD (gercek, halka aciklik duzeltmeli) dene
         for alan, yaklasik_mi in [("hao_pd", False), ("pd", True)]:
             sektor_toplam = {}
+            sektor_hisse_sayisi = {}  # HANGI sektorun KAC hisseden toplandigini izler
             genel_toplam = 0.0
+            genel_hisse_sayisi = 0
             for kod, v in hisse_veri.get("hisseler", {}).items():
                 deger = v.get(alan) if isinstance(v, dict) else None
                 sektor = kod_to_sektor.get(kod)
                 if deger and sektor:
                     sektor_toplam[sektor] = sektor_toplam.get(sektor, 0.0) + deger
+                    sektor_hisse_sayisi[sektor] = sektor_hisse_sayisi.get(sektor, 0) + 1
                     genel_toplam += deger
+                    genel_hisse_sayisi += 1
             if genel_toplam:
-                sonuc = {kod: round(toplam / genel_toplam * 100, 2) for kod, toplam in sektor_toplam.items()}
-                # GUVENLIK: mantik disi buyuk agirliklari GURULTULU logla (veri
-                # YAZILIR ama Actions log'unda acikca gorulur - sessiz hata yok).
-                for kod, agirlik in sonuc.items():
-                    if agirlik > MANTIKSAL_UST_SINIR:
-                        print(f"  [CIDDI UYARI] {kod} agirligi %{agirlik} - tarihsel olarak "
-                              f"mantik disi buyuk (ust sinir: %{MANTIKSAL_UST_SINIR}). "
-                              f"Muhtemel veri hatasi - sektor_hisseler.json'da bu sektore "
-                              f"yanlislikla buyuk bir hisse eslenmis olabilir, ELLE kontrol et.")
+                # GUVENLIK (19 Tem 2026 - Teknoloji sektorunun %37 gibi mantik
+                # disi bir agirlikla ciktigi tespit edildi): EN OLASI mekanizma
+                # su - eger piyasa_cek.py kismen basarisiz olup COK sayida
+                # hissenin hao_pd/pd degeri o an icin eksikse, genel_toplam
+                # (payda) YAPAY OLARAK KUCULUR, elde kalan az sayida hisse
+                # (orn. ASELS gibi buyuk, HER_ZAMAN garanti dahil edilen bir
+                # hisse) toplam agirligin cok buyuk bir yuzdesini SANAL olarak
+                # alir - HESAP DOGRU ama GIRDI EKSIK. Bunu YAKALAMAK icin: her
+                # sektorun agirliginin, KAC hisseden toplandigina bakiliyor -
+                # cok az hisseden (orn. 1-2) gelen buyuk bir agirlik supheli
+                # sayilir ve GURULTULU loglanir + yaklasik olarak isaretlenir.
+                toplam_kapsanan_hisse = genel_hisse_sayisi
+                toplam_beklenen_hisse = sum(len(h) for h in sektor_harita.get("hisseler", {}).values())
+                kapsam_orani = (toplam_kapsanan_hisse / toplam_beklenen_hisse * 100) if toplam_beklenen_hisse else 0
+
+                sonuc = {}
+                supheli_var = False
+                for kod, toplam in sektor_toplam.items():
+                    agirlik = round(toplam / genel_toplam * 100, 2)
+                    sonuc[kod] = agirlik
+                    hisse_sayisi = sektor_hisse_sayisi.get(kod, 0)
+                    # Az hisseden (<=3) gelen BUYUK (>%15) bir agirlik - klasik
+                    # "az veriden sisen agirlik" belirtisi.
+                    if agirlik > 15.0 and hisse_sayisi <= 3:
+                        supheli_var = True
+                        print(f"  [CIDDI UYARI] {kod} agirligi %{agirlik} SADECE {hisse_sayisi} hisseden "
+                              f"hesaplandi - bu sayida az hisseyle bu kadar buyuk bir agirlik cikmasi supheli, "
+                              f"muhtemelen digerlerinin verisi o an eksikti. Genel veri kapsami: "
+                              f"{toplam_kapsanan_hisse}/{toplam_beklenen_hisse} hisse (%{round(kapsam_orani)}).")
+                    # Hisse sayisi yeterli olsa BILE, tarihsel olarak hicbir
+                    # sektorun asmadigi genel bir ust sinir (MANTIKSAL_UST_SINIR) - ek katman.
+                    elif agirlik > MANTIKSAL_UST_SINIR:
+                        supheli_var = True
+                        print(f"  [CIDDI UYARI] {kod} agirligi %{agirlik} - tarihsel olarak mantik disi "
+                              f"buyuk (ust sinir: %{MANTIKSAL_UST_SINIR}), {hisse_sayisi} hisseden hesaplandi. "
+                              f"ELLE kontrol et.")
+
+                if kapsam_orani < 70:
+                    print(f"  [CIDDI UYARI] Agirlik hesabi sadece %{round(kapsam_orani)} hisse kapsamiyla "
+                          f"yapildi ({toplam_kapsanan_hisse}/{toplam_beklenen_hisse}) - sektor_hisse_veri.json "
+                          f"muhtemelen kismen eksik/eski (piyasa_cek.py'nin son calismasi kismi basarisiz olmus "
+                          f"olabilir). Sonuclar YAKLASIK olarak isaretleniyor, guvenilmez sayilmali.")
+                    yaklasik_mi = True
+                elif supheli_var:
+                    yaklasik_mi = True
+
                 return sonuc, yaklasik_mi
 
         return {}, False
