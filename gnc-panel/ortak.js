@@ -9,6 +9,7 @@ const GNC_NAV_GRUPLARI = [
     { id: "genel-bakis",      ad: "Genel Bakış",       href: "gnc_panel.html" },
     { id: "ortam-modelleme",  ad: "Ortam Modelleme",   href: "ortam-modelleme.html" },
     { id: "sektor-rotasyonu", ad: "Sektör Rotasyonu",  href: "sektor-rotasyonu.html" },
+    { id: "sirketler",        ad: "Şirketler",         href: "sirketler.html" },
   ]},
   { grup: "Değerlendirme", ogeler: [
     { id: "makro-ortam",  ad: "Makro Ortam",   href: "makro-ortam.html" },
@@ -108,34 +109,6 @@ function gncTarihKisa(tarihStr) {
   const d = new Date(tarihStr);
   if (isNaN(d)) return tarihStr;
   return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" }).toUpperCase();
-}
-
-/** Bir elemana "Veri güncellenme: DD.MM.YYYY HH:MM" yazar. Kaynak dosya
- * yoksa/okunamiyorsa acikca belirtir - sessizce bos birakmaz. Tum sayfalar
- * (Genel Bakis + Sektor Rotasyonu) bu TEK fonksiyonu paylasir, boylece
- * "her veri icin ne zaman guncellendigi" tutarli sekilde gosterilir. */
-function gncVeriZamani(elemanId, isoTarih) {
-  const el = document.getElementById(elemanId);
-  if (!el) return;
-  if (!isoTarih) { el.textContent = "Veri zamanı bilinmiyor"; return; }
-  try {
-    const d = new Date(isoTarih);
-    const gun = String(d.getDate()).padStart(2, '0');
-    const ay = String(d.getMonth() + 1).padStart(2, '0');
-    const saat = String(d.getHours()).padStart(2, '0');
-    const dk = String(d.getMinutes()).padStart(2, '0');
-    el.textContent = `Veri güncellenme: ${gun}.${ay}.${d.getFullYear()} ${saat}:${dk}`;
-  } catch (e) { el.textContent = "Veri zamanı okunamadı"; }
-}
-
-/** Bir kart BIRDEN FAZLA kaynaktan besleniyorsa (orn. Turkiye Makro: faiz +
- * deflator + makro), bunlarin EN ESKISINI doner - kullaniciyi yaniltmamak
- * icin ("en taze" degil "en eski/en muhafazakar" gosterilir). Gecersiz/eksik
- * tarihler otomatik elenir. */
-function gncEnEskiTarih(...isoTarihler) {
-  const gecerli = isoTarihler.filter(t => t && !isNaN(new Date(t)));
-  if (!gecerli.length) return null;
-  return gecerli.reduce((enEski, t) => new Date(t) < new Date(enEski) ? t : enEski);
 }
 
 /** Tum sayfadaki (i) tooltip ikonlarini TIKLAMA ile ac/kapa (hover degil -
