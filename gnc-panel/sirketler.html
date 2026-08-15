@@ -218,13 +218,33 @@ function enflasyonCarpani(donem){
 
 /* Bir kalemin dönem->değer haritasını, seçili dönemler için diziye çevirir.
    ENFLASYON açıksa her değeri kendi çeyreğinin çarpanıyla bugüne taşır. */
-function seriCikar(kalem, donemler){
+function seriHam(kalem, donemler){
+  // HAM değerler - enflasyon UYGULANMAZ. Kümülatif çıkarma işlemi bu ham
+  // değerler üzerinde yapılmalı (bkz. enflasyonUygula açıklaması).
   if(!kalem) return donemler.map(() => null);
   return donemler.map(d => {
     const v = kalem.degerler[d];
-    if(v === undefined || v === null) return null;
-    return v * enflasyonCarpani(d);
+    return (v === undefined || v === null) ? null : v;
   });
+}
+
+/* KRİTİK İŞLEM SIRASI (16 Ağu 2026'da bulunan hata):
+   Enflasyon düzeltmesi, kümülatiften çeyrekliğe çevirmeden SONRA
+   uygulanmalıdır. Önce uygulanırsa şu olur:
+     Q2 = H1×m(6) − Q1×m(3)     ← YANLIŞ, m(3) > m(6) olduğu için fazla çıkarır
+   Doğrusu:
+     Q2 = (H1 − Q1) × m(6)       ← önce çıkar, sonra taşı
+   Yanlış sıra değerleri KÜÇÜLTÜYORDU: AGHOL 2026Ç1'de enflasyon açıkken
+   755,99 Mr, kapalıyken 788,95 Mr çıkıyordu — düzeltme değeri küçültemez,
+   bu imkânsız. Finvest'te aynı dönem 757,5 → 842,1 (büyüyor, doğru yön). */
+function enflasyonUygula(seri, donemler){
+  return seri.map((v, i) => (v === null || v === undefined) ? null : v * enflasyonCarpani(donemler[i]));
+}
+
+/* Geriye dönük uyumluluk: enflasyonu doğrudan uygulayan eski sarmalayıcı.
+   SADECE kümülatif olmayan (stok/bilanço) kalemler için güvenlidir. */
+function seriCikar(kalem, donemler){
+  return enflasyonUygula(seriHam(kalem, donemler), donemler);
 }
 
 /* KÜMÜLATİFTEN ÇEYREKLİĞE ÇEVİRME — kritik düzeltme (16 Ağu 2026).
@@ -800,11 +820,19 @@ function gelirAkisiCiz(hedefId, K, donem){
     kol.kutular.forEach(b => {
       if(b.gizli) return;
       svg += `<rect x="${b.x}" y="${b.y.toFixed(1)}" width="${KUTU_G}" height="${b.h.toFixed(1)}" fill="${b.renk}" rx="2"/>`;
-      const etY = Math.max(14, b.y - 8);
-      svg += `<text x="${b.x + KUTU_G/2}" y="${etY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#141A19">${b.ad}</text>`;
-      svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 13).toFixed(1)}" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono,monospace" fill="${b.deger < 0 ? KIRMIZI : '#565F5A'}">${paraKisa(b.deger)} ₺</text>`;
-      if(!b.marjYok){
-        svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 25).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#8D958E">%${(b.deger/hasilat*100).toFixed(1)}</text>`;
+      // ETİKET YERLEŞİMİ — DÜZELTME (16 Ağu 2026): Önce ad kutunun üstündeydi
+      // ama tutar (+13) ve marj (+25) satırları AŞAĞI doğru gidiyor, yani
+      // kutunun İÇİNE giriyordu. Artık üçü de kutunun TAMAMEN ÜSTÜNDE,
+      // yukarıdan aşağı: ad → tutar → marj, en alttaki kutuya 8px mesafede.
+      const marjVar = !b.marjYok;
+      const altSatir = Math.max(30, b.y - 8);              // en alttaki yazı satırı
+      const marjY   = altSatir;                             // marj (en alta yakın)
+      const tutarY  = marjVar ? altSatir - 12 : altSatir;   // tutar
+      const adY     = tutarY - 13;                          // ad (en üstte)
+      svg += `<text x="${b.x + KUTU_G/2}" y="${adY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#141A19">${b.ad}</text>`;
+      svg += `<text x="${b.x + KUTU_G/2}" y="${tutarY.toFixed(1)}" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono,monospace" fill="${b.deger < 0 ? KIRMIZI : '#565F5A'}">${paraKisa(b.deger)} ₺</text>`;
+      if(marjVar){
+        svg += `<text x="${b.x + KUTU_G/2}" y="${marjY.toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#8D958E">%${(b.deger/hasilat*100).toFixed(1)}</text>`;
       }
     });
   });
@@ -871,12 +899,15 @@ function finansallarCiz(){
 
   kalemler.forEach(k => {
     const anaMi = anaKalemMi(k.ad);
-    // Bu kalemin tüm dönemlerdeki (enflasyon düzeltilmiş) değerleri
+    // DOĞRU SIRA: önce HAM değerler, sonra kümülatiften çeyreğe, EN SON
+    // enflasyon. Ters sırada Q2 = H1×m(6) − Q1×m(3) olur ve fazla çıkarma
+    // yüzünden değer küçülür (16 Ağu 2026'da tespit edildi).
     let degerler = tumDonemler.map(d => {
       const v = k.degerler[d];
-      return (v === undefined || v === null) ? null : v * enflasyonCarpani(d);
+      return (v === undefined || v === null) ? null : v;
     });
     if(akisTablosuMu) degerler = kumulatiftenCeyrege(degerler, tumDonemler);
+    degerler = enflasyonUygula(degerler, tumDonemler);
 
     html += `<tr class="${anaMi?'ana':''}"><td>${k.ad}</td>`;
     degerler.forEach((v, i) => {
@@ -966,8 +997,10 @@ function karneCiz(){
 
   // AKIŞ kalemleri (gelir tablosu / nakit akım): KÜMÜLATİF geliyor, önce
   // gerçek çeyrekliğe çevir, SONRA yıllıklandır.
-  const akis = (kalem) => yilliklandir(kumulatiftenCeyrege(seriCikar(kalem, donemler), donemler), false);
-  // STOK kalemleri (bilanço): dönem sonu değeri, kümülatif DEĞİL, dokunma.
+  // DOĞRU SIRA: ham → kümülatiften çeyreğe → enflasyon → yıllıklandır
+  const akis = (kalem) => yilliklandir(
+    enflasyonUygula(kumulatiftenCeyrege(seriHam(kalem, donemler), donemler), donemler), false);
+  // STOK kalemleri (bilanço): kümülatif DEĞİL, doğrudan enflasyon uygulanır.
   const stok = (kalem) => yilliklandir(seriCikar(kalem, donemler), true);
 
   const sSatis   = akis(satis);
@@ -994,7 +1027,8 @@ function karneCiz(){
   const genelK    = kalemBul(K, ["Genel Yönetim Giderleri (-)"]);
   const argeK     = kalemBul(K, ["Araştırma ve Geliştirme Giderleri (-)"]);
 
-  const cev = (kalem) => kumulatiftenCeyrege(seriCikar(kalem, donemler), donemler);
+  // FAVÖK bileşenleri de AKIŞ kalemi: ham → çeyreklik → enflasyon
+  const cev = (kalem) => enflasyonUygula(kumulatiftenCeyrege(seriHam(kalem, donemler), donemler), donemler);
   const sBrutKar = cev(brutKarK);
   const sPazarlama = cev(pazarlamaK);
   const sGenel = cev(genelK);
@@ -1142,16 +1176,20 @@ function ozelGrafikleriCiz(donemler, etiketler){
     // Bilanço kalemi STOK (kümülatif değil), diğerleri AKIŞ (kümülatif) -
     // akış olanlar önce gerçek çeyrekliğe çevrilir.
     const bilancoMu1 = bolumle(K).bilanco.includes(k1);
-    const ham1 = seriCikar(k1, donemler);
-    const s1 = yilliklandir(bilancoMu1 ? ham1 : kumulatiftenCeyrege(ham1, donemler), bilancoMu1);
+    const ham1 = seriHam(k1, donemler);
+    const s1 = yilliklandir(bilancoMu1
+      ? enflasyonUygula(ham1, donemler)
+      : enflasyonUygula(kumulatiftenCeyrege(ham1, donemler), donemler), bilancoMu1);
     let s2, ad2, paraMi = true;
     if(o.k2 === "fiyat"){
       s2 = fiyatSerisi(donemler); ad2 = "Hisse Fiyatı"; paraMi = false;
     } else {
       const k2 = K[parseInt(o.k2)];
       const bilancoMu2 = bolumle(K).bilanco.includes(k2);
-      const ham2 = seriCikar(k2, donemler);
-      s2 = yilliklandir(bilancoMu2 ? ham2 : kumulatiftenCeyrege(ham2, donemler), bilancoMu2);
+      const ham2 = seriHam(k2, donemler);
+      s2 = yilliklandir(bilancoMu2
+        ? enflasyonUygula(ham2, donemler)
+        : enflasyonUygula(kumulatiftenCeyrege(ham2, donemler), donemler), bilancoMu2);
       ad2 = k2?.ad || "—";
     }
     grafikCiz(`g-oz${idx}`, { etiketler, bar:{ad:k1?.ad||"—", renk:"#1D6555", veriler:s1},
