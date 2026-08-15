@@ -1,0 +1,43 @@
+name: Hisse finansal TAM YENILEME (aylik)
+
+on:
+  schedule:
+    # Ayda BIR KEZ (her ayin 1'i, 02:00 UTC - trafigin en dusuk oldugu saat).
+    # Neden gerekli: TMS 29 (enflasyon muhasebesi) GECMIS donemleri de
+    # yeniden ifade edebiliyor - artimli mod sadece yeni ceyrekleri ceker,
+    # gecmisteki bir duzeltmeyi kacirir. Ayda bir tam tarama bunu yakalar.
+    - cron: "0 2 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veri-hisse-finansal
+  cancel-in-progress: false
+
+jobs:
+  tam_yenile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330  # ~5.5 saat (tam tarama ~4 saat surer)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kutuphaneleri yukle
+        run: pip install isyatirimhisse pandas
+      - name: TAM finansal tarama (tum gecmis)
+        env:
+          TAM_YENILEME: "1"
+        run: python hisse_finansal_cek.py
+      - name: Buyume hesapla
+        run: python buyume_hesapla.py
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
+          git commit -m "Hisse finansal TAM YENILEME (aylik)" || { echo "Degisiklik yok"; exit 0; }
+          git pull --rebase --autostash origin main
+          git push
