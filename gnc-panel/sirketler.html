@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Şirketler — GNC Insight</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="ortak.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  /* ---------- Liste görünümü ---------- */
+  .sl-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+  .sl-arama { flex:1; min-width:200px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:16px; background:var(--surface-raised); color:var(--ink); }
+  .sl-select { padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface-raised); font-size:16px; color:var(--ink); }
+  .sl-tablo { width:100%; min-width:560px; border-collapse:collapse; font-size:12.5px; }
+  .sl-tablo thead th { text-align:left; padding:8px 10px 8px 0; border-bottom:1px solid var(--line-strong); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; white-space:nowrap; }
+  .sl-tablo thead th.num, .sl-tablo tbody td.num { text-align:right; }
+  .sl-tablo tbody td { padding:9px 10px 9px 0; border-bottom:1px solid var(--line); }
+  .sl-tablo tbody tr:hover { background:rgba(0,0,0,0.02); cursor:pointer; }
+  .sl-kod { font-weight:600; }
+  .sl-ad { font-size:10.5px; color:var(--ink-faint); }
+  .sl-sektor-etiket { display:inline-block; font-size:10px; padding:2px 7px; border-radius:10px; background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); white-space:nowrap; }
+
+  /* ---------- Detay: sekmeler ---------- */
+  .sd-baslik { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+  .sd-kod { font-family:'Fraunces',serif; font-size:26px; font-weight:600; }
+  .sd-ad { color:var(--ink-soft); font-size:13px; }
+  .sd-fiyat { margin-left:auto; text-align:right; }
+  .sd-fiyat .buyuk { font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; }
+  .sd-geri { display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+  .sd-sekmeler { display:flex; gap:2px; border-bottom:1px solid var(--line-strong); flex-wrap:wrap; margin:16px 0 18px; }
+  .sd-sekme { padding:9px 14px; font-size:13px; color:var(--ink-faint); cursor:pointer; border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; }
+  .sd-sekme:hover { color:var(--ink); }
+  .sd-sekme.aktif { color:var(--ink); border-bottom:2px solid var(--copper-dark); font-weight:500; }
+  .sd-alt-sekmeler { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .sd-alt-sekme { padding:6px 12px; font-size:12px; border:1px solid var(--line); border-radius:7px; background:var(--surface-raised); color:var(--ink-soft); cursor:pointer; }
+  .sd-alt-sekme.aktif { background:var(--ink); color:#fff; border-color:var(--ink); font-weight:600; }
+
+  /* ---------- Enflasyon düğmesi ---------- */
+  .sd-arac-satir { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .sd-switch { width:38px; height:21px; border-radius:12px; background:var(--line-strong); position:relative; cursor:pointer; flex-shrink:0; transition:background .15s; }
+  .sd-switch::after { content:''; position:absolute; top:2.5px; left:2.5px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .15s; }
+  .sd-switch.acik { background:var(--pine); }
+  .sd-switch.acik::after { left:19.5px; }
+  .sd-switch-not { font-size:10.5px; color:var(--ink-faint); }
+
+  /* ---------- Grafik ---------- */
+  .sd-grafik-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:1000px){ .sd-grafik-grid { grid-template-columns:1fr; } }
+  .sd-grafik-baslik { font-family:'Fraunces',serif; font-size:14px; font-weight:600; }
+  .sd-grafik-alt { font-size:10.5px; color:var(--ink-faint); margin-top:2px; }
+  .sd-lejant { display:flex; gap:14px; flex-wrap:wrap; font-size:10.5px; color:var(--ink-soft); margin:10px 0 4px; }
+  .sd-lejant .kutu { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+  .sd-lejant .cizgi { display:inline-block; width:13px; border-top:2px solid; margin-right:4px; vertical-align:middle; }
+  .sd-grafik-dis { position:relative; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .sd-grafik-dis svg { display:block; }
+  .sd-tooltip {
+    position:absolute; display:none; z-index:60; pointer-events:none;
+    background:var(--surface-raised); border:1px solid var(--line-strong); border-radius:7px;
+    padding:8px 10px; font-size:11px; box-shadow:0 6px 18px rgba(0,0,0,.10); min-width:150px;
+  }
+  .sd-tooltip .tt-donem { font-weight:600; margin-bottom:5px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+  .sd-tooltip .tt-satir { display:flex; justify-content:space-between; gap:14px; padding:1.5px 0; }
+  .sd-tooltip .tt-deger { font-family:'IBM Plex Mono',monospace; font-weight:600; }
+
+  /* ---------- Finansal tablo ---------- */
+  .fin-tablo { width:100%; border-collapse:collapse; font-size:11.5px; min-width:700px; }
+  .fin-tablo th { position:sticky; top:0; background:var(--surface); text-align:right; padding:7px 8px; border-bottom:1px solid var(--line-strong); font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-faint); white-space:nowrap; }
+  .fin-tablo th:first-child { text-align:left; min-width:230px; }
+  .fin-tablo td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+  .fin-tablo td:first-child { text-align:left; font-family:'IBM Plex Sans',sans-serif; color:var(--ink-soft); }
+  .fin-tablo tr:hover td { background:rgba(0,0,0,0.02); }
+  .fin-tablo tr.ana td:first-child { font-weight:600; color:var(--ink); }
+
+  /* ---------- Özel grafik paneli ---------- */
+  .oz-panel { border:1px dashed var(--line-strong); border-radius:var(--radius); padding:16px; margin-top:16px; }
+  .oz-form { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
+  @media (max-width:760px){ .oz-form { grid-template-columns:1fr; } }
+  .oz-etiket { display:block; font-size:10.5px; color:var(--ink-faint); margin-bottom:4px; }
+  .oz-select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--surface-raised); font-size:16px; color:var(--ink); }
+  .oz-btn { padding:9px 16px; border:1px solid var(--ink); border-radius:7px; background:var(--ink); color:#fff; font-size:12.5px; cursor:pointer; font-weight:600; white-space:nowrap; }
+
+  .gnc-png-indir { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface-raised); color:var(--ink-faint); cursor:pointer; margin-left:auto; flex-shrink:0; }
+  .gnc-png-indir:hover { color:var(--copper-dark); border-color:var(--copper-dark); }
+  .gnc-png-indir svg { width:12px; height:12px; }
+  .gnc-png-indir.yukleniyor { opacity:.5; pointer-events:none; }
+  .sd-veri-zaman { margin-top:10px; padding-top:8px; border-top:1px dashed var(--line); font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-faint); text-align:right; }
+</style>
+</head>
+<body>
+<div class="gnc-shell">
+  <aside class="gnc-sidebar" id="sidebar"></aside>
+  <main class="gnc-main">
+    <div class="gnc-topbar">
+      <div class="baslik-satiri"><h1 id="ust-baslik">Şirketler</h1></div>
+      <span class="gnc-donem" id="ust-donem">—</span>
+    </div>
+    <div class="gnc-content">
+      <div id="liste-gorunum"></div>
+      <div id="detay-gorunum" style="display:none;"></div>
+    </div>
+  </main>
+</div>
+
+<script src="ortak.js"></script>
+<script>
+/* ============================================================
+   ŞİRKETLER SAYFASI
+   Tek dosya: ?kod=THYAO yoksa LİSTE, varsa DETAY görünümü.
+   Ayrı HTML dosyası üretmiyoruz - deploy maliyeti ve dosya
+   sayısı kontrol altında kalsın diye (Doruk'un Netlify kredi
+   ve GitHub dakika kısıtı).
+   ============================================================ */
+
+let SIRKETLER = [];        // sirket_listesi.json
+let TUFE = {};             // tufe_ceyreklik.json -> endeksler
+let AKTIF_KOD = null;
+let FIN = null;            // finansal/{KOD}.json
+let FIYAT = null;          // hisse_gecmis/{KOD}.json
+let SEKME = "finansallar"; // "finansallar" | "karne"
+let ALT_SEKME = "bilanco"; // "bilanco" | "gelir" | "nakit"
+let ENFLASYON = true;      // enflasyon düzeltmesi açık mı
+let PERIYOT = "yillik";    // "ceyreklik" | "yillik" (yıllık = son 4 çeyrek toplamı)
+let OZEL_GRAFIKLER = [];   // kullanıcının eklediği ek grafikler
+
+/* ---------- Finansal tablo bölümleme ----------
+   Kalemler kaynak dosyada DOĞAL SIRAYLA geliyor: önce bilanço,
+   sonra gelir tablosu, sonra nakit akım. Sınırları bilinen
+   "dönüm noktası" kalem adlarıyla buluyoruz. Bu, kalem adı
+   tahminine göre çok daha sağlam - sıra bozulmadıkça çalışır. */
+const SINIR_BILANCO_SON = ["TOPLAM KAYNAKLAR", "PASİF TOPLAMI"];
+const SINIR_NAKIT_BAS = ["İşletme Faaliyetlerinden Kaynaklanan Net Nakit", "İşletme Faaliyetlerinden Nakit Akışları"];
+
+function bolumle(kalemler){
+  const adlar = kalemler.map(k => k.ad);
+  let bilancoSon = -1, nakitBas = -1;
+  SINIR_BILANCO_SON.forEach(s => { const i = adlar.indexOf(s); if(i > bilancoSon) bilancoSon = i; });
+  SINIR_NAKIT_BAS.forEach(s => { const i = adlar.indexOf(s); if(i >= 0 && (nakitBas < 0 || i < nakitBas)) nakitBas = i; });
+  if(bilancoSon < 0) bilancoSon = Math.floor(kalemler.length * 0.45);
+  if(nakitBas < 0 || nakitBas <= bilancoSon) nakitBas = Math.floor(kalemler.length * 0.85);
+  return {
+    bilanco: kalemler.slice(0, bilancoSon + 1),
+    gelir:   kalemler.slice(bilancoSon + 1, nakitBas),
+    nakit:   kalemler.slice(nakitBas),
+  };
+}
+
+/* ---------- Dönem yardımcıları ---------- */
+function donemAnahtar(d){ const [y,q] = d.split("/"); return parseInt(y)*100 + parseInt(q); }
+function donemEtiket(d){ const [y,q] = d.split("/"); return `${y}Ç${Math.ceil(parseInt(q)/3)}`; }
+
+/* Enflasyon çarpanı: o çeyrekteki 1 TL, BUGÜN kaç TL eder.
+   TÜFE endeksi yoksa 1 döner (düzeltme yapılmaz, veri bozulmaz). */
+function enflasyonCarpani(donem){
+  if(!ENFLASYON) return 1;
+  const guncel = TUFE["_guncel"];
+  const o = TUFE[donem];
+  if(!guncel || !o) return 1;
+  return guncel / o;
+}
+
+/* Bir kalemin dönem->değer haritasını, seçili dönemler için diziye çevirir.
+   ENFLASYON açıksa her değeri kendi çeyreğinin çarpanıyla bugüne taşır. */
+function seriCikar(kalem, donemler){
+  if(!kalem) return donemler.map(() => null);
+  return donemler.map(d => {
+    const v = kalem.degerler[d];
+    if(v === undefined || v === null) return null;
+    return v * enflasyonCarpani(d);
+  });
+}
+
+/* Yıllıklandırma (TTM): her nokta için kendisi + önceki 3 çeyreğin TOPLAMI.
+   Mevsimselliği giderir; Finvest'in "(Yıllık)" etiketiyle aynı mantık.
+   Bilanço kalemlerinde toplama YAPILMAZ (stok değeri, akış değil) - o yüzden
+   'stokMu' bayrağı ile ayırıyoruz. */
+function yilliklandir(seri, stokMu){
+  if(PERIYOT !== "yillik") return seri;
+  if(stokMu) return seri;  // bilanço kalemi: son değer zaten geçerli
+  return seri.map((_, i) => {
+    if(i < 3) return null;
+    const dilim = seri.slice(i-3, i+1);
+    if(dilim.some(v => v === null)) return null;
+    return dilim.reduce((a,b) => a+b, 0);
+  });
+}
+
+function kalemBul(kalemler, adaylar){
+  for(const ad of adaylar){
+    const k = kalemler.find(x => x.ad === ad);
+    if(k) return k;
+  }
+  return null;
+}
+
+/* ---------- Sayı biçimleme ---------- */
+function trSayi(v, ondalik){
+  if(v === null || v === undefined || isNaN(v)) return "—";
+  return v.toLocaleString("tr-TR", { minimumFractionDigits: ondalik ?? 0, maximumFractionDigits: ondalik ?? 0 });
+}
+function paraKisa(v){
+  if(v === null || v === undefined || isNaN(v)) return "—";
+  const m = Math.abs(v);
+  if(m >= 1e9)  return (v/1e9).toLocaleString("tr-TR",{maximumFractionDigits:2}) + " Mr";
+  if(m >= 1e6)  return (v/1e6).toLocaleString("tr-TR",{maximumFractionDigits:1}) + " Mn";
+  if(m >= 1e3)  return (v/1e3).toLocaleString("tr-TR",{maximumFractionDigits:1}) + " B";
+  return trSayi(v, 0);
+}
+
+/* ============================================================
+   GRAFİK MOTORU (bar + çizgi, çift eksen, hover tooltip)
+   ============================================================ */
+function grafikCiz(hedefId, cfg){
+  const kap = document.getElementById(hedefId);
+  if(!kap) return;
+  const etiketler = cfg.etiketler;
+  const N = etiketler.length;
+  if(!N){ kap.innerHTML = '<div class="gnc-durum-kutu">Bu grafik için yeterli veri yok.</div>'; return; }
+
+  const yuk = 230, padL = 62, padR = cfg.cizgiler.length ? 62 : 16, padT = 12, padB = 42;
+  const cizimYuk = yuk - padT - padB;
+  const kapGenislik = kap.clientWidth || 520;
+  const minAralik = 30;
+  let aralik = Math.max(minAralik, (kapGenislik - padL - padR) / Math.max(N, 1));
+  const cizimGen = aralik * N;
+  const genislik = padL + cizimGen + padR;
+
+  // Bar ekseni (sol)
+  const barDeg = (cfg.bar ? cfg.bar.veriler : []).filter(v => v !== null);
+  let barMin = Math.min(0, ...(barDeg.length ? barDeg : [0]));
+  let barMax = Math.max(...(barDeg.length ? barDeg : [1]));
+  if(barMax === barMin) barMax = barMin + 1;
+  barMax += (barMax - barMin) * 0.14;
+
+  // Çizgi ekseni (sağ)
+  const cizgiDeg = cfg.cizgiler.flatMap(c => c.veriler).filter(v => v !== null);
+  let cMin = cizgiDeg.length ? Math.min(...cizgiDeg) : 0;
+  let cMax = cizgiDeg.length ? Math.max(...cizgiDeg) : 1;
+  if(cfg.sifirCizgisi){ cMin = Math.min(cMin, 0); cMax = Math.max(cMax, 0); }
+  const cPay = (cMax - cMin) * 0.14 || 1;
+  cMin -= cPay; cMax += cPay;
+
+  const x  = i => padL + aralik * (i + 0.5);
+  const yB = v => padT + (1 - (v - barMin) / (barMax - barMin)) * cizimYuk;
+  const yC = v => padT + (1 - (v - cMin) / (cMax - cMin)) * cizimYuk;
+
+  let svg = `<svg width="${genislik}" height="${yuk}" viewBox="0 0 ${genislik} ${yuk}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Yatay ızgara + sol eksen etiketleri
+  for(let i=0;i<=4;i++){
+    const oran = i/4;
+    const yy = padT + oran * cizimYuk;
+    const deger = barMax - oran * (barMax - barMin);
+    svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${padL+cizimGen}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/>`;
+    svg += `<text x="${padL-7}" y="${(yy+3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--ink-faint)" font-family="IBM Plex Mono,monospace">${paraKisa(deger)}</text>`;
+  }
+  // Sağ eksen etiketleri
+  if(cfg.cizgiler.length){
+    for(let i=0;i<=4;i++){
+      const oran = i/4;
+      const yy = padT + oran * cizimYuk;
+      const deger = cMax - oran * (cMax - cMin);
+      const metin = cfg.sagEksenPara === false
+        ? deger.toLocaleString("tr-TR",{maximumFractionDigits:1})
+        : paraKisa(deger);
+      svg += `<text x="${padL+cizimGen+7}" y="${(yy+3.5).toFixed(1)}" text-anchor="start" font-size="9" fill="var(--ink-faint)" font-family="IBM Plex Mono,monospace">${metin}</text>`;
+    }
+  }
+  // Sıfır çizgisi
+  if(barMin < 0){
+    const y0 = yB(0);
+    svg += `<line x1="${padL}" y1="${y0.toFixed(1)}" x2="${padL+cizimGen}" y2="${y0.toFixed(1)}" stroke="var(--ink-faint)" stroke-width="1"/>`;
+  }
+
+  // Barlar
+  if(cfg.bar){
+    const bg = Math.min(aralik * 0.62, 22);
+    cfg.bar.veriler.forEach((v,i) => {
+      if(v === null) return;
+      const y0 = yB(Math.max(0, Math.min(v, 0) === v ? 0 : 0));
+      const yv = yB(v);
+      const ust = v >= 0 ? yv : yB(0);
+      const h = Math.abs(yv - yB(0));
+      svg += `<rect x="${(x(i)-bg/2).toFixed(1)}" y="${ust.toFixed(1)}" width="${bg.toFixed(1)}" height="${Math.max(h,0.5).toFixed(1)}" fill="${cfg.bar.renk}" opacity="0.9" rx="2"/>`;
+    });
+  }
+
+  // Çizgiler
+  cfg.cizgiler.forEach(c => {
+    let d = "", basladi = false;
+    c.veriler.forEach((v,i) => {
+      if(v === null){ basladi = false; return; }
+      d += (basladi ? " L " : " M ") + x(i).toFixed(1) + " " + yC(v).toFixed(1);
+      basladi = true;
+    });
+    if(d) svg += `<path d="${d}" fill="none" stroke="${c.renk}" stroke-width="2" stroke-linejoin="round"/>`;
+    c.veriler.forEach((v,i) => {
+      if(v === null) return;
+      svg += `<circle cx="${x(i).toFixed(1)}" cy="${yC(v).toFixed(1)}" r="2.4" fill="${c.renk}"/>`;
+    });
+  });
+
+  // X ekseni etiketleri (kalabalıksa atlayarak)
+  const atla = Math.ceil(N / Math.max(1, Math.floor(cizimGen / 52)));
+  etiketler.forEach((e,i) => {
+    if(i % atla !== 0 && i !== N-1) return;
+    svg += `<text x="${x(i).toFixed(1)}" y="${yuk-24}" text-anchor="middle" font-size="8.5" fill="var(--ink-faint)" font-family="IBM Plex Mono,monospace" transform="rotate(-45 ${x(i).toFixed(1)} ${yuk-24})">${e}</text>`;
+  });
+
+  // Hover şeritleri (tooltip için)
+  etiketler.forEach((e,i) => {
+    svg += `<rect class="hv" data-i="${i}" x="${(x(i)-aralik/2).toFixed(1)}" y="${padT}" width="${aralik.toFixed(1)}" height="${cizimYuk}" fill="transparent" style="cursor:crosshair;"/>`;
+  });
+
+  svg += `</svg><div class="sd-tooltip" id="tip-${hedefId}"></div>`;
+  kap.innerHTML = svg;
+
+  // Tooltip davranışı
+  const tip = document.getElementById("tip-" + hedefId);
+  kap.querySelectorAll("rect.hv").forEach(r => {
+    r.addEventListener("mouseenter", () => {
+      const i = parseInt(r.dataset.i);
+      let html = `<div class="tt-donem">${etiketler[i]}</div>`;
+      if(cfg.bar){
+        html += `<div class="tt-satir"><span><span class="kutu" style="background:${cfg.bar.renk}"></span>${cfg.bar.ad}</span><span class="tt-deger">${paraKisa(cfg.bar.veriler[i])} ₺</span></div>`;
+      }
+      cfg.cizgiler.forEach(c => {
+        const v = c.veriler[i];
+        const gosterim = cfg.sagEksenPara === false
+          ? (v === null ? "—" : v.toLocaleString("tr-TR",{maximumFractionDigits:2}) + " ₺")
+          : paraKisa(v) + " ₺";
+        html += `<div class="tt-satir"><span><span class="cizgi" style="border-color:${c.renk}"></span>${c.ad}</span><span class="tt-deger">${gosterim}</span></div>`;
+      });
+      tip.innerHTML = html;
+      tip.style.display = "block";
+      const solPx = x(i) - kap.scrollLeft;
+      const sagaTasar = solPx + 175 > kap.clientWidth;
+      tip.style.left = (sagaTasar ? Math.max(6, solPx - 165) : solPx + 12) + "px";
+      tip.style.top = padT + "px";
+    });
+    r.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+  });
+}
+
+/* ============================================================
+   LİSTE GÖRÜNÜMÜ
+   ============================================================ */
+function listeCiz(){
+  const kap = document.getElementById("liste-gorunum");
+  const arama = (document.getElementById("sl-arama")?.value || "").trim().toLocaleLowerCase("tr-TR");
+  const sektor = document.getElementById("sl-sektor")?.value || "tumu";
+  const sirala = document.getElementById("sl-sirala")?.value || "kod";
+
+  let liste = SIRKETLER.slice();
+  if(sektor !== "tumu") liste = liste.filter(s => s.sektor === sektor);
+  if(arama) liste = liste.filter(s =>
+    s.kod.toLocaleLowerCase("tr-TR").includes(arama) || (s.ad||"").toLocaleLowerCase("tr-TR").includes(arama));
+
+  const yon = { kod:1, g1:-1, h1:-1, a1:-1 }[sirala] || 1;
+  liste.sort((a,b) => {
+    if(sirala === "kod") return a.kod.localeCompare(b.kod, "tr");
+    return yon * ((b[sirala] ?? -9999) - (a[sirala] ?? -9999));
+  });
+
+  let html = `
+    <div class="sl-toolbar">
+      <input class="sl-arama" id="sl-arama" type="text" placeholder="Şirket kodu veya adı ara..." value="${arama ? arama : ''}">
+      <select class="sl-select" id="sl-sektor"></select>
+      <select class="sl-select" id="sl-sirala">
+        <option value="kod">Koda göre (A-Z)</option>
+        <option value="g1">Günlük (yüksekten)</option>
+        <option value="h1">Haftalık (yüksekten)</option>
+        <option value="a1">Aylık (yüksekten)</option>
+      </select>
+    </div>
+    <div class="gnc-panel-kart">
+      <div class="gnc-panel-baslik"><h2><i class="bi bi-buildings"></i> Tüm Şirketler</h2>
+        <span class="alt-etiket">${liste.length} şirket</span></div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table class="sl-tablo"><thead><tr>
+        <th>Şirket</th><th>Sektör</th><th class="num">Fiyat</th>
+        <th class="num">Günlük</th><th class="num">Haftalık</th><th class="num">Aylık</th><th></th>
+      </tr></thead><tbody>`;
+
+  liste.forEach(s => {
+    html += `<tr onclick="sirketAc('${s.kod}')">
+      <td><div class="sl-kod">${s.kod}</div>${s.ad && s.ad !== s.kod ? `<div class="sl-ad">${s.ad}</div>` : ''}</td>
+      <td><span class="sl-sektor-etiket">${s.sektor_ad || '—'}</span></td>
+      <td class="num mono">${s.fiyat != null ? s.fiyat.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'}</td>
+      <td class="num mono ${gncYon(s.g1)}">${s.g1 != null ? gncYuzde(s.g1) : '—'}</td>
+      <td class="num mono ${gncYon(s.h1)}">${s.h1 != null ? gncYuzde(s.h1) : '—'}</td>
+      <td class="num mono ${gncYon(s.a1)}">${s.a1 != null ? gncYuzde(s.a1) : '—'}</td>
+      <td style="text-align:right;color:var(--ink-faint);">›</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>
+    <div class="gnc-spk-not">Bir şirkete tıklayarak finansal tablolarını ve karne grafiklerini inceleyebilirsin. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>
+    <div class="sd-veri-zaman" id="liste-veri-zaman"></div>
+    </div>`;
+  kap.innerHTML = html;
+
+  // Sektör seçeneklerini doldur (seçimi koru)
+  const sektorler = [...new Set(SIRKETLER.map(s => s.sektor).filter(Boolean))]
+    .map(k => ({ kod:k, ad:(SIRKETLER.find(s => s.sektor === k)?.sektor_ad) || k }))
+    .sort((a,b) => a.ad.localeCompare(b.ad,"tr"));
+  const sel = document.getElementById("sl-sektor");
+  sel.innerHTML = `<option value="tumu">Tüm sektörler</option>` +
+    sektorler.map(s => `<option value="${s.kod}">${s.ad}</option>`).join("");
+  sel.value = sektor;
+  document.getElementById("sl-sirala").value = sirala;
+  veriZamaniYaz("liste-veri-zaman", LISTE_GUNCELLEME);
+
+  document.getElementById("sl-arama").addEventListener("input", () => listeCiz());
+  sel.addEventListener("change", () => listeCiz());
+  document.getElementById("sl-sirala").addEventListener("change", () => listeCiz());
+  if(arama){ const el = document.getElementById("sl-arama"); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+}
+
+let LISTE_GUNCELLEME = null;
+
+function veriZamaniYaz(id, iso){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(!iso){ el.textContent = "Veri zamanı bilinmiyor"; return; }
+  try {
+    const d = new Date(iso);
+    const p = n => String(n).padStart(2,'0');
+    el.textContent = `Veri güncellenme: ${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  } catch(e){ el.textContent = "Veri zamanı okunamadı"; }
+}
+
+/* ============================================================
+   DETAY GÖRÜNÜMÜ
+   ============================================================ */
+function sirketAc(kod){
+  const url = new URL(window.location);
+  url.searchParams.set("kod", kod);
+  window.history.pushState({}, "", url);
+  AKTIF_KOD = kod;
+  detayYukle();
+}
+function listeyeDon(){
+  const url = new URL(window.location);
+  url.searchParams.delete("kod");
+  window.history.pushState({}, "", url);
+  AKTIF_KOD = null;
+  document.getElementById("detay-gorunum").style.display = "none";
+  document.getElementById("liste-gorunum").style.display = "block";
+  document.getElementById("ust-baslik").textContent = "Şirketler";
+  listeCiz();
+}
+
+async function detayYukle(){
+  document.getElementById("liste-gorunum").style.display = "none";
+  const kap = document.getElementById("detay-gorunum");
+  kap.style.display = "block";
+  kap.innerHTML = '<div class="gnc-durum-kutu">Yükleniyor…</div>';
+  document.getElementById("ust-baslik").textContent = AKTIF_KOD;
+
+  const [fin, fiyat] = await Promise.all([
+    gncVeriCek(`finansal/${AKTIF_KOD}.json`),
+    gncVeriCek(`hisse_gecmis/${AKTIF_KOD}.json`),
+  ]);
+  FIN = fin; FIYAT = fiyat;
+
+  if(!FIN || !FIN.kalemler || !FIN.kalemler.length){
+    kap.innerHTML = `<a class="sd-geri" href="#" onclick="listeyeDon();return false;">‹ Tüm şirketler</a>
+      <div class="gnc-durum-kutu">${AKTIF_KOD} için finansal veri bulunamadı. Bu şirketin bilanço verisi henüz çekilmemiş olabilir.</div>`;
+    return;
+  }
+  detayCiz();
+}
+
+function detayCiz(){
+  const kap = document.getElementById("detay-gorunum");
+  const bilgi = SIRKETLER.find(s => s.kod === AKTIF_KOD) || {};
+  const sonFiyat = bilgi.fiyat;
+
+  kap.innerHTML = `
+    <a class="sd-geri" href="#" onclick="listeyeDon();return false;">‹ Tüm şirketler</a>
+    <div class="sd-baslik">
+      <span class="sd-kod">${AKTIF_KOD}</span>
+      ${bilgi.ad && bilgi.ad !== AKTIF_KOD ? `<span class="sd-ad">${bilgi.ad}</span>` : ''}
+      ${bilgi.sektor_ad ? `<span class="sl-sektor-etiket">${bilgi.sektor_ad}</span>` : ''}
+      <div class="sd-fiyat">
+        <div class="buyuk">${sonFiyat != null ? sonFiyat.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺" : "—"}</div>
+        <div class="mono ${gncYon(bilgi.g1)}" style="font-size:11.5px;">${bilgi.g1 != null ? gncYuzde(bilgi.g1) : ''}</div>
+      </div>
+    </div>
+    <div class="sd-sekmeler">
+      <button class="sd-sekme ${SEKME==='finansallar'?'aktif':''}" onclick="sekmeSec('finansallar')">Finansallar</button>
+      <button class="sd-sekme ${SEKME==='karne'?'aktif':''}" onclick="sekmeSec('karne')">Karne</button>
+    </div>
+    <div id="sekme-icerik"></div>`;
+  sekmeIcerikCiz();
+}
+
+function sekmeSec(s){ SEKME = s; detayCiz(); }
+function altSekmeSec(s){ ALT_SEKME = s; sekmeIcerikCiz(); }
+
+function sekmeIcerikCiz(){
+  if(SEKME === "finansallar") finansallarCiz();
+  else karneCiz();
+}
+
+/* ---------- FİNANSALLAR ---------- */
+function finansallarCiz(){
+  const kap = document.getElementById("sekme-icerik");
+  const bolumler = bolumle(FIN.kalemler);
+  const secili = { bilanco:"Bilanço", gelir:"Gelir Tablosu", nakit:"Nakit Akım" }[ALT_SEKME];
+  const kalemler = bolumler[ALT_SEKME] || [];
+
+  // Dönemler: en yeniden eskiye, en fazla 40 (10 yıl)
+  const tumDonemler = [...new Set(FIN.kalemler.flatMap(k => Object.keys(k.degerler)))]
+    .sort((a,b) => donemAnahtar(b) - donemAnahtar(a)).slice(0, 40);
+
+  let html = `
+    <div class="sd-alt-sekmeler">
+      <button class="sd-alt-sekme ${ALT_SEKME==='bilanco'?'aktif':''}" onclick="altSekmeSec('bilanco')">Bilanço</button>
+      <button class="sd-alt-sekme ${ALT_SEKME==='gelir'?'aktif':''}" onclick="altSekmeSec('gelir')">Gelir Tablosu</button>
+      <button class="sd-alt-sekme ${ALT_SEKME==='nakit'?'aktif':''}" onclick="altSekmeSec('nakit')">Nakit Akım</button>
+    </div>
+    <div class="sd-arac-satir">
+      <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
+      <span style="font-size:12px;">Enflasyon düzeltmesi</span>
+      <span class="sd-switch-not">${ENFLASYON
+        ? "Tüm dönemler TÜFE ile bugünün lirasına taşındı — dönemler karşılaştırılabilir."
+        : "Rakamlar raporlandığı gibi (nominal). 2024 ve sonrası zaten TMS 29 ile düzeltilmiş, öncesi değil — bu iki dönem birebir karşılaştırılamaz."}</span>
+    </div>
+    <div class="gnc-panel-kart">
+      <div class="gnc-panel-baslik"><h2><i class="bi bi-table"></i> ${secili}</h2>${pngBtnHtml()}</div>
+      <div style="overflow-x:auto;max-height:640px;-webkit-overflow-scrolling:touch;">
+      <table class="fin-tablo"><thead><tr><th>Kalem</th>`;
+  tumDonemler.forEach(d => html += `<th>${donemEtiket(d)}</th>`);
+  html += `</tr></thead><tbody>`;
+
+  kalemler.forEach(k => {
+    const anaMi = k.ad === k.ad.toUpperCase() && k.ad.length > 4;
+    html += `<tr class="${anaMi?'ana':''}"><td>${k.ad}</td>`;
+    tumDonemler.forEach(d => {
+      const v = k.degerler[d];
+      const duzeltilmis = (v === undefined || v === null) ? null : v * enflasyonCarpani(d);
+      html += `<td>${duzeltilmis === null ? '—' : paraKisa(duzeltilmis)}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>
+    <div class="gnc-spk-not">Değerler TL cinsindendir. Kaynak: İş Yatırım. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>
+    <div class="sd-veri-zaman" id="fin-veri-zaman"></div>
+    </div>`;
+  kap.innerHTML = html;
+  veriZamaniYaz("fin-veri-zaman", FIN.guncelleme);
+  pngBtnBagla();
+}
+
+function enflasyonDegis(){ ENFLASYON = !ENFLASYON; sekmeIcerikCiz(); }
+function periyotDegis(p){ PERIYOT = p; sekmeIcerikCiz(); }
+
+/* ---------- KARNE ---------- */
+/* Fiyatı çeyrek sonlarına hizala: her çeyreğin SON işlem günü kapanışı.
+   Enflasyon açıkken fiyat da bugünün lirasına taşınır (Finvest de böyle
+   yapıyor - 15 Ağu 2026 ekran görüntüsünde fiyat ekseni 32₺ -> 90₺ oldu). */
+function fiyatSerisi(donemler){
+  if(!FIYAT || !FIYAT.seri) return donemler.map(() => null);
+  const seri = FIYAT.seri.slice().sort((a,b) => a.tarih.localeCompare(b.tarih));
+  return donemler.map(d => {
+    const [y,q] = d.split("/");
+    const sinir = `${y}-${String(q).padStart(2,'0')}-31`;
+    let son = null;
+    for(const s of seri){ if(s.tarih <= sinir) son = s.kapanis; else break; }
+    if(son === null) return null;
+    return son * enflasyonCarpani(d);
+  });
+}
+
+function karneCiz(){
+  const kap = document.getElementById("sekme-icerik");
+  const K = FIN.kalemler;
+
+  // Dönemler: eskiden yeniye, son 40 çeyrek (10 yıl)
+  const donemler = [...new Set(K.flatMap(k => Object.keys(k.degerler)))]
+    .sort((a,b) => donemAnahtar(a) - donemAnahtar(b)).slice(-40);
+  const etiketler = donemler.map(donemEtiket);
+
+  // --- Kalemler (birden fazla olası ad denenir - kaynak isimlendirmeyi değiştirebilir) ---
+  const satis   = kalemBul(K, ["Satış Gelirleri","Hasılat","Esas Faaliyet Gelirleri"]);
+  const netKar  = kalemBul(K, ["Dönem Net Kar/Zararı","Net Dönem Kârı (Zararı)","DÖNEM KARI (ZARARI)"]);
+  const faalKar = kalemBul(K, ["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","Esas Faaliyet Kârı (Zararı)"]);
+  const amort   = kalemBul(K, ["Amortisman Giderleri","Amortisman & İtfa Payları"]);
+  const serbest = kalemBul(K, ["Serbest Nakit Akım"]);
+  const opNakit = kalemBul(K, ["İşletme Faaliyetlerinden Kaynaklanan Net Nakit"]);
+  const ozkaynak= kalemBul(K, ["Özkaynaklar","XVI. ÖZKAYNAKLAR","Ana Ortaklığa Ait Özkaynaklar"]);
+  const nakit   = kalemBul(K, ["Nakit ve Nakit Benzerleri","I. NAKİT DEĞERLER VE MERKEZ BANKASI"]);
+
+  const sSatis   = yilliklandir(seriCikar(satis, donemler), false);
+  const sNetKar  = yilliklandir(seriCikar(netKar, donemler), false);
+  const sSerbest = yilliklandir(seriCikar(serbest, donemler), false);
+  const sOpNakit = yilliklandir(seriCikar(opNakit, donemler), false);
+  const sOzkaynak= yilliklandir(seriCikar(ozkaynak, donemler), true);   // bilanço = stok
+  const sNakit   = yilliklandir(seriCikar(nakit, donemler), true);      // bilanço = stok
+  const sFiyat   = fiyatSerisi(donemler);
+
+  // FAVÖK = Faaliyet Kârı + Amortisman (standart yaklaşım; kaynakta hazır kalem yok)
+  const sFaalKar = seriCikar(faalKar, donemler);
+  const sAmort   = seriCikar(amort, donemler);
+  const sFavokHam = sFaalKar.map((v,i) => (v === null || sAmort[i] === null) ? null : v + sAmort[i]);
+  const sFavok = yilliklandir(sFavokHam, false);
+
+  const pEk = PERIYOT === "yillik" ? "(Yıllık) " : "";
+  const birim = PERIYOT === "yillik" ? "Son 4 çeyrek toplamı" : "Çeyreklik";
+
+  let html = `
+    <div class="sd-arac-satir">
+      <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
+      <span style="font-size:12px;">Enflasyon düzeltmesi</span>
+      <div class="sd-alt-sekmeler" style="margin:0 0 0 14px;">
+        <button class="sd-alt-sekme ${PERIYOT==='yillik'?'aktif':''}" onclick="periyotDegis('yillik')">Yıllık</button>
+        <button class="sd-alt-sekme ${PERIYOT==='ceyreklik'?'aktif':''}" onclick="periyotDegis('ceyreklik')">Çeyreklik</button>
+      </div>
+    </div>
+    <div class="sd-switch-not" style="margin:-8px 0 16px;">${ENFLASYON
+      ? "Tüm dönemler TÜFE ile bugünün lirasına taşındı — geçmişle bugün gerçekten karşılaştırılabilir."
+      : "Rakamlar raporlandığı gibi (nominal). 2024 ve sonrası zaten TMS 29 ile düzeltilmiş, öncesi değil."}</div>
+    <div class="sd-grafik-grid">
+      ${grafikKartHtml("k1","Büyüme Trendi: Satışlar ve Kârlılık", birim + ", TL", [
+        {tip:"kutu", renk:"#1D6555", ad:pEk+"Satışlar (sol)"},
+        {tip:"cizgi", renk:"#A8552A", ad:pEk+"FAVÖK (sağ)"},
+        {tip:"cizgi", renk:"#8C6C28", ad:pEk+"Net Kâr (sağ)"},
+      ])}
+      ${grafikKartHtml("k2","Satışlar ve Hisse Fiyatı", birim + " satış vs. hisse fiyatı (₺)", [
+        {tip:"kutu", renk:"#1D6555", ad:pEk+"Satışlar (sol)"},
+        {tip:"cizgi", renk:"#823F1C", ad:"Hisse Fiyatı (sağ)"},
+      ])}
+      ${grafikKartHtml("k3","Nakit Akışı Kalitesi", birim + ", TL", [
+        {tip:"kutu", renk:"#7FA88F", ad:pEk+"Serbest Nakit Akışı (sol)"},
+        {tip:"cizgi", renk:"#3D5A72", ad:pEk+"Operasyonel Nakit Akışı (sağ)"},
+        {tip:"cizgi", renk:"#A8552A", ad:pEk+"Net Kâr (sağ)"},
+      ])}
+      ${grafikKartHtml("k4","Bilanço Gücü: Özkaynak ve Nakit", "Dönem sonu, TL", [
+        {tip:"kutu", renk:"#7FA88F", ad:"Özkaynak (sol)"},
+        {tip:"cizgi", renk:"#823F1C", ad:"Nakit ve Benzerleri (sağ)"},
+      ])}
+    </div>
+    ${ozelPanelHtml(K)}
+    <div id="ozel-grafikler"></div>
+    <div class="sd-veri-zaman" id="karne-veri-zaman"></div>`;
+  kap.innerHTML = html;
+  veriZamaniYaz("karne-veri-zaman", FIN.guncelleme);
+
+  grafikCiz("g-k1", { etiketler, bar:{ad:"Satışlar", renk:"#1D6555", veriler:sSatis},
+    cizgiler:[{ad:"FAVÖK",renk:"#A8552A",veriler:sFavok},{ad:"Net Kâr",renk:"#8C6C28",veriler:sNetKar}], sifirCizgisi:true });
+  grafikCiz("g-k2", { etiketler, bar:{ad:"Satışlar", renk:"#1D6555", veriler:sSatis},
+    cizgiler:[{ad:"Hisse Fiyatı",renk:"#823F1C",veriler:sFiyat}], sagEksenPara:false });
+  grafikCiz("g-k3", { etiketler, bar:{ad:"Serbest Nakit Akışı", renk:"#7FA88F", veriler:sSerbest},
+    cizgiler:[{ad:"Operasyonel Nakit",renk:"#3D5A72",veriler:sOpNakit},{ad:"Net Kâr",renk:"#A8552A",veriler:sNetKar}], sifirCizgisi:true });
+  grafikCiz("g-k4", { etiketler, bar:{ad:"Özkaynak", renk:"#7FA88F", veriler:sOzkaynak},
+    cizgiler:[{ad:"Nakit ve Benzerleri",renk:"#823F1C",veriler:sNakit}] });
+
+  ozelGrafikleriCiz(donemler, etiketler);
+  pngBtnBagla();
+}
+
+function grafikKartHtml(id, baslik, alt, lejant){
+  const lej = lejant.map(l => l.tip === "kutu"
+    ? `<span><span class="kutu" style="background:${l.renk}"></span>${l.ad}</span>`
+    : `<span><span class="cizgi" style="border-color:${l.renk}"></span>${l.ad}</span>`).join("");
+  return `<div class="gnc-panel-kart">
+    <div class="gnc-panel-baslik"><div><h2 class="sd-grafik-baslik">${baslik}</h2><div class="sd-grafik-alt">${alt}</div></div>${pngBtnHtml()}</div>
+    <div class="sd-lejant">${lej}</div>
+    <div class="sd-grafik-dis" id="g-${id}"></div>
+  </div>`;
+}
+
+/* ---------- ÖZEL GRAFİK PANELİ (5. ve sonrası) ---------- */
+function ozelPanelHtml(kalemler){
+  const secenekler = kalemler.map((k,i) => `<option value="${i}">${k.ad}</option>`).join("");
+  return `<div class="oz-panel">
+    <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:600;margin-bottom:3px;">Kendi grafiğini oluştur</div>
+    <div style="font-size:11px;color:var(--ink-faint);margin-bottom:12px;">Bilançodan bir kalem seç, hisse fiyatıyla ya da başka bir kalemle karşılaştır.</div>
+    <div class="oz-form">
+      <div><label class="oz-etiket">1. Kalem (sütun olarak çizilir)</label>
+        <select class="oz-select" id="oz-k1">${secenekler}</select></div>
+      <div><label class="oz-etiket">2. Karşılaştırma (çizgi olarak çizilir)</label>
+        <select class="oz-select" id="oz-k2"><option value="fiyat">Hisse Fiyatı</option>${secenekler}</select></div>
+      <div><button class="oz-btn" onclick="ozelEkle()">Grafiği Ekle</button></div>
+    </div>
+  </div>`;
+}
+
+function ozelEkle(){
+  const i1 = document.getElementById("oz-k1").value;
+  const v2 = document.getElementById("oz-k2").value;
+  OZEL_GRAFIKLER.push({ k1:parseInt(i1), k2:v2 });
+  sekmeIcerikCiz();
+}
+function ozelSil(idx){ OZEL_GRAFIKLER.splice(idx,1); sekmeIcerikCiz(); }
+
+function ozelGrafikleriCiz(donemler, etiketler){
+  const kap = document.getElementById("ozel-grafikler");
+  if(!kap || !OZEL_GRAFIKLER.length){ if(kap) kap.innerHTML = ""; return; }
+  const K = FIN.kalemler;
+
+  let html = `<div class="sd-grafik-grid" style="margin-top:16px;">`;
+  OZEL_GRAFIKLER.forEach((o, idx) => {
+    const k1 = K[o.k1];
+    const ad2 = o.k2 === "fiyat" ? "Hisse Fiyatı" : (K[parseInt(o.k2)]?.ad || "—");
+    html += `<div class="gnc-panel-kart">
+      <div class="gnc-panel-baslik">
+        <div><h2 class="sd-grafik-baslik">${k1?.ad || '—'} <span style="color:var(--ink-faint);font-weight:400;">vs</span> ${ad2}</h2>
+          <div class="sd-grafik-alt">${PERIYOT==='yillik'?'Son 4 çeyrek toplamı':'Çeyreklik'}${ENFLASYON?' · enflasyondan arındırılmış':''}</div></div>
+        ${pngBtnHtml()}
+        <span onclick="ozelSil(${idx})" title="Bu grafiği kaldır" style="cursor:pointer;color:var(--ink-faint);margin-left:8px;font-size:15px;">×</span>
+      </div>
+      <div class="sd-lejant">
+        <span><span class="kutu" style="background:#1D6555"></span>${k1?.ad || '—'} (sol)</span>
+        <span><span class="cizgi" style="border-color:#823F1C"></span>${ad2} (sağ)</span>
+      </div>
+      <div class="sd-grafik-dis" id="g-oz${idx}"></div>
+    </div>`;
+  });
+  html += `</div>`;
+  kap.innerHTML = html;
+
+  OZEL_GRAFIKLER.forEach((o, idx) => {
+    const k1 = K[o.k1];
+    const bilancoMu1 = bolumle(K).bilanco.includes(k1);
+    const s1 = yilliklandir(seriCikar(k1, donemler), bilancoMu1);
+    let s2, ad2, paraMi = true;
+    if(o.k2 === "fiyat"){
+      s2 = fiyatSerisi(donemler); ad2 = "Hisse Fiyatı"; paraMi = false;
+    } else {
+      const k2 = K[parseInt(o.k2)];
+      const bilancoMu2 = bolumle(K).bilanco.includes(k2);
+      s2 = yilliklandir(seriCikar(k2, donemler), bilancoMu2);
+      ad2 = k2?.ad || "—";
+    }
+    grafikCiz(`g-oz${idx}`, { etiketler, bar:{ad:k1?.ad||"—", renk:"#1D6555", veriler:s1},
+      cizgiler:[{ad:ad2, renk:"#823F1C", veriler:s2}], sifirCizgisi:true, sagEksenPara:paraMi });
+  });
+  pngBtnBagla();
+}
+
+/* ---------- PNG İNDİRME ---------- */
+function pngBtnHtml(){
+  return `<span class="gnc-png-indir" title="PNG olarak indir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>`;
+}
+function pngBtnBagla(){
+  document.querySelectorAll(".gnc-png-indir").forEach(btn => {
+    if(btn.dataset.bagli) return;
+    btn.dataset.bagli = "1";
+    btn.addEventListener("click", async () => {
+      const kart = btn.closest(".gnc-panel-kart");
+      if(!kart || btn.classList.contains("yukleniyor")) return;
+      btn.classList.add("yukleniyor");
+      // Mobilde PNG "yarım" kalmasın diye render anında masaüstü genişliğine
+      // zorluyoruz, sonra eski haline döndürüyoruz (finally ile garanti).
+      const MASAUSTU = 1100;
+      const mobilMi = window.innerWidth < MASAUSTU;
+      const eski = { w:kart.style.width, mw:kart.style.minWidth, mx:kart.style.maxWidth };
+      try {
+        if(mobilMi){ kart.style.width = MASAUSTU+"px"; kart.style.minWidth = MASAUSTU+"px"; kart.style.maxWidth = "none"; }
+        const canvas = await html2canvas(kart, { backgroundColor:"#F8FAF6", scale:2,
+          windowWidth: mobilMi ? MASAUSTU : undefined, width: mobilMi ? MASAUSTU : undefined });
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          const bas = (kart.querySelector("h2")?.textContent || "grafik").trim()
+            .toLocaleLowerCase("tr-TR").replace(/[^a-z0-9ğüşıöç]+/gi,"-");
+          a.href = url;
+          a.download = `gnc-insight-${AKTIF_KOD||'sirketler'}-${bas}-${new Date().toISOString().slice(0,10)}.png`;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      } catch(e){
+        console.error("PNG indirme hatası:", e);
+        alert("PNG indirilemedi, tekrar dener misin?");
+      } finally {
+        if(mobilMi){ kart.style.width = eski.w; kart.style.minWidth = eski.mw; kart.style.maxWidth = eski.mx; }
+        btn.classList.remove("yukleniyor");
+      }
+    });
+  });
+}
+
+/* ============================================================
+   BAŞLANGIÇ
+   ============================================================ */
+async function baslat(){
+  gncSidebarOlustur("sirketler", "sidebar");
+  const [liste, tufe] = await Promise.all([
+    gncVeriCek("sirket_listesi.json"),
+    gncVeriCek("tufe_ceyreklik.json"),
+  ]);
+  SIRKETLER = (liste && liste.sirketler) || [];
+  LISTE_GUNCELLEME = liste && liste.guncelleme;
+  TUFE = (tufe && tufe.endeksler) || {};
+
+  if(TUFE["_guncel_ay"]){
+    document.getElementById("ust-donem").textContent = "TÜFE bazı: " + TUFE["_guncel_ay"];
+  }
+  if(!SIRKETLER.length){
+    document.getElementById("liste-gorunum").innerHTML =
+      '<div class="gnc-durum-kutu">Şirket listesi henüz yok. sirket_listesi_hazirla.py çalıştırılmalı.</div>';
+    return;
+  }
+
+  const kod = new URLSearchParams(window.location.search).get("kod");
+  if(kod){ AKTIF_KOD = kod.toUpperCase(); detayYukle(); }
+  else listeCiz();
+}
+
+window.addEventListener("popstate", () => {
+  const kod = new URLSearchParams(window.location.search).get("kod");
+  if(kod){ AKTIF_KOD = kod.toUpperCase(); detayYukle(); } else listeyeDon();
+});
+window.addEventListener("resize", () => { if(AKTIF_KOD && SEKME === "karne") sekmeIcerikCiz(); });
+
+baslat();
+</script>
+</body>
+</html>
