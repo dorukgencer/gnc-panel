@@ -10,9 +10,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   /* ---------- Liste görünümü ---------- */
-  .sl-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
-  .sl-arama { flex:1; min-width:200px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:16px; background:var(--surface-raised); color:var(--ink); }
-  .sl-select { padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface-raised); font-size:16px; color:var(--ink); }
+  /* FİLTRE KARTI — diğer bölümlerle aynı kart diline uysun diye
+     gnc-panel-kart içine alındı, etiketli alanlarla hizalandı. */
+  .sl-filtre-kart { margin-bottom:18px; padding:16px 20px; }
+  .sl-filtre-satir { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; align-items:end; }
+  @media (max-width:760px){ .sl-filtre-satir { grid-template-columns:1fr; } }
+  .sl-alan { display:flex; flex-direction:column; min-width:0; }
+  .sl-etiket { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin-bottom:5px; }
+  .sl-arama, .sl-select {
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface-raised); font-size:16px; color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+  .sl-arama:focus, .sl-select:focus { outline:none; border-color:var(--copper-dark); }
   .sl-tablo { width:100%; min-width:560px; border-collapse:collapse; font-size:12.5px; }
   .sl-tablo thead th { text-align:left; padding:8px 10px 8px 0; border-bottom:1px solid var(--line-strong); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; white-space:nowrap; }
   .sl-tablo thead th.num, .sl-tablo tbody td.num { text-align:right; }
@@ -71,8 +81,18 @@
   .fin-tablo td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:right; font-family:'IBM Plex Mono',monospace; white-space:nowrap; line-height:1.5; }
   .fin-tablo td:first-child { text-align:left; font-family:'IBM Plex Sans',sans-serif; color:var(--ink-soft); padding-right:20px; }
   .fin-tablo tr:hover td { background:rgba(0,0,0,0.02); }
-  .fin-tablo tr.ana td { background:rgba(0,0,0,0.015); }
-  .fin-tablo tr.ana td:first-child { font-weight:600; color:var(--ink); }
+  /* ANA KALEMLER: daha büyük, kalın, hafif zeminli - gözün hiyerarşiyi
+     yakalaması için (Finvest'teki gibi). */
+  .fin-tablo tr.ana td { background:rgba(0,0,0,0.02); font-size:12.5px; font-weight:600; color:var(--ink); }
+  .fin-tablo tr.ana td:first-child { font-weight:700; font-size:12.5px; color:var(--ink); }
+  /* ALT kalemler biraz içeride ve soluk - alt kırılım olduğu belli olsun */
+  .fin-tablo tr:not(.ana) td:first-child { padding-left:16px; }
+  /* Dönemler arası % değişim rozeti */
+  .fin-rozet { display:inline-block; margin-left:7px; font-size:9.5px; font-weight:600;
+    padding:1px 5px; border-radius:9px; font-family:'IBM Plex Sans',sans-serif; white-space:nowrap; }
+  .fin-rozet.up   { background:#CDDCD3; color:#124B3F; }
+  .fin-rozet.down { background:#E7D2CC; color:#9B3A2C; }
+  .fin-rozet.notr { background:var(--surface); color:var(--ink-faint); }
 
   /* ---------- Özel grafik paneli ---------- */
   .oz-panel { border:1px dashed var(--line-strong); border-radius:var(--radius); padding:16px; margin-top:16px; }
@@ -81,6 +101,18 @@
   .oz-etiket { display:block; font-size:10.5px; color:var(--ink-faint); margin-bottom:4px; }
   .oz-select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--surface-raised); font-size:16px; color:var(--ink); }
   .oz-btn { padding:9px 16px; border:1px solid var(--ink); border-radius:7px; background:var(--ink); color:#fff; font-size:12.5px; cursor:pointer; font-weight:600; white-space:nowrap; }
+
+  /* ---------- Mevsimsellik ısı haritası ---------- */
+  .mv-tablo { width:100%; border-collapse:separate; border-spacing:3px; font-size:11px; min-width:760px; }
+  .mv-tablo th { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.06em;
+    color:var(--ink-faint); font-weight:600; padding:4px 2px; text-align:center; }
+  .mv-tablo th.yil { text-align:left; }
+  .mv-tablo td { text-align:center; padding:9px 4px; border-radius:5px;
+    font-family:'IBM Plex Mono',monospace; font-weight:600; white-space:nowrap; }
+  .mv-tablo td.yil { background:none; color:var(--ink); font-weight:700; text-align:left; font-size:12px; }
+  .mv-tablo td.bos { background:var(--surface); color:var(--ink-faint); font-weight:400; }
+  .mv-tablo td.toplam { font-weight:700; }
+  .mv-tablo th.toplam { color:var(--ink); }
 
   .gnc-png-indir { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface-raised); color:var(--ink-faint); cursor:pointer; margin-left:auto; flex-shrink:0; }
   .gnc-png-indir:hover { color:var(--copper-dark); border-color:var(--copper-dark); }
@@ -115,7 +147,8 @@
    ============================================================ */
 
 let SIRKETLER = [];        // sirket_listesi.json
-let TUFE = {};             // tufe_ceyreklik.json -> endeksler
+let TUFE = {};             // tufe_ceyreklik.json -> endeksler (çeyreklik)
+let TUFE_AYLIK = {};       // aylık TÜFE - mevsimsellikte reel getiri için
 let AKTIF_KOD = null;
 let FIN = null;            // finansal/{KOD}.json
 let FIYAT = null;          // hisse_gecmis/{KOD}.json
@@ -125,6 +158,7 @@ let ENFLASYON = true;      // enflasyon düzeltmesi açık mı
 let PERIYOT = "yillik";    // "ceyreklik" | "yillik" (yıllık = son 4 çeyrek toplamı)
 let OZEL_GRAFIKLER = [];   // kullanıcının eklediği ek grafikler
 let TUM_KALEMLER = false;  // false = tamamen boş/sıfır satırlar gizli
+let DEGISIM_GOSTER = true; // tabloda dönemler arası % değişim rozetleri
 
 /* ---------- Finansal tablo bölümleme ----------
    Kalemler kaynak dosyada DOĞAL SIRAYLA geliyor: önce bilanço,
@@ -231,6 +265,30 @@ function yilliklandir(seri, stokMu){
   });
 }
 
+/* ANA KALEMLER — tabloda büyük ve kalın gösterilecek satırlar.
+   Sadece "tümü büyük harf" kuralı yetmiyordu: Finvest "Dönen Varlıklar",
+   "Özkaynaklar" gibi normal yazımlı ana başlıkları da vurguluyor. */
+const ANA_KALEM_ADLARI = new Set([
+  // Bilanço
+  "Dönen Varlıklar","Duran Varlıklar","TOPLAM VARLIKLAR","AKTİF TOPLAMI","KAYNAKLAR",
+  "Kısa Vadeli Yükümlülükler","Uzun Vadeli Yükümlülükler","TOPLAM KAYNAKLAR","PASİF TOPLAMI",
+  "Özkaynaklar","XVI. ÖZKAYNAKLAR","Ana Ortaklığa Ait Özkaynaklar","Ödenmiş Sermaye",
+  // Gelir tablosu
+  "Satış Gelirleri","Hasılat","Satışların Maliyeti (-)","BRÜT KAR (ZARAR)",
+  "FAALİYET KARI (ZARARI)","DÖNEM KARI (ZARARI)","Dönem Net Kar/Zararı",
+  "SÜRDÜRÜLEN FAALİYETLER VERGİ ÖNCESİ KARI (ZARARI)","Hisse Başına Kazanç",
+  // Nakit akım
+  "İşletme Faaliyetlerinden Kaynaklanan Net Nakit","Serbest Nakit Akım",
+  "Yatırım Faaliyetlerinden Kaynaklanan Nakit","Finansman Faaliyetlerden Kaynaklanan Nakit",
+  "Dönem Sonu Nakit",
+]);
+function anaKalemMi(ad){
+  if(ANA_KALEM_ADLARI.has(ad)) return true;
+  // Tümü büyük harf + yeterince uzun olanlar da ana başlık sayılır
+  // (bankaların "XVIII. NET DÖNEM KARI/ZARARI" gibi başlıkları için).
+  return ad === ad.toLocaleUpperCase("tr-TR") && ad.length > 6;
+}
+
 function kalemBul(kalemler, adaylar){
   for(const ad of adaylar){
     const k = kalemler.find(x => x.ad === ad);
@@ -309,8 +367,8 @@ function grafikCiz(hedefId, cfg){
     const oran = i/4;
     const yy = padT + oran * cizimYuk;
     const deger = barMax - oran * (barMax - barMin);
-    svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${padL+cizimGen}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/>`;
-    svg += `<text x="${padL-7}" y="${(yy+3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--ink-faint)" font-family="IBM Plex Mono,monospace">${paraKisa(deger)}</text>`;
+    svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${padL+cizimGen}" y2="${yy.toFixed(1)}" stroke="#CFD6CC" stroke-width="1" stroke-dasharray="2 3"/>`;
+    svg += `<text x="${padL-7}" y="${(yy+3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="#8D958E" font-family="IBM Plex Mono,monospace">${paraKisa(deger)}</text>`;
   }
   // Sağ eksen etiketleri
   if(cfg.cizgiler.length){
@@ -321,13 +379,13 @@ function grafikCiz(hedefId, cfg){
       const metin = cfg.sagEksenPara === false
         ? deger.toLocaleString("tr-TR",{maximumFractionDigits:1})
         : paraKisa(deger);
-      svg += `<text x="${padL+cizimGen+7}" y="${(yy+3.5).toFixed(1)}" text-anchor="start" font-size="9" fill="var(--ink-faint)" font-family="IBM Plex Mono,monospace">${metin}</text>`;
+      svg += `<text x="${padL+cizimGen+7}" y="${(yy+3.5).toFixed(1)}" text-anchor="start" font-size="9" fill="#8D958E" font-family="IBM Plex Mono,monospace">${metin}</text>`;
     }
   }
   // Sıfır çizgisi
   if(barMin < 0){
     const y0 = yB(0);
-    svg += `<line x1="${padL}" y1="${y0.toFixed(1)}" x2="${padL+cizimGen}" y2="${y0.toFixed(1)}" stroke="var(--ink-faint)" stroke-width="1"/>`;
+    svg += `<line x1="${padL}" y1="${y0.toFixed(1)}" x2="${padL+cizimGen}" y2="${y0.toFixed(1)}" stroke="#8D958E" stroke-width="1"/>`;
   }
 
   // Barlar
@@ -362,7 +420,7 @@ function grafikCiz(hedefId, cfg){
   const atla = Math.ceil(N / Math.max(1, Math.floor(cizimGen / 52)));
   etiketler.forEach((e,i) => {
     if(i % atla !== 0 && i !== N-1) return;
-    svg += `<text x="${x(i).toFixed(1)}" y="${yuk-24}" text-anchor="middle" font-size="8.5" fill="var(--ink-faint)" font-family="IBM Plex Mono,monospace" transform="rotate(-45 ${x(i).toFixed(1)} ${yuk-24})">${e}</text>`;
+    svg += `<text x="${x(i).toFixed(1)}" y="${yuk-24}" text-anchor="middle" font-size="8.5" fill="#8D958E" font-family="IBM Plex Mono,monospace" transform="rotate(-45 ${x(i).toFixed(1)} ${yuk-24})">${e}</text>`;
   });
 
   // Hover şeritleri (tooltip için)
@@ -426,19 +484,30 @@ function listeCiz(){
   });
 
   let html = `
-    <div class="sl-toolbar">
-      <input class="sl-arama" id="sl-arama" type="text" placeholder="Şirket kodu veya adı ara..." value="${arama ? arama : ''}">
-      <select class="sl-select" id="sl-sektor"></select>
-      <select class="sl-select" id="sl-sirala">
-        <option value="kod">Koda göre (A-Z)</option>
-        <option value="g1">Günlük (yüksekten)</option>
-        <option value="h1">Haftalık (yüksekten)</option>
-        <option value="a1">Aylık (yüksekten)</option>
-      </select>
+    <div class="gnc-panel-kart sl-filtre-kart">
+      <div class="sl-filtre-satir">
+        <div class="sl-alan sl-alan-genis">
+          <label class="sl-etiket">Ara</label>
+          <input class="sl-arama" id="sl-arama" type="text" placeholder="Şirket kodu veya adı..." value="${arama ? arama : ''}">
+        </div>
+        <div class="sl-alan">
+          <label class="sl-etiket">Sektör</label>
+          <select class="sl-select" id="sl-sektor"></select>
+        </div>
+        <div class="sl-alan">
+          <label class="sl-etiket">Sıralama</label>
+          <select class="sl-select" id="sl-sirala">
+            <option value="kod">Koda göre (A-Z)</option>
+            <option value="g1">Günlük (yüksekten)</option>
+            <option value="h1">Haftalık (yüksekten)</option>
+            <option value="a1">Aylık (yüksekten)</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div class="gnc-panel-kart">
       <div class="gnc-panel-baslik"><h2><i class="bi bi-buildings"></i> Tüm Şirketler</h2>
-        <span class="alt-etiket">${liste.length} şirket</span></div>
+        <span class="alt-etiket">${liste.length} şirket</span>${pngBtnHtml()}</div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
       <table class="sl-tablo"><thead><tr>
         <th>Şirket</th><th>Sektör</th><th class="num">Fiyat</th>
@@ -476,6 +545,7 @@ function listeCiz(){
   document.getElementById("sl-arama").addEventListener("input", () => listeCiz());
   sel.addEventListener("change", () => listeCiz());
   document.getElementById("sl-sirala").addEventListener("change", () => listeCiz());
+  pngBtnBagla();   // liste kartındaki indirme butonu da çalışsın
   if(arama){ const el = document.getElementById("sl-arama"); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
 }
 
@@ -561,6 +631,7 @@ function detayCiz(){
     <div class="sd-sekmeler">
       <button class="sd-sekme ${SEKME==='finansallar'?'aktif':''}" onclick="sekmeSec('finansallar')">Finansallar</button>
       <button class="sd-sekme ${SEKME==='karne'?'aktif':''}" onclick="sekmeSec('karne')">Karne</button>
+      <button class="sd-sekme ${SEKME==='mevsimsellik'?'aktif':''}" onclick="sekmeSec('mevsimsellik')">Mevsimsellik</button>
     </div>
     <div id="sekme-icerik"></div>`;
   sekmeIcerikCiz();
@@ -571,6 +642,7 @@ function altSekmeSec(s){ ALT_SEKME = s; sekmeIcerikCiz(); }
 
 function sekmeIcerikCiz(){
   if(SEKME === "finansallar") finansallarCiz();
+  else if(SEKME === "mevsimsellik") mevsimsellikCiz();
   else karneCiz();
 }
 
@@ -638,9 +710,12 @@ function gelirAkisiCiz(hedefId, K, donem){
     return;
   }
 
-  const G = 900, Y = 300, ustPay = 46, altPay = 40;
+  // BOYUTLAR — DÜZELTME (16 Ağu 2026): Her kutunun ÜSTÜNDE 3 satır yazı var
+  // (ad + tutar + marj ≈ 30px) ama kutular arası boşluk 26px'ti -> yazılar
+  // birbirinin üstüne biniyordu. Boşluk 48px'e, üst pay 52px'e çıkarıldı.
+  const G = 900, Y = 345, ustPay = 52, altPay = 38;
   const cizimY = Y - ustPay - altPay;
-  const KUTU_G = 15, BOSLUK = 26;
+  const KUTU_G = 15, BOSLUK = 48;
 
   // OLCEK: tek bir kutuya gore DEGIL, EN KALABALIK KOLONUN TOPLAMINA gore
   // hesaplanir. Yoksa iki kutulu bir kolon (kutular + aradaki bosluk) cizim
@@ -726,10 +801,10 @@ function gelirAkisiCiz(hedefId, K, donem){
       if(b.gizli) return;
       svg += `<rect x="${b.x}" y="${b.y.toFixed(1)}" width="${KUTU_G}" height="${b.h.toFixed(1)}" fill="${b.renk}" rx="2"/>`;
       const etY = Math.max(14, b.y - 8);
-      svg += `<text x="${b.x + KUTU_G/2}" y="${etY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">${b.ad}</text>`;
-      svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 13).toFixed(1)}" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono,monospace" fill="${b.deger < 0 ? KIRMIZI : 'var(--ink-soft)'}">${paraKisa(b.deger)} ₺</text>`;
+      svg += `<text x="${b.x + KUTU_G/2}" y="${etY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#141A19">${b.ad}</text>`;
+      svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 13).toFixed(1)}" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono,monospace" fill="${b.deger < 0 ? KIRMIZI : '#565F5A'}">${paraKisa(b.deger)} ₺</text>`;
       if(!b.marjYok){
-        svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 25).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">%${(b.deger/hasilat*100).toFixed(1)}</text>`;
+        svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 25).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#8D958E">%${(b.deger/hasilat*100).toFixed(1)}</text>`;
       }
     });
   });
@@ -780,25 +855,48 @@ function finansallarCiz(){
     </div>
     <div class="gnc-panel-kart">
       <div class="gnc-panel-baslik"><h2><i class="bi bi-table"></i> ${secili}</h2>
-        ${gizlenenSayi ? `<button class="sd-alt-sekme ${TUM_KALEMLER?'aktif':''}" style="margin-left:12px;font-size:10.5px;padding:4px 10px;" onclick="tumKalemleriDegis()">${TUM_KALEMLER ? 'Boş satırları gizle' : gizlenenSayi + ' boş satırı göster'}</button>` : ''}
+        <button class="sd-alt-sekme ${DEGISIM_GOSTER?'aktif':''}" style="margin-left:12px;font-size:10.5px;padding:4px 10px;" onclick="degisimDegis()">% değişim</button>
+        ${gizlenenSayi ? `<button class="sd-alt-sekme ${TUM_KALEMLER?'aktif':''}" style="margin-left:6px;font-size:10.5px;padding:4px 10px;" onclick="tumKalemleriDegis()">${TUM_KALEMLER ? 'Boş satırları gizle' : gizlenenSayi + ' boş satırı göster'}</button>` : ''}
         ${pngBtnHtml()}</div>
       <div style="overflow-x:auto;max-height:640px;-webkit-overflow-scrolling:touch;">
       <table class="fin-tablo"><thead><tr><th>Kalem</th>`;
   tumDonemler.forEach(d => html += `<th>${donemEtiket(d)}</th>`);
   html += `</tr></thead><tbody>`;
 
+  // AKIŞ tablolarında (Gelir Tablosu / Nakit Akım) kaynak KÜMÜLATİF gelir.
+  // "2026Ç2" sütunu gerçekten O ÇEYREĞİ göstersin diye çeyrekliğe çeviriyoruz -
+  // yoksa Q2'ye bakan kişi aslında 6 aylık toplamı görür ve yanılır (Finvest de
+  // böyle yapıyor). BİLANÇO stok verisidir, dokunulmaz.
+  const akisTablosuMu = (ALT_SEKME === 'gelir' || ALT_SEKME === 'nakit');
+
   kalemler.forEach(k => {
-    const anaMi = k.ad === k.ad.toUpperCase() && k.ad.length > 4;
-    html += `<tr class="${anaMi?'ana':''}"><td>${k.ad}</td>`;
-    tumDonemler.forEach(d => {
+    const anaMi = anaKalemMi(k.ad);
+    // Bu kalemin tüm dönemlerdeki (enflasyon düzeltilmiş) değerleri
+    let degerler = tumDonemler.map(d => {
       const v = k.degerler[d];
-      const duzeltilmis = (v === undefined || v === null) ? null : v * enflasyonCarpani(d);
-      html += `<td>${duzeltilmis === null ? '—' : paraKisa(duzeltilmis)}</td>`;
+      return (v === undefined || v === null) ? null : v * enflasyonCarpani(d);
+    });
+    if(akisTablosuMu) degerler = kumulatiftenCeyrege(degerler, tumDonemler);
+
+    html += `<tr class="${anaMi?'ana':''}"><td>${k.ad}</td>`;
+    degerler.forEach((v, i) => {
+      // Değişim: bir ÖNCEKİ dönem = bir SONRAKİ sütun (tablo yeniden eskiye sıralı)
+      let rozet = '';
+      if(DEGISIM_GOSTER && v !== null){
+        const onceki = degerler[i+1];
+        if(onceki !== null && onceki !== undefined && onceki !== 0){
+          const yuzde = (v - onceki) / Math.abs(onceki) * 100;
+          const yon = yuzde > 0.5 ? 'up' : (yuzde < -0.5 ? 'down' : 'notr');
+          const ok = yuzde > 0.5 ? '↑' : (yuzde < -0.5 ? '↓' : '—');
+          rozet = `<span class="fin-rozet ${yon}">${ok} %${Math.abs(yuzde).toFixed(0)}</span>`;
+        }
+      }
+      html += `<td>${v === null ? '—' : paraKisa(v)}${rozet}</td>`;
     });
     html += `</tr>`;
   });
   html += `</tbody></table></div>
-    <div class="gnc-spk-not">Değerler TL cinsindendir. Kaynak: İş Yatırım. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>
+    <div class="gnc-spk-not">${akisTablosuMu ? 'Her sütun O ÇEYREĞE ait değeri gösterir (kümülatif değil) — "2026Ç2" sadece ikinci çeyrektir. ' : ''}Değerler TL cinsindendir. Kaynak: İş Yatırım. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>
     <div class="sd-veri-zaman" id="fin-veri-zaman"></div>
     </div>`;
   kap.innerHTML = html;
@@ -811,6 +909,7 @@ function finansallarCiz(){
 
 function enflasyonDegis(){ ENFLASYON = !ENFLASYON; sekmeIcerikCiz(); }
 function tumKalemleriDegis(){ TUM_KALEMLER = !TUM_KALEMLER; sekmeIcerikCiz(); }
+function degisimDegis(){ DEGISIM_GOSTER = !DEGISIM_GOSTER; sekmeIcerikCiz(); }
 function periyotDegis(p){ PERIYOT = p; sekmeIcerikCiz(); }
 
 /* ---------- KARNE ---------- */
@@ -882,9 +981,40 @@ function karneCiz(){
   // FAVÖK = Faaliyet Kârı + Amortisman (standart yaklaşım; kaynakta hazır kalem yok)
   // FAVÖK = Faaliyet Kârı + Amortisman. İkisi de AKIŞ kalemi -> önce
   // kümülatiften çeyrekliğe çevrilir, sonra toplanır, sonra yıllıklandırılır.
-  const sFaalKarC = kumulatiftenCeyrege(seriCikar(faalKar, donemler), donemler);
-  const sAmortC   = kumulatiftenCeyrege(seriCikar(amort, donemler), donemler);
-  const sFavokHam = sFaalKarC.map((v,i) => (v === null || sAmortC[i] === null) ? null : v + sAmortC[i]);
+  // FAVÖK (EBITDA) — DÜZELTME (16 Ağu 2026):
+  // Önce "FAALİYET KARI + Amortisman" kullanıyorduk ama İş Yatırım'ın
+  // "FAALİYET KARI (ZARARI)" kalemi DİĞER faaliyet gelir/giderlerini de
+  // içeriyor; FAVÖK ise bunları dışlar. AGHOL'de bu yüzden 55,8 Mr çıkıyordu,
+  // Finvest 74,6 Mr gösteriyordu (%25 fark), oysa Satışlar ve Net Kâr birebir
+  // tutuyordu — yani sorun sadece bu formüldeydi.
+  // Standart tanım: FAVÖK = Brüt Kâr − (Pazarlama + Genel Yönetim + Ar-Ge) + Amortisman
+  // Bu kalemler bulunamazsa eski yönteme (Faaliyet Kârı + Amortisman) düşer.
+  const brutKarK  = kalemBul(K, ["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)"]);
+  const pazarlamaK= kalemBul(K, ["Pazarlama, Satış ve Dağıtım Giderleri (-)","Pazarlama Giderleri (-)"]);
+  const genelK    = kalemBul(K, ["Genel Yönetim Giderleri (-)"]);
+  const argeK     = kalemBul(K, ["Araştırma ve Geliştirme Giderleri (-)"]);
+
+  const cev = (kalem) => kumulatiftenCeyrege(seriCikar(kalem, donemler), donemler);
+  const sBrutKar = cev(brutKarK);
+  const sPazarlama = cev(pazarlamaK);
+  const sGenel = cev(genelK);
+  const sArge = cev(argeK);
+  const sFaalKarC = cev(faalKar);
+  const sAmortC   = cev(amort);
+
+  const sFavokHam = donemler.map((_, i) => {
+    const am = sAmortC[i];
+    // Tercih edilen (standart) yöntem
+    if(brutKarK && sBrutKar[i] !== null && am !== null){
+      // Gider kalemleri kaynakta NEGATİF geliyor (adlarında "(-)" var),
+      // bu yüzden ÇIKARMAK yerine TOPLUYORUZ. Eksik olan gider 0 sayılır.
+      const giderler = (sPazarlama[i] || 0) + (sGenel[i] || 0) + (sArge[i] || 0);
+      return sBrutKar[i] + giderler + am;
+    }
+    // Yedek: eski yöntem
+    if(sFaalKarC[i] !== null && am !== null) return sFaalKarC[i] + am;
+    return null;
+  });
   const sFavok = yilliklandir(sFavokHam, false);
 
   const pEk = PERIYOT === "yillik" ? "(Yıllık) " : "";
@@ -1030,6 +1160,140 @@ function ozelGrafikleriCiz(donemler, etiketler){
   pngBtnBagla();
 }
 
+
+/* ============================================================
+   MEVSİMSELLİK — aylık getiri ısı haritası
+   Yöntem (Finvest'in AGHOL verisiyle DOĞRULANDI, 16 Ağu 2026):
+     aylık getiri = (ayın son kapanışı / önceki ayın son kapanışı) − 1
+     yıllık toplam = ayların BİLEŞİĞİ (çarpımı), toplamı DEĞİL
+   Test: 2024 için 57,09% ve 2023 için 83,71% çıktı — Finvest'in
+   gösterdiğiyle sıfır sapma.
+   Enflasyon düğmesi açıkken REEL getiri gösterilir (nominal getiriden o
+   ayın TÜFE artışı arındırılır) — bu GNC'nin "reel getiri" yaklaşımı.
+   ============================================================ */
+function aylikGetiriler(){
+  if(!FIYAT || !FIYAT.seri || !FIYAT.seri.length) return null;
+  const seri = FIYAT.seri.slice().sort((a,b) => a.tarih.localeCompare(b.tarih));
+  // Her ayın SON kapanışı
+  const aySon = {};
+  seri.forEach(s => {
+    if(!s.tarih || s.kapanis === null || s.kapanis === undefined) return;
+    aySon[s.tarih.slice(0,7)] = s.kapanis;   // "YYYY-MM"
+  });
+  const aylar = Object.keys(aySon).sort();
+  if(aylar.length < 2) return null;
+
+  const getiri = {};   // "YYYY-MM" -> yüzde
+  for(let i = 1; i < aylar.length; i++){
+    const oncekiAy = aylar[i-1], buAy = aylar[i];
+    // Ay atlanmışsa (veri boşluğu) hesaplama - yanıltıcı olur
+    const [y1,m1] = oncekiAy.split("-").map(Number);
+    const [y2,m2] = buAy.split("-").map(Number);
+    if((y2*12+m2) - (y1*12+m1) !== 1) continue;
+
+    const onceki = aySon[oncekiAy], simdi = aySon[buAy];
+    if(!onceki || !simdi) continue;
+    let g = (simdi / onceki - 1) * 100;
+
+    if(ENFLASYON){
+      // REEL getiri: nominal getiriden o ayın enflasyonu arındırılır
+      // (1+nominal)/(1+enflasyon) − 1
+      const t1 = TUFE_AYLIK[oncekiAy], t2 = TUFE_AYLIK[buAy];
+      if(t1 && t2){
+        const enf = t2 / t1 - 1;
+        g = ((1 + g/100) / (1 + enf) - 1) * 100;
+      } else {
+        continue;  // TÜFE yoksa REEL getiri hesaplanamaz - uydurma yapmıyoruz
+      }
+    }
+    getiri[buAy] = g;
+  }
+  return getiri;
+}
+
+function mevsimsellikCiz(){
+  const kap = document.getElementById("sekme-icerik");
+  const getiri = aylikGetiriler();
+
+  if(!getiri || !Object.keys(getiri).length){
+    kap.innerHTML = `<div class="sd-arac-satir">
+        <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
+        <span style="font-size:12px;">Enflasyon düzeltmesi</span>
+      </div>
+      <div class="gnc-durum-kutu">${ENFLASYON
+        ? "Reel getiri için aylık TÜFE verisi gerekiyor ama bulunamadı. Enflasyon düzeltmesini kapatarak nominal getirileri görebilirsin."
+        : "Bu şirket için yeterli fiyat geçmişi bulunamadı."}</div>`;
+    return;
+  }
+
+  const yillar = [...new Set(Object.keys(getiri).map(a => a.slice(0,4)))].sort().reverse();
+  const AY_ADLARI = ["OCA","ŞUB","MAR","NİS","MAY","HAZ","TEM","AĞU","EYL","EKİ","KAS","ARA"];
+
+  function renk(g){
+    if(g === null || g === undefined) return { bg:"var(--surface)", tx:"var(--ink-faint)" };
+    if(g >= 25)  return { bg:"#124B3F", tx:"#fff" };
+    if(g >= 10)  return { bg:"#1D6555", tx:"#fff" };
+    if(g >= 2)   return { bg:"#CDDCD3", tx:"#141A19" };
+    if(g > -2)   return { bg:"#EEF1EC", tx:"#565F5A" };
+    if(g > -10)  return { bg:"#E7D2CC", tx:"#141A19" };
+    if(g > -25)  return { bg:"#C4695A", tx:"#fff" };
+    return { bg:"#9B3A2C", tx:"#fff" };
+  }
+
+  let html = `
+    <div class="sd-arac-satir">
+      <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
+      <span style="font-size:12px;">Enflasyon düzeltmesi</span>
+      <span class="sd-switch-not">${ENFLASYON
+        ? "REEL getiri — her aydan o ayın enflasyonu arındırıldı. Paranın alım gücü cinsinden gerçek kazanç/kayıp."
+        : "NOMİNAL getiri — fiyat değişimi, enflasyon arındırılmadı."}</span>
+    </div>
+    <div class="gnc-panel-kart">
+      <div class="gnc-panel-baslik">
+        <div><h2 class="sd-grafik-baslik"><i class="bi bi-calendar3"></i> Aylık Getiri Performansı (${AKTIF_KOD})</h2>
+          <div class="sd-grafik-alt">${yillar.length} yıllık periyodik getiri haritası · ${ENFLASYON ? 'reel (TÜFE\'den arındırılmış)' : 'nominal'} · ₺</div></div>
+        ${pngBtnHtml()}
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table class="mv-tablo"><thead><tr><th class="yil">YIL</th>`;
+  AY_ADLARI.forEach(a => html += `<th>${a}</th>`);
+  html += `<th class="toplam">TOPLAM</th></tr></thead><tbody>`;
+
+  yillar.forEach(yil => {
+    html += `<tr><td class="yil">${yil}</td>`;
+    let carpim = 1, veriVar = false;
+    for(let ay = 1; ay <= 12; ay++){
+      const anahtar = `${yil}-${String(ay).padStart(2,'0')}`;
+      const g = getiri[anahtar];
+      if(g === undefined){
+        html += `<td class="bos">—</td>`;
+      } else {
+        const r = renk(g);
+        html += `<td style="background:${r.bg};color:${r.tx};">${g >= 0 ? '+' : ''}${g.toFixed(2)}%</td>`;
+        carpim *= (1 + g/100);
+        veriVar = true;
+      }
+    }
+    // Yıllık toplam = ayların BİLEŞİĞİ (Finvest ile doğrulandı)
+    if(veriVar){
+      const yillik = (carpim - 1) * 100;
+      const r = renk(yillik);
+      html += `<td class="toplam" style="background:${r.bg};color:${r.tx};">${yillik >= 0 ? '+' : ''}${yillik.toFixed(2)}%</td>`;
+    } else {
+      html += `<td class="toplam bos">—</td>`;
+    }
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>
+    <div class="gnc-spk-not">Aylık getiri = ayın son kapanışının bir önceki ayın son kapanışına oranı. Yıllık toplam, ayların bileşik (çarpım) sonucudur. Eksik aylar hesaba katılmaz. Geçmiş performans gelecek için gösterge değildir; eğitim ve araştırma amaçlıdır.</div>
+    <div class="sd-veri-zaman" id="mv-veri-zaman"></div>
+    </div>`;
+  kap.innerHTML = html;
+  veriZamaniYaz("mv-veri-zaman", FIYAT && FIYAT.guncelleme);
+  pngBtnBagla();
+}
+
 /* ---------- PNG İNDİRME ---------- */
 function pngBtnHtml(){
   return `<span class="gnc-png-indir" title="PNG olarak indir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>`;
@@ -1084,6 +1348,7 @@ async function baslat(){
   SIRKETLER = (liste && liste.sirketler) || [];
   LISTE_GUNCELLEME = liste && liste.guncelleme;
   TUFE = (tufe && tufe.endeksler) || {};
+  TUFE_AYLIK = (tufe && tufe.aylik) || {};
 
   if(TUFE["_guncel_ay"]){
     document.getElementById("ust-donem").textContent = "TÜFE bazı: " + TUFE["_guncel_ay"];
