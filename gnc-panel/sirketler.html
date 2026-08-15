@@ -53,8 +53,8 @@
   .sd-lejant { display:flex; gap:14px; flex-wrap:wrap; font-size:10.5px; color:var(--ink-soft); margin:10px 0 4px; }
   .sd-lejant .kutu { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:middle; }
   .sd-lejant .cizgi { display:inline-block; width:13px; border-top:2px solid; margin-right:4px; vertical-align:middle; }
-  .sd-grafik-dis { position:relative; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .sd-grafik-dis svg { display:block; }
+  .sd-grafik-dis { position:relative; }
+  .sd-grafik-dis svg { display:block; width:100%; height:auto; }
   .sd-tooltip {
     position:absolute; display:none; z-index:60; pointer-events:none;
     background:var(--surface-raised); border:1px solid var(--line-strong); border-radius:7px;
@@ -66,11 +66,12 @@
 
   /* ---------- Finansal tablo ---------- */
   .fin-tablo { width:100%; border-collapse:collapse; font-size:11.5px; min-width:700px; }
-  .fin-tablo th { position:sticky; top:0; background:var(--surface); text-align:right; padding:7px 8px; border-bottom:1px solid var(--line-strong); font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-faint); white-space:nowrap; }
-  .fin-tablo th:first-child { text-align:left; min-width:230px; }
-  .fin-tablo td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
-  .fin-tablo td:first-child { text-align:left; font-family:'IBM Plex Sans',sans-serif; color:var(--ink-soft); }
+  .fin-tablo th { position:sticky; top:0; background:var(--surface); text-align:right; padding:11px 12px; border-bottom:1px solid var(--line-strong); font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-faint); white-space:nowrap; }
+  .fin-tablo th:first-child { text-align:left; min-width:250px; }
+  .fin-tablo td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:right; font-family:'IBM Plex Mono',monospace; white-space:nowrap; line-height:1.5; }
+  .fin-tablo td:first-child { text-align:left; font-family:'IBM Plex Sans',sans-serif; color:var(--ink-soft); padding-right:20px; }
   .fin-tablo tr:hover td { background:rgba(0,0,0,0.02); }
+  .fin-tablo tr.ana td { background:rgba(0,0,0,0.015); }
   .fin-tablo tr.ana td:first-child { font-weight:600; color:var(--ink); }
 
   /* ---------- Özel grafik paneli ---------- */
@@ -123,6 +124,7 @@ let ALT_SEKME = "bilanco"; // "bilanco" | "gelir" | "nakit"
 let ENFLASYON = true;      // enflasyon düzeltmesi açık mı
 let PERIYOT = "yillik";    // "ceyreklik" | "yillik" (yıllık = son 4 çeyrek toplamı)
 let OZEL_GRAFIKLER = [];   // kullanıcının eklediği ek grafikler
+let TUM_KALEMLER = false;  // false = tamamen boş/sıfır satırlar gizli
 
 /* ---------- Finansal tablo bölümleme ----------
    Kalemler kaynak dosyada DOĞAL SIRAYLA geliyor: önce bilanço,
@@ -152,12 +154,32 @@ function donemEtiket(d){ const [y,q] = d.split("/"); return `${y}Ç${Math.ceil(p
 
 /* Enflasyon çarpanı: o çeyrekteki 1 TL, BUGÜN kaç TL eder.
    TÜFE endeksi yoksa 1 döner (düzeltme yapılmaz, veri bozulmaz). */
+/* Enflasyon düzeltmesinin BAZ dönemi.
+   DEĞİŞİKLİK (16 Ağu 2026): Eskiden "en son TÜFE ayına" taşıyorduk. Ama
+   Finvest/Fintables ile karşılaştırınca değerlerimiz SABİT 1,070 oranında
+   düşük çıktı (Dönen Varlıklar 1,0697 · Duran Varlıklar 1,0700 — birebir
+   aynı oran). Oranın her kalemde aynı olması, ham verinin ve hesabın DOĞRU
+   olduğunu, sadece BAZIN farklı olduğunu kanıtladı.
+   Finvest'in tablosunda en son çeyrekte yıldız YOK, öncekilerde VAR — yani
+   onlar "bugüne" değil EN SON BİLANÇO DÖNEMİNE taşıyor. Bu, TMS 29'un
+   standart yaklaşımı (karşılaştırmalı dönemler cari raporlama dönemine
+   yeniden ifade edilir). Aynı yönteme geçtik. */
+let TUFE_BAZ_DONEM = null;   // "YYYY/Q" - en son finansal dönem
+function tufeBazDegeriniBelirle(donemler){
+  // Elimizdeki en son finansal dönem için TÜFE endeksi varsa onu baz al.
+  // Yoksa (o çeyreğin TÜFE'si henüz açıklanmamışsa) en son bilinen TÜFE'ye düş.
+  const sirali = donemler.slice().sort((a,b) => donemAnahtar(b) - donemAnahtar(a));
+  for(const d of sirali){
+    if(TUFE[d]){ TUFE_BAZ_DONEM = d; return; }
+  }
+  TUFE_BAZ_DONEM = null;
+}
 function enflasyonCarpani(donem){
   if(!ENFLASYON) return 1;
-  const guncel = TUFE["_guncel"];
+  const baz = TUFE_BAZ_DONEM ? TUFE[TUFE_BAZ_DONEM] : TUFE["_guncel"];
   const o = TUFE[donem];
-  if(!guncel || !o) return 1;
-  return guncel / o;
+  if(!baz || !o) return 1;
+  return baz / o;
 }
 
 /* Bir kalemin dönem->değer haritasını, seçili dönemler için diziye çevirir.
@@ -218,13 +240,17 @@ function grafikCiz(hedefId, cfg){
   const N = etiketler.length;
   if(!N){ kap.innerHTML = '<div class="gnc-durum-kutu">Bu grafik için yeterli veri yok.</div>'; return; }
 
+  // DUZELTME (16 Agu 2026): Genislik ARTIK kap.clientWidth'e bagli DEGIL.
+  // Onceden kartlar DOM'a tam yerlesmeden olculuyordu, yanlis genislik
+  // cikip grafik kutudan tasip kayiyordu (ozellikle sagdaki kartlarda).
+  // Simdi SABIT koordinat sisteminde cizip SVG'yi width:100% ile
+  // olcekliyoruz - her zaman kutuya TAM oturur, olcum hatasi imkansiz.
+  const TASARIM_GENISLIK = 720;
   const yuk = 230, padL = 62, padR = cfg.cizgiler.length ? 62 : 16, padT = 12, padB = 42;
   const cizimYuk = yuk - padT - padB;
-  const kapGenislik = kap.clientWidth || 520;
-  const minAralik = 30;
-  let aralik = Math.max(minAralik, (kapGenislik - padL - padR) / Math.max(N, 1));
-  const cizimGen = aralik * N;
-  const genislik = padL + cizimGen + padR;
+  const cizimGen = TASARIM_GENISLIK - padL - padR;
+  const aralik = cizimGen / Math.max(N, 1);
+  const genislik = TASARIM_GENISLIK;
 
   // Bar ekseni (sol)
   const barDeg = (cfg.bar ? cfg.bar.veriler : []).filter(v => v !== null);
@@ -245,7 +271,7 @@ function grafikCiz(hedefId, cfg){
   const yB = v => padT + (1 - (v - barMin) / (barMax - barMin)) * cizimYuk;
   const yC = v => padT + (1 - (v - cMin) / (cMax - cMin)) * cizimYuk;
 
-  let svg = `<svg width="${genislik}" height="${yuk}" viewBox="0 0 ${genislik} ${yuk}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `<svg width="100%" height="auto" viewBox="0 0 ${genislik} ${yuk}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;" xmlns="http://www.w3.org/2000/svg">`;
 
   // Yatay ızgara + sol eksen etiketleri
   for(let i=0;i<=4;i++){
@@ -334,10 +360,15 @@ function grafikCiz(hedefId, cfg){
       });
       tip.innerHTML = html;
       tip.style.display = "block";
-      const solPx = x(i) - kap.scrollLeft;
-      const sagaTasar = solPx + 175 > kap.clientWidth;
+      // SVG artik %100 genislikte ESNIYOR - viewBox koordinatini (x(i))
+      // dogrudan piksel gibi kullanamayiz, once GERCEK olceklenmis
+      // genislige cevirmemiz gerekiyor.
+      const gercekGenislik = kap.clientWidth || genislik;
+      const olcek = gercekGenislik / genislik;
+      const solPx = x(i) * olcek;
+      const sagaTasar = solPx + 175 > gercekGenislik;
       tip.style.left = (sagaTasar ? Math.max(6, solPx - 165) : solPx + 12) + "px";
-      tip.style.top = padT + "px";
+      tip.style.top = (padT * olcek) + "px";
     });
     r.addEventListener("mouseleave", () => { tip.style.display = "none"; });
   });
@@ -469,6 +500,14 @@ async function detayYukle(){
       <div class="gnc-durum-kutu">${AKTIF_KOD} için finansal veri bulunamadı. Bu şirketin bilanço verisi henüz çekilmemiş olabilir.</div>`;
     return;
   }
+
+  // TÜFE bazını bu şirketin EN SON finansal dönemine göre belirle
+  // (TMS 29 standardı - Finvest/Fintables de böyle yapıyor).
+  const tumDonemler = [...new Set(FIN.kalemler.flatMap(k => Object.keys(k.degerler)))];
+  tufeBazDegeriniBelirle(tumDonemler);
+  if(TUFE_BAZ_DONEM){
+    document.getElementById("ust-donem").textContent = "Enflasyon bazı: " + donemEtiket(TUFE_BAZ_DONEM);
+  }
   detayCiz();
 }
 
@@ -504,16 +543,166 @@ function sekmeIcerikCiz(){
   else karneCiz();
 }
 
-/* ---------- FİNANSALLAR ---------- */
+/* ============================================================
+   GELİR AKIŞ DİYAGRAMI (Sankey benzeri)
+   Hasılat'tan Net Kâr'a kadar paranın nereye gittiğini gösterir.
+   NEGATİF değerlerle çalışır: bant YÜKSEKLİĞİ mutlak değere,
+   RENGİ işarete göre belirlenir (HEKTS'te Faaliyet Kârı -371 Mn
+   gibi durumlar gerçek — 16 Ağu 2026'da doğrulandı).
+   ============================================================ */
+function gelirAkisiCiz(hedefId, K, donem){
+  const kap = document.getElementById(hedefId);
+  if(!kap) return;
+
+  const carpan = enflasyonCarpani(donem);
+  const al = (adaylar) => {
+    const k = kalemBul(K, adaylar);
+    if(!k) return null;
+    const v = k.degerler[donem];
+    return (v === undefined || v === null) ? null : v * carpan;
+  };
+  const toplamAl = (adaylar) => {
+    let t = null;
+    adaylar.forEach(ad => {
+      const k = K.find(x => x.ad === ad);
+      if(!k) return;
+      const v = k.degerler[donem];
+      if(v !== undefined && v !== null){ t = (t || 0) + v * carpan; }
+    });
+    return t;
+  };
+
+  const hasilat  = al(["Satış Gelirleri","Hasılat","Esas Faaliyet Gelirleri"]);
+  const satMal   = al(["Satışların Maliyeti (-)","Satışların Maliyeti"]);
+  const brutKar  = al(["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)"]);
+  const faalGider= toplamAl(["Pazarlama, Satış ve Dağıtım Giderleri (-)","Genel Yönetim Giderleri (-)","Araştırma ve Geliştirme Giderleri (-)"]);
+  const faalKar  = al(["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","Esas Faaliyet Kârı (Zararı)"]);
+  const vergiOnc = al(["SÜRDÜRÜLEN FAALİYETLER VERGİ ÖNCESİ KARI (ZARARI)","Sürdürülen Faaliyetler Vergi Öncesi Karı (Zararı)"]);
+  const vergi    = al(["Sürdürülen Faaliyetler Vergi Geliri (Gideri)","Dönem Vergi Geliri (Gideri)"]);
+  const netKar   = al(["DÖNEM KARI (ZARARI)","Dönem Net Kar/Zararı","Net Dönem Kârı (Zararı)"]);
+
+  if(hasilat === null || !hasilat){
+    kap.innerHTML = '<div class="gnc-durum-kutu">Bu dönem için gelir tablosu akışı çizilemedi (hasılat verisi yok).</div>';
+    return;
+  }
+
+  const G = 900, Y = 300, ustPay = 46, altPay = 40;
+  const cizimY = Y - ustPay - altPay;
+  const KUTU_G = 15, BOSLUK = 26;
+
+  // OLCEK: tek bir kutuya gore DEGIL, EN KALABALIK KOLONUN TOPLAMINA gore
+  // hesaplanir. Yoksa iki kutulu bir kolon (kutular + aradaki bosluk) cizim
+  // alanini asip tasar (16 Agu 2026'da HEKTS verisiyle test edilip yakalandi).
+  const kolonGruplari = [
+    [hasilat],
+    [brutKar, satMal],
+    [faalKar, faalGider],
+    [vergiOnc],
+    [netKar, vergi],
+  ];
+  let enBuyukKolon = 0;
+  kolonGruplari.forEach(grup => {
+    const gecerli = grup.filter(v => v !== null);
+    const toplam = gecerli.reduce((a,v) => a + Math.abs(v), 0);
+    if(toplam > enBuyukKolon) enBuyukKolon = toplam;
+  });
+  const enCokKutu = Math.max(...kolonGruplari.map(g => g.filter(v => v !== null).length));
+  const bosluklarToplam = BOSLUK * Math.max(0, enCokKutu - 1);
+  const kullanilabilir = Math.max(40, cizimY - bosluklarToplam);
+  const olcek = kullanilabilir / (enBuyukKolon || 1);
+  const yuk = v => Math.max(3, Math.abs(v || 0) * olcek);
+
+  const YESIL = "#1D6555", KIRMIZI = "#9B3A2C", MOR = "#3D5A72";
+  const renk = v => (v === null || v >= 0) ? YESIL : KIRMIZI;
+  const marj = v => (v === null || !hasilat) ? "" : ` · %${(v/hasilat*100).toFixed(1)} marj`;
+
+  // Kolonlar: her biri {x, kutular:[{ad,deger,renk}]}
+  const kolonlar = [
+    { x: 40,  kutular: [{ad:"Hasılat", deger:hasilat, renk:MOR, marjYok:true}] },
+    { x: 235, kutular: [
+        {ad:"Brüt Kâr", deger:brutKar, renk:renk(brutKar)},
+        {ad:"Satışların Maliyeti", deger:satMal, renk:KIRMIZI},
+      ]},
+    { x: 430, kutular: [
+        {ad:"Faaliyet Kârı", deger:faalKar, renk:renk(faalKar)},
+        {ad:"Faaliyet Giderleri", deger:faalGider, renk:KIRMIZI},
+      ]},
+    { x: 625, kutular: [{ad:"Vergi Öncesi Kâr", deger:vergiOnc, renk:renk(vergiOnc)}] },
+    { x: 820, kutular: [
+        {ad:"Net Kâr", deger:netKar, renk:renk(netKar)},
+        {ad:"Vergi", deger:vergi, renk:renk(vergi)},
+      ]},
+  ];
+
+  // Her kolondaki kutuları dikey yerleştir (üstten alta, aralarında boşluk)
+  kolonlar.forEach(kol => {
+    const gecerli = kol.kutular.filter(b => b.deger !== null);
+    const toplamY = gecerli.reduce((a,b) => a + yuk(b.deger), 0) + BOSLUK * Math.max(0, gecerli.length - 1);
+    let y = ustPay + (cizimY - toplamY) / 2;
+    kol.kutular.forEach(b => {
+      if(b.deger === null){ b.gizli = true; return; }
+      b.y = y; b.h = yuk(b.deger); b.x = kol.x;
+      y += b.h + BOSLUK;
+    });
+  });
+
+  let svg = `<svg width="100%" height="auto" viewBox="0 0 ${G} ${Y}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Akış bantları (kaynak kutunun sağından hedef kutunun soluna, eğri)
+  function bant(kaynak, hedef, bRenk){
+    if(!kaynak || !hedef || kaynak.gizli || hedef.gizli) return "";
+    const x1 = kaynak.x + KUTU_G, x2 = hedef.x;
+    const orta = (x1 + x2) / 2;
+    const h = Math.min(kaynak.h, hedef.h);
+    const y1 = kaynak.y, y2 = hedef.y;
+    return `<path d="M ${x1} ${y1} C ${orta} ${y1}, ${orta} ${y2}, ${x2} ${y2}
+             L ${x2} ${y2 + h} C ${orta} ${y2 + h}, ${orta} ${y1 + h}, ${x1} ${y1 + h} Z"
+             fill="${bRenk}" opacity="0.16"/>`;
+  }
+  const [k0,k1,k2,k3,k4] = kolonlar;
+  svg += bant(k0.kutular[0], k1.kutular[0], YESIL);
+  svg += bant(k0.kutular[0], k1.kutular[1], KIRMIZI);
+  svg += bant(k1.kutular[0], k2.kutular[0], renk(faalKar));
+  svg += bant(k1.kutular[0], k2.kutular[1], KIRMIZI);
+  svg += bant(k2.kutular[0], k3.kutular[0], renk(vergiOnc));
+  svg += bant(k3.kutular[0], k4.kutular[0], renk(netKar));
+  svg += bant(k3.kutular[0], k4.kutular[1], renk(vergi));
+
+  // Kutular + etiketler
+  kolonlar.forEach(kol => {
+    kol.kutular.forEach(b => {
+      if(b.gizli) return;
+      svg += `<rect x="${b.x}" y="${b.y.toFixed(1)}" width="${KUTU_G}" height="${b.h.toFixed(1)}" fill="${b.renk}" rx="2"/>`;
+      const etY = Math.max(14, b.y - 8);
+      svg += `<text x="${b.x + KUTU_G/2}" y="${etY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">${b.ad}</text>`;
+      svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 13).toFixed(1)}" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono,monospace" fill="${b.deger < 0 ? KIRMIZI : 'var(--ink-soft)'}">${paraKisa(b.deger)} ₺</text>`;
+      if(!b.marjYok){
+        svg += `<text x="${b.x + KUTU_G/2}" y="${(etY + 25).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">%${(b.deger/hasilat*100).toFixed(1)}</text>`;
+      }
+    });
+  });
+
+  svg += `</svg>`;
+  kap.innerHTML = svg;
+}
+
 function finansallarCiz(){
   const kap = document.getElementById("sekme-icerik");
   const bolumler = bolumle(FIN.kalemler);
   const secili = { bilanco:"Bilanço", gelir:"Gelir Tablosu", nakit:"Nakit Akım" }[ALT_SEKME];
-  const kalemler = bolumler[ALT_SEKME] || [];
+  const hamKalemler = bolumler[ALT_SEKME] || [];
 
   // Dönemler: en yeniden eskiye, en fazla 40 (10 yıl)
   const tumDonemler = [...new Set(FIN.kalemler.flatMap(k => Object.keys(k.degerler)))]
     .sort((a,b) => donemAnahtar(b) - donemAnahtar(a)).slice(0, 40);
+
+  // Tamamen 0 / bos olan kalemleri GIZLE. Bu satirlar hicbir bilgi tasimiyor,
+  // sadece tabloyu sisirip okumayi zorlastiriyor. Veri SILINMIYOR - "Tümünü
+  // göster" ile geri acilir.
+  const doluKalemler = hamKalemler.filter(k =>
+    tumDonemler.some(d => { const v = k.degerler[d]; return v !== undefined && v !== null && v !== 0; }));
+  const gizlenenSayi = hamKalemler.length - doluKalemler.length;
+  const kalemler = TUM_KALEMLER ? hamKalemler : doluKalemler;
 
   let html = `
     <div class="sd-alt-sekmeler">
@@ -525,11 +714,23 @@ function finansallarCiz(){
       <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
       <span style="font-size:12px;">Enflasyon düzeltmesi</span>
       <span class="sd-switch-not">${ENFLASYON
-        ? "Tüm dönemler TÜFE ile bugünün lirasına taşındı — dönemler karşılaştırılabilir."
+        ? `Tüm dönemler TÜFE ile ${TUFE_BAZ_DONEM ? donemEtiket(TUFE_BAZ_DONEM) : "en son"} dönemin lirasına taşındı — dönemler karşılaştırılabilir.`
         : "Rakamlar raporlandığı gibi (nominal). 2024 ve sonrası zaten TMS 29 ile düzeltilmiş, öncesi değil — bu iki dönem birebir karşılaştırılamaz."}</span>
     </div>
+    ${ALT_SEKME === 'gelir' ? `
+    <div class="gnc-panel-kart" style="margin-bottom:16px;">
+      <div class="gnc-panel-baslik">
+        <div><h2 class="sd-grafik-baslik"><i class="bi bi-diagram-3"></i> Gelir Tablosu Akışı</h2>
+          <div class="sd-grafik-alt">${donemEtiket(tumDonemler[0])} · hasılattan net kâra kadar paranın izlediği yol${ENFLASYON ? ' · enflasyondan arındırılmış' : ''}</div></div>
+        ${pngBtnHtml()}
+      </div>
+      <div id="gelir-akis"></div>
+      <div class="gnc-spk-not">Yüzdeler hasılata oranı (marj) gösterir. Kırmızı kutular gideri ya da zararı ifade eder. Eğitim ve araştırma amaçlıdır.</div>
+    </div>` : ''}
     <div class="gnc-panel-kart">
-      <div class="gnc-panel-baslik"><h2><i class="bi bi-table"></i> ${secili}</h2>${pngBtnHtml()}</div>
+      <div class="gnc-panel-baslik"><h2><i class="bi bi-table"></i> ${secili}</h2>
+        ${gizlenenSayi ? `<button class="sd-alt-sekme ${TUM_KALEMLER?'aktif':''}" style="margin-left:12px;font-size:10.5px;padding:4px 10px;" onclick="tumKalemleriDegis()">${TUM_KALEMLER ? 'Boş satırları gizle' : gizlenenSayi + ' boş satırı göster'}</button>` : ''}
+        ${pngBtnHtml()}</div>
       <div style="overflow-x:auto;max-height:640px;-webkit-overflow-scrolling:touch;">
       <table class="fin-tablo"><thead><tr><th>Kalem</th>`;
   tumDonemler.forEach(d => html += `<th>${donemEtiket(d)}</th>`);
@@ -551,10 +752,14 @@ function finansallarCiz(){
     </div>`;
   kap.innerHTML = html;
   veriZamaniYaz("fin-veri-zaman", FIN.guncelleme);
+  if(ALT_SEKME === 'gelir' && tumDonemler.length){
+    gelirAkisiCiz("gelir-akis", FIN.kalemler, tumDonemler[0]);
+  }
   pngBtnBagla();
 }
 
 function enflasyonDegis(){ ENFLASYON = !ENFLASYON; sekmeIcerikCiz(); }
+function tumKalemleriDegis(){ TUM_KALEMLER = !TUM_KALEMLER; sekmeIcerikCiz(); }
 function periyotDegis(p){ PERIYOT = p; sekmeIcerikCiz(); }
 
 /* ---------- KARNE ---------- */
@@ -620,7 +825,7 @@ function karneCiz(){
       </div>
     </div>
     <div class="sd-switch-not" style="margin:-8px 0 16px;">${ENFLASYON
-      ? "Tüm dönemler TÜFE ile bugünün lirasına taşındı — geçmişle bugün gerçekten karşılaştırılabilir."
+      ? `Tüm dönemler TÜFE ile ${TUFE_BAZ_DONEM ? donemEtiket(TUFE_BAZ_DONEM) : "en son"} dönemin lirasına taşındı — geçmişle bugün gerçekten karşılaştırılabilir.`
       : "Rakamlar raporlandığı gibi (nominal). 2024 ve sonrası zaten TMS 29 ile düzeltilmiş, öncesi değil."}</div>
     <div class="sd-grafik-grid">
       ${grafikKartHtml("k1","Büyüme Trendi: Satışlar ve Kârlılık", birim + ", TL", [
