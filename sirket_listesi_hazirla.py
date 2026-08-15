@@ -64,6 +64,22 @@ def tufe_ceyreklik_uret():
     return ceyrekler
 
 
+def tufe_aylik_uret():
+    """AYLIK TUFE endeksi -> {"2016-01": 412.3, ...}
+    Mevsimsellik sekmesindeki REEL (enflasyondan arindirilmis) aylik getiri
+    hesabi icin gerekli. Ceyreklik endeks yetmiyor cunku getiriler AYLIK."""
+    veri = yukle("deflator.json")
+    if not veri:
+        return {}
+    seri = veri.get("deflatorler", {}).get("tufe", {}).get("seri", [])
+    aylik = {}
+    for nokta in seri:
+        tarih, deger = nokta.get("tarih", ""), nokta.get("deger")
+        if deger is not None and "-" in tarih:
+            aylik[tarih] = deger
+    return aylik
+
+
 def sirket_listesi_uret():
     """Liste sayfasi icin: her hissenin kodu, sektoru, gunluk/haftalik/aylik
     getirisi ve guncel fiyati."""
@@ -131,8 +147,10 @@ def main():
 
     (PANEL / "sirket_listesi.json").write_text(
         json.dumps({"guncelleme": now, "sirketler": liste}, ensure_ascii=False), encoding="utf-8")
+    aylik = tufe_aylik_uret()
+    print(f"  Aylik TUFE endeksi: {len(aylik)} ay")
     (PANEL / "tufe_ceyreklik.json").write_text(
-        json.dumps({"guncelleme": now, "endeksler": tufe}, ensure_ascii=False), encoding="utf-8")
+        json.dumps({"guncelleme": now, "endeksler": tufe, "aylik": aylik}, ensure_ascii=False), encoding="utf-8")
 
     print(f"\nTamamlandi -> sirket_listesi.json, tufe_ceyreklik.json")
 
