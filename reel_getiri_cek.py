@@ -18,6 +18,7 @@ degiskeninden okunur (GitHub Actions secret) - borsapy bu ismi otomatik tanir.
 
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -30,7 +31,13 @@ HEDEF_FAIZ = KLASOR / "gnc-panel" / "faiz_gecmis.json"
 
 TUFE_SERI = "TP.FG.J0"          # TUFE genel endeks (2003=100), aylik - TCMB EVDS
 USD_SERI = "TP.DK.USD.A.YTL"    # USD/TRY alis kuru - TCMB EVDS
-GOLD_FRED = "GOLDAMGBD228NLBM"  # Ons altin (LBMA, USD) - FRED
+# ALTIN KAYNAGI SU AN YOK (16 Agu 2026):
+# GOLDAMGBD228NLBM FRED tarafindan TAMAMEN KALDIRILDI ("discontinued and,
+# since they have no replacement, will be removed") - HTTP 400 veriyor.
+# Yahoo (XAUUSD=X) ise GitHub Actions IP'sini 429 ile engelliyor.
+# Altin ISTEGE BAGLI hale getirildi: bulunamazsa bos gecilir, TUFE ve USD
+# calistigi surece pipeline BASARILI sayilir (altin ikincil bir gosterge).
+GOLD_FRED = None
 # NOT (13 Tem 2026): USD/TRY ve altin ONCEDEN Yahoo Finance'ten cekiliyordu
 # ("uluslararasi, likit, standart kaynak" gerekcesiyle) ama GitHub Actions'ta
 # Yahoo SUREKLI 429 (Too Many Requests) verdi - bekleme/retry ile de cozulmedi,
@@ -134,18 +141,31 @@ def _df_to_seri(df, deger_kolon_ipucu=None):
     return seri
 
 
-def _seri_cek(kod, baslangic, deger_ipucu=None):
-    """Tek EVDS serisini aylik ceker. Hata olursa bos liste doner (pipeline kirilmaz)."""
-    try:
-        ev = bp.EVDS()
-        s = ev.series(kod)
-        df = s.history(start=baslangic, frequency="monthly", aggregation="avg")
-        seri = _df_to_seri(df, deger_ipucu)
-        print(f"  {kod}: {len(seri)} aylik gozlem")
-        return seri
-    except Exception as e:
-        print(f"  {kod}: cekilemedi ({e})")
-        return []
+def _seri_cek(kod, baslangic, deger_ipucu=None, deneme_sayisi=3):
+    """Tek EVDS serisini aylik ceker. Hata olursa bos liste doner (pipeline kirilmaz).
+
+    RETRY (16 Agu 2026 eklendi): EVDS zaman zaman "SSL handshake timed out"
+    veriyor - GitHub Actions'tan TCMB'ye baglantidaki gecici bir sorun. Tek
+    denemede pes etmek TUM gunun verisini kaybettiriyordu. Artik artan
+    bekleme ile 3 kez deneniyor."""
+    for deneme in range(deneme_sayisi):
+        try:
+            ev = bp.EVDS()
+            s = ev.series(kod)
+            df = s.history(start=baslangic, frequency="monthly", aggregation="avg")
+            seri = _df_to_seri(df, deger_ipucu)
+            if seri:
+                print(f"  {kod}: {len(seri)} aylik gozlem" + (f" ({deneme+1}. denemede)" if deneme else ""))
+                return seri
+            print(f"  {kod}: bos dondu ({deneme+1}/{deneme_sayisi})")
+        except Exception as e:
+            print(f"  {kod}: deneme {deneme+1}/{deneme_sayisi} basarisiz ({str(e)[:90]})")
+        if deneme < deneme_sayisi - 1:
+            bekle = 5 * (deneme + 1)
+            print(f"    {bekle}sn bekleniyor...")
+            time.sleep(bekle)
+    print(f"  {kod}: {deneme_sayisi} denemede de alinamadi")
+    return []
 
 
 def _yuzde(son, onceki):
@@ -206,27 +226,37 @@ def main():
                 evds_sonuc[anahtar] = []
     tufe, faiz = evds_sonuc["tufe"], evds_sonuc["faiz"]
 
-    # USD/TRY artik EVDS'ten (TP.DK.USD.A.YTL) - ayni script'te zaten calisan,
-    # kanitlanmis borsapy/EVDS altyapisi yeniden kullaniliyor. Ons altin FRED'den
-    # (GOLDAMGBD228NLBM). YAHOO ARTIK KULLANILMIYOR - GitHub Actions'ta surekli
-    # 429 (Too Many Requests) verdigi ILK ISTEKTE bile dogrulandi (13 Tem 2026),
-    # yani rate-limit degil muhtemelen IP bazli engelleme - beklemeyle cozulmuyor.
-    print("USD/TRY (EVDS) ve ons altin (FRED) cekiliyor...")
+    # USD/TRY EVDS'ten (TP.DK.USD.A.YTL) - ayni script'te zaten calisan,
+    # kanitlanmis borsapy/EVDS altyapisi.
+    print("USD/TRY (EVDS) cekiliyor...")
     usdtry_seri = _seri_cek(USD_SERI, baslangic)
-    xau_seri = _fred_aylik_cek(GOLD_FRED, baslangic)
+    usd = usdtry_seri
 
-    usd = usdtry_seri  # USD/TRY serisinin kendisi zaten "usd" olarak kullanilan sey
-    usdtry_map = {s["tarih"]: s["deger"] for s in usdtry_seri}
-    xau_map = {s["tarih"]: s["deger"] for s in xau_seri}
-    ortak_aylar = sorted(set(usdtry_map) & set(xau_map), reverse=True)
-    altin = [
-        {"tarih": ay, "deger": round((xau_map[ay] / GRAM_ONS) * usdtry_map[ay], 4)}
-        for ay in ortak_aylar
-    ]
-    print(f"  Gram altin (hesaplanmis): {len(altin)} aylik gozlem")
+    # ALTIN: su an GUVENILIR BIR KAYNAK YOK (bkz. GOLD_FRED aciklamasi).
+    # ISTEGE BAGLI - bulunamazsa bos gecilir, pipeline'i COKERTMEZ.
+    altin = []
+    if GOLD_FRED:
+        print("Ons altin (FRED) cekiliyor...")
+        xau_seri = _fred_aylik_cek(GOLD_FRED, baslangic)
+        usdtry_map = {s["tarih"]: s["deger"] for s in usdtry_seri}
+        xau_map = {s["tarih"]: s["deger"] for s in xau_seri}
+        ortak_aylar = sorted(set(usdtry_map) & set(xau_map), reverse=True)
+        altin = [
+            {"tarih": ay, "deger": round((xau_map[ay] / GRAM_ONS) * usdtry_map[ay], 4)}
+            for ay in ortak_aylar
+        ]
+        print(f"  Gram altin (hesaplanmis): {len(altin)} aylik gozlem")
+    else:
+        print("Altin: kaynak yok, ATLANDI (TUFE ve USD icin sorun degil).")
 
-    if not tufe and not usd and not altin:
-        raise SystemExit("TUFE/USD/Altin ucunun de bos geldi (EVDS ve/veya Yahoo erisilemez olabilir). deflator.json YAZILMADI, mevcut korunuyor.")
+    # COKME KOSULU DARALTILDI (16 Agu 2026): eskiden ucu de bos olunca
+    # cokuyordu ama altin zaten opsiyonel. Asil kritik olan TUFE - enflasyon
+    # duzeltmesi ve tum reel hesaplar ona bagli. TUFE gelmiyorsa gercekten
+    # durmali; USD/altin eksikse uyarip devam etmeli.
+    if not tufe:
+        raise SystemExit("TUFE alinamadi (EVDS erisilemez). deflator.json YAZILMADI, mevcut korunuyor.")
+    if not usd:
+        print("  UYARI: USD/TRY alinamadi - deflator.json TUFE ile yaziliyor, USD alani bos kalacak.")
 
     cikti = {
         "guncelleme": datetime.now().isoformat(),
