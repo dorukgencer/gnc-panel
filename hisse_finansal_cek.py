@@ -29,6 +29,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import pandas as pd
 from isyatirimhisse import fetch_financials
 
@@ -36,7 +38,8 @@ KLASOR = Path(__file__).parent
 FINANSAL_KLASOR = KLASOR / "gnc-panel" / "finansal"
 BASE_COLS = {"SYMBOL", "FINANCIAL_ITEM_CODE", "FINANCIAL_ITEM_NAME_TR", "FINANCIAL_ITEM_NAME_EN"}
 DONEM_SAYISI = 40   # ~10 yil (ceyreklik) - TAM YENILEMEDE saklanacak donem sayisi
-GRUP_BOYUT = 25     # tek istekte kac sembol
+GRUP_BOYUT = 40     # tek istekte kac sembol (25->40, daha az istek)
+PARALEL = 4         # es zamanli istek sayisi (piyasa_cek.py ile ayni, kanitlanmis)
 MIN_KALEM = 10
 ARTIMLI_GERI_YIL = 2  # artimli modda kac yil geriye bakilir (guvenli pay)
 
@@ -169,17 +172,39 @@ def birlestir(mevcut, yeni):
     }
 
 
+def _parca_cek(parca, yil_bas, yil_bit, grup, donem_limiti, etiket):
+    """Tek bir sembol grubunu ceker. Hata olursa bos doner - pipeline kirilmaz."""
+    try:
+        df = fetch_financials(symbols=parca, start_year=yil_bas, end_year=yil_bit, financial_group=grup)
+        cikan = parcala(df, donem_limiti)
+        print(f"  grup {grup} [{etiket}]: {len(cikan)} hisse")
+        return cikan
+    except Exception as e:
+        print(f"  grup {grup} [{etiket}] hata: {str(e)[:80]}")
+        return {}
+
+
 def toplu_cek(kodlar, yil_bas, yil_bit, grup, donem_limiti=None):
+    """PARALEL cekim (16 Agu 2026): eskiden istekler SIRAYLA gidiyordu ve tam
+    yenileme 5.5 SAAT suruyordu. piyasa_cek.py'de zaten kanitlanmis olan 4
+    paralel istek desenini buraya da uyguladik + grup boyutu 25'ten 40'a
+    cikarildi. Beklenen: ~4 kat hizlanma."""
     bulunan = {}
+    parcalar = []
     for i in range(0, len(kodlar), GRUP_BOYUT):
         parca = kodlar[i:i + GRUP_BOYUT]
-        try:
-            df = fetch_financials(symbols=parca, start_year=yil_bas, end_year=yil_bit, financial_group=grup)
-            cikan = parcala(df, donem_limiti)
-            bulunan.update(cikan)
-            print(f"  grup {grup} [{i}-{i+len(parca)}]: {len(cikan)} hisse")
-        except Exception as e:
-            print(f"  grup {grup} [{i}-{i+len(parca)}] hata: {str(e)[:80]}")
+        parcalar.append((parca, f"{parca[0]}..{parca[-1]}"))
+
+    if not parcalar:
+        return bulunan
+
+    with ThreadPoolExecutor(max_workers=PARALEL) as havuz:
+        isler = {
+            havuz.submit(_parca_cek, parca, yil_bas, yil_bit, grup, donem_limiti, etiket): etiket
+            for parca, etiket in parcalar
+        }
+        for is_ in as_completed(isler):
+            bulunan.update(is_.result())
     return bulunan
 
 
