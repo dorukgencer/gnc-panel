@@ -127,6 +127,37 @@
   .fin-tablo th.tms-duz sup { color:var(--pine); font-size:8px; margin-left:2px; font-weight:700; }
   .fin-tablo th.tms-ham { color:var(--ink-faint); opacity:.75; }
 
+  /* Filigran seçim penceresi */
+  .fs-ortu { position:fixed; inset:0; background:rgba(20,26,25,0.42); z-index:220;
+    display:flex; align-items:center; justify-content:center; padding:20px; }
+  .fs-kutu { background:var(--surface-raised); border-radius:12px; padding:22px 24px;
+    max-width:460px; width:100%; box-shadow:0 18px 50px rgba(0,0,0,.22); }
+  .fs-baslik { font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--ink); }
+  .fs-alt { font-size:11.5px; color:var(--ink-faint); margin-top:5px; line-height:1.5; }
+  .fs-secenekler { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+  @media (max-width:520px){ .fs-secenekler { grid-template-columns:1fr; } }
+  .fs-btn { border:1px solid var(--line-strong); background:var(--surface); border-radius:9px;
+    padding:12px 14px; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:3px; }
+  .fs-btn:hover { border-color:var(--pine); background:var(--pine-soft); }
+  .fs-btn.birincil { border-color:var(--pine); background:var(--pine-soft); }
+  .fs-btn-ad { font-size:13px; font-weight:600; color:var(--ink); }
+  .fs-btn-not { font-size:10.5px; color:var(--ink-faint); line-height:1.4; }
+
+  /* Arka filigran — içeriğin ARKASINDA, çapraz tekrarlı. Kırpılamaz. */
+  .png-arka-filigran { position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    z-index:0; display:flex; align-items:center; justify-content:center; }
+  .png-arka-filigran .pa-yazi { font-family:'Fraunces',serif; font-size:clamp(28px,5.5vw,66px);
+    font-weight:600; color:#141A19; opacity:.13; letter-spacing:.01em; white-space:nowrap; }
+  .gnc-panel-kart > *:not(.png-arka-filigran) { position:relative; z-index:1; }
+
+  /* PNG alt künyesi — sadece indirme anında karta eklenir */
+  .png-filigran { display:flex; align-items:flex-end; justify-content:space-between;
+    gap:20px; margin-top:18px; padding-top:12px; border-top:1px solid #D8DED4; }
+  .pf-marka { font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:#1D3A32; letter-spacing:.01em; }
+  .pf-alt { font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6B7570; margin-top:2px; letter-spacing:.04em; }
+  .pf-sag { text-align:right; font-size:9.5px; color:#8D958E; line-height:1.5; }
+  .pf-uyari { color:#9B3A2C; font-weight:600; margin-top:1px; }
+
   /* SPK yasal dipnot */
   .spk-dipnot { margin-top:26px; padding:14px 16px; border-top:1px solid var(--line);
     font-size:10.5px; line-height:1.65; color:var(--ink-faint); }
@@ -453,14 +484,36 @@ function yilliklandir(seri, stokMu){
    olduğu için fark çok büyük. Finvest de ana ortaklık payını gösteriyor.
    Bu yüzden önce ana ortaklık payını arıyor, yoksa toplama düşüyoruz. */
 const NET_KAR_ADAYLARI = [
-  "Ana Ortaklık Payları",           // TERCİH EDİLEN
+  // --- Sanayi/ticaret: ana ortaklık payı önce ---
+  "Ana Ortaklık Payları",
   "Dönem Karı (Zararı) - Ana Ortaklık Payları",
+  // --- BANKA: ana ortaklık payının adı "Grubun Karı" (16 Ağu 2026'da eklendi,
+  //     AKBNK gelir tablosuyla doğrulandı; öncesinde bankalarda net kâr
+  //     HİÇ BULUNAMIYORDU) ---
+  "Grubun Karı (Zararı)", "GRUBUN KARI (ZARARI)",
+  // --- Toplam kâr (ana ortaklık payı yoksa) ---
   "DÖNEM KARI (ZARARI)", "Dönem Net Kar/Zararı", "Net Dönem Kârı (Zararı)",
+  "DÖNEM NET KARI VEYA ZARARI", "Dönem Net Karı veya Zararı",
+  "SÜRDÜRÜLEN FAALİYETLER DÖNEM NET KARI (ZARARI)",
   "XVIII. NET DÖNEM KARI/ZARARI", "XVII. NET DÖNEM KARI/ZARARI",
 ];
+/* SANKEY'E ÖZEL (16 Ağu 2026): Gelir akışı bir DENGE diyagramıdır —
+   Vergi Öncesi Kâr = Net Kâr + Vergi olmalı. Bu denklem yalnızca TOPLAM
+   dönem kârıyla kapanır; ana ortaklık payı kullanılırsa azınlık payı kadar
+   açık kalır (AGHOL 2026Ç2'de 7,09 Mr'lık görünmez boşluk demek).
+   Bu yüzden Sankey TOPLAM kârı, Karne ve Değerleme ANA ORTAKLIK payını
+   kullanır. İkisi de kendi bağlamında doğrudur. */
+const SANKEY_NET_KAR_ADAYLARI = [
+  "DÖNEM KARI (ZARARI)", "Dönem Net Kar/Zararı", "Net Dönem Kârı (Zararı)",
+  "DÖNEM NET KARI VEYA ZARARI", "Dönem Net Karı veya Zararı",
+  "SÜRDÜRÜLEN FAALİYETLER DÖNEM NET KARI (ZARARI)",
+  "XVIII. NET DÖNEM KARI/ZARARI", "XVII. NET DÖNEM KARI/ZARARI",
+  "Ana Ortaklık Payları", "Grubun Karı (Zararı)",   // son çare
+];
+
 const OZKAYNAK_ADAYLARI = [
-  "Ana Ortaklığa Ait Özkaynaklar",  // TERCİH EDİLEN (ana ortaklık payı ile tutarlı)
-  "Özkaynaklar", "XVI. ÖZKAYNAKLAR",
+  "Ana Ortaklığa Ait Özkaynaklar",
+  "Özkaynaklar", "XVI. ÖZKAYNAKLAR", "ÖZKAYNAKLAR", "Toplam Özkaynaklar",
 ];
 
 /* ANA KALEMLER — tabloda büyük ve kalın gösterilecek satırlar.
@@ -919,7 +972,7 @@ function gelirAkisiCiz(hedefId, K, donem){
   const vergi    = al(["Sürdürülen Faaliyetler Vergi Geliri (Gideri)","Dönem Vergi Geliri (Gideri)",
                     "SÜRDÜRÜLEN FAALİYETLER VERGİ GELİRİ (GİDERİ)","Vergi Geliri (Gideri)",
                     "Dönem Vergi Gideri (-)","XVI. VERGİ KARŞILIĞI (∓)"]);
-  const netKar   = al(NET_KAR_ADAYLARI);
+  const netKar   = al(SANKEY_NET_KAR_ADAYLARI);   // akış kapansın diye TOPLAM
 
   // TÜRETME (16 Ağu 2026): Ara kutulardan biri bulunamazsa zincir GÖRSEL OLARAK
   // KOPUYORDU (TRALT'ta Vergi Öncesi Kâr kutusu çıkmıyor, akış ortada kesiliyordu).
@@ -1377,11 +1430,11 @@ function karneCiz(){
   veriZamaniYaz("karne-veri-zaman", FIN.guncelleme);
 
   grafikCiz("g-k1", { etiketler, bar:{ad:"Satışlar", renk:"#1D6555", veriler:sSatis},
-    cizgiler:[{ad:"FAVÖK",renk:"#A8552A",veriler:sFavok},{ad:"Net Kâr",renk:"#8C6C28",veriler:sNetKar}], sifirCizgisi:true });
+    cizgiler:[{ad:"FAVÖK",renk:"#A8552A",veriler:sFavok},{ad:"Net Kâr (Ana Ort.)",renk:"#8C6C28",veriler:sNetKar}], sifirCizgisi:true });
   grafikCiz("g-k2", { etiketler, bar:{ad:"Satışlar", renk:"#1D6555", veriler:sSatis},
     cizgiler:[{ad:"Hisse Fiyatı",renk:"#823F1C",veriler:sFiyat}], sagEksenPara:false });
   grafikCiz("g-k3", { etiketler, bar:{ad:"Serbest Nakit Akışı", renk:"#7FA88F", veriler:sSerbest},
-    cizgiler:[{ad:"Operasyonel Nakit",renk:"#3D5A72",veriler:sOpNakit},{ad:"Net Kâr",renk:"#A8552A",veriler:sNetKar}], sifirCizgisi:true });
+    cizgiler:[{ad:"Operasyonel Nakit",renk:"#3D5A72",veriler:sOpNakit},{ad:"Net Kâr (Ana Ort.)",renk:"#A8552A",veriler:sNetKar}], sifirCizgisi:true });
   grafikCiz("g-k4", { etiketler, bar:{ad:"Özkaynak", renk:"#7FA88F", veriler:sOzkaynak},
     cizgiler:[{ad:"Nakit ve Benzerleri",renk:"#823F1C",veriler:sNakit}] });
 
@@ -1651,11 +1704,13 @@ function degerlemeHesapla(){
   const netKarK   = kalemBul(K, NET_KAR_ADAYLARI);
   const ozkaynakK = kalemBul(K, OZKAYNAK_ADAYLARI);
   const sermayeK  = kalemBul(K, ["Ödenmiş Sermaye","16.1 Ödenmiş Sermaye"]);
-  const faalKarK  = kalemBul(K, ["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","XI. NET FAALİYET KARI/ZARARI"]);
+  const faalKarK  = kalemBul(K, ["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","XI. NET FAALİYET KARI/ZARARI",
+                    "NET FAALİYET KARI (ZARARI)","Faaliyet Karı (Zararı)"]);
   const amortK    = kalemBul(K, ["Amortisman Giderleri","Amortisman & İtfa Payları"]);
   const borcK     = kalemBul(K, ["Finansal Borçlar","Kısa Vadeli Borçlanmalar","Toplam Finansal Borçlar"]);
   const nakitK    = kalemBul(K, ["Nakit ve Nakit Benzerleri","I. NAKİT DEĞERLER VE MERKEZ BANKASI"]);
-  const satisK    = kalemBul(K, ["Satış Gelirleri","Hasılat","III. NET FAİZ GELİRİ/GİDERİ (I - II)"]);
+  const satisK    = kalemBul(K, ["Satış Gelirleri","Hasılat","III. NET FAİZ GELİRİ/GİDERİ (I - II)",
+                    "NET FAİZ GELİRİ VEYA GİDERİ","FAİZ GELİRLERİ"]);
   const brutKarK  = kalemBul(K, ["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)"]);
 
   const sonDeger = (kalem) => {
@@ -2020,11 +2075,14 @@ function genelBakisCiz(){
   const IZLENEN = [
     { ad:"Özkaynak",            adaylar:OZKAYNAK_ADAYLARI, stok:true,
       not:"Şirketin kendi sermayesi. Artması, birikmiş değerin büyüdüğünü gösterir." },
-    { ad:"Satışlar",            adaylar:["Satış Gelirleri","Hasılat","III. NET FAİZ GELİRİ/GİDERİ (I - II)"], stok:false,
+    { ad:"Satışlar",            adaylar:["Satış Gelirleri","Hasılat","III. NET FAİZ GELİRİ/GİDERİ (I - II)",
+                    "NET FAİZ GELİRİ VEYA GİDERİ","FAİZ GELİRLERİ"], stok:false,
       not:"En üstteki sıra. Talep ve fiyatlama gücünün ilk göstergesi." },
-    { ad:"Brüt Kâr",            adaylar:["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kar (Zarar)"], stok:false,
+    { ad:"Brüt Kâr",            adaylar:["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kar (Zarar)",
+                    "FAALİYET BRÜT KÂRI","FAALİYET BRÜT KARI"], stok:false,
       not:"Satıştan üretim maliyeti düşülünce kalan. Muhasebe tercihlerinden en az etkilenen kâr." },
-    { ad:"Faaliyet Kârı",       adaylar:["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","XI. NET FAALİYET KARI/ZARARI"], stok:false,
+    { ad:"Faaliyet Kârı",       adaylar:["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","XI. NET FAALİYET KARI/ZARARI",
+                    "NET FAALİYET KARI (ZARARI)","Faaliyet Karı (Zararı)"], stok:false,
       not:"Ana işten kazanılan. Tek seferlik gelirlerden arınmış asıl performans." },
     { ad:"Operasyonel Nakit",   adaylar:["İşletme Faaliyetlerinden Kaynaklanan Net Nakit","I. BANKACILIK FAALİYETLERİNDEN KAYNAKLANAN NET NAKİT AKIŞI"], stok:false,
       not:"Kârın nakde dönüp dönmediği. Kâr artarken bu artmıyorsa dikkat." },
@@ -2167,10 +2225,47 @@ function pngBtnBagla(){
   document.querySelectorAll(".gnc-png-indir").forEach(btn => {
     if(btn.dataset.bagli) return;
     btn.dataset.bagli = "1";
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const kart = btn.closest(".gnc-panel-kart");
       if(!kart || btn.classList.contains("yukleniyor")) return;
-      btn.classList.add("yukleniyor");
+      filigranSor(secim => pngIndir(btn, kart, secim));
+    });
+  });
+}
+
+/* İndirmeden önce filigran seçimi sorulur. Paylaşılacak görselde filigran
+   isteniyor, sunum/rapor içinde kullanılacaksa istenmiyor olabilir. */
+function filigranSor(geriCagir){
+  const eski = document.getElementById("filigran-secim");
+  if(eski) eski.remove();
+  const kutu = document.createElement("div");
+  kutu.id = "filigran-secim";
+  kutu.className = "fs-ortu";
+  kutu.innerHTML = `
+    <div class="fs-kutu" onclick="event.stopPropagation()">
+      <div class="fs-baslik">Görseli nasıl indirelim?</div>
+      <div class="fs-alt">Paylaşacaksan filigranlı, kendi raporunda kullanacaksan filigransız.</div>
+      <div class="fs-secenekler">
+        <button class="fs-btn birincil" data-secim="filigranli">
+          <span class="fs-btn-ad">Filigranlı</span>
+          <span class="fs-btn-not">GNC Insight ortada + künye altta</span>
+        </button>
+        <button class="fs-btn" data-secim="sade">
+          <span class="fs-btn-ad">Filigransız</span>
+          <span class="fs-btn-not">Yalnızca grafik</span>
+        </button>
+      </div>
+    </div>`;
+  const kapat = () => kutu.remove();
+  kutu.addEventListener("click", kapat);
+  kutu.querySelectorAll(".fs-btn").forEach(b =>
+    b.addEventListener("click", () => { kapat(); geriCagir(b.dataset.secim); }));
+  document.body.appendChild(kutu);
+}
+
+async function pngIndir(btn, kart, secim){
+  const filigranli = secim === "filigranli";
+  btn.classList.add("yukleniyor");
       /* PNG KALİTESİ VE TAM YAKALAMA (16 Ağu 2026)
          Önceki sorunlar ve çözümleri:
          1) Mobilde kart dar olduğu için grafik "yarım" iniyordu
@@ -2187,6 +2282,7 @@ function pngBtnBagla(){
       const mobilMi = window.innerWidth < MASAUSTU;
       const eski = { w:kart.style.width, mw:kart.style.minWidth, mx:kart.style.maxWidth };
       // Kart içindeki tüm yatay kaydırma kaplarını aç
+      let eskiPozisyon = kart.style.position;
       const kaydirmalar = [...kart.querySelectorAll('[style*="overflow-x"], .sd-grafik-dis')]
         .map(el => ({ el, ox:el.style.overflowX, oy:el.style.overflowY, w:el.style.width, mh:el.style.maxHeight }));
       try {
@@ -2197,6 +2293,45 @@ function pngBtnBagla(){
           k.el.style.maxHeight = "none";
           if(k.el.scrollWidth > k.el.clientWidth) k.el.style.width = k.el.scrollWidth + "px";
         });
+
+        /* FİLİGRAN (16 Ağu 2026): PNG paylaşıldığında kaynağı ve yasal
+           uyarıyı da taşısın diye karta geçici bir alt şerit ekliyoruz.
+           Sadece indirme anında var; ekranda görünmüyor ve finally'de
+           MUTLAKA kaldırılıyor. */
+        /* ARKA FİLİGRAN: içeriğin ARKASINA, çapraz ve tekrarlı.
+           Alt şerit kırpılabilir; bu kırpılamaz çünkü grafiğin her yerinde var.
+           Opaklık çok düşük (%4) — okunurluğu bozmuyor ama ekran görüntüsünde
+           ve yeniden paylaşımda kaynak kayıtlı kalıyor. */
+        let arkaFiligran = null, filigran = null;
+        if(filigranli){
+          arkaFiligran = document.createElement("div");
+          arkaFiligran.className = "png-arka-filigran";
+          arkaFiligran.setAttribute("aria-hidden", "true");
+          /* ORANTILI BOYUT: kartın gerçek genişliğinin %5,5'i. vw kullanmıyoruz
+             çünkü o ekran genişliğini ölçer, kartınkini değil — dar kartta
+             filigran taşardı. 28-90px arasında sınırlanıyor. */
+          const kartG = (mobilMi ? MASAUSTU : kart.scrollWidth) || 900;
+          const puntoBoyut = Math.round(Math.max(28, Math.min(90, kartG * 0.055)));
+          arkaFiligran.innerHTML =
+            `<div class="pa-yazi" style="font-size:${puntoBoyut}px">GNC Insight</div>`;
+          kart.style.position = "relative";
+          kart.appendChild(arkaFiligran);
+        }
+
+        if(filigranli){
+        filigran = document.createElement("div");
+        filigran.className = "png-filigran";
+        filigran.innerHTML = `
+          <div class="pf-sol">
+            <div class="pf-marka">GNC Insight</div>
+            <div class="pf-alt">gncinsight.com${AKTIF_KOD ? ' · ' + AKTIF_KOD : ''}</div>
+          </div>
+          <div class="pf-sag">
+            <div>${new Date().toLocaleDateString("tr-TR", {day:"numeric", month:"long", year:"numeric"})} · Kaynak: İş Yatırım, TÜİK</div>
+            <div class="pf-uyari">Eğitim ve araştırma amaçlıdır · Yatırım tavsiyesi değildir</div>
+          </div>`;
+        kart.appendChild(filigran);
+        }
 
         // Yerleşim otursun diye iki kare bekle
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -2235,10 +2370,10 @@ function pngBtnBagla(){
           k.el.style.overflowX = k.ox; k.el.style.overflowY = k.oy;
           k.el.style.width = k.w; k.el.style.maxHeight = k.mh;
         });
+        kart.querySelectorAll(".png-filigran, .png-arka-filigran").forEach(e => e.remove());
+        kart.style.position = eskiPozisyon;
         btn.classList.remove("yukleniyor");
       }
-    });
-  });
 }
 
 /* ============================================================
