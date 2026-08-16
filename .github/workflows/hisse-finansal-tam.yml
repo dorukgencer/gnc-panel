@@ -1,12 +1,16 @@
-name: Hisse finansal TAM YENILEME (aylik)
+name: Hisse finansal TAM YENILEME (kademeli, haftalik dilim)
 
 on:
   schedule:
-    # Ayda BIR KEZ (her ayin 1'i, 02:00 UTC - trafigin en dusuk oldugu saat).
-    # Neden gerekli: TMS 29 (enflasyon muhasebesi) GECMIS donemleri de
-    # yeniden ifade edebiliyor - artimli mod sadece yeni ceyrekleri ceker,
-    # gecmisteki bir duzeltmeyi kacirir. Ayda bir tam tarama bunu yakalar.
-    - cron: "0 2 1 * *"
+    # KADEMELI TAM YENILEME (16 Agu 2026)
+    # Eskiden ayda 1 kez TUM hisseler cekiliyordu -> 4-6 SAAT suren tek blok.
+    # O sure boyunca git catismasi riski, tek hatada her seyin cope gitmesi ve
+    # kotada tek kalemde buyuk darbe vardi.
+    # Simdi ayin 1/8/15/22'sinde birer DILIM yenileniyor: ayni is, 4 parcada,
+    # her biri ~25 dk. Ay sonunda tum hisseler yenilenmis oluyor.
+    # Neden gerekli: TMS 29 GECMIS donemleri de yeniden ifade edebiliyor;
+    # artimli mod sadece yeni ceyregi ceker, gecmisteki duzeltmeyi kacirir.
+    - cron: "0 2 1,8,15,22 * *"
   workflow_dispatch: {}
 
 permissions:
@@ -19,7 +23,7 @@ concurrency:
 jobs:
   tam_yenile:
     runs-on: ubuntu-latest
-    timeout-minutes: 180  # ~3 saat (paralel cekimle ~1-1.5 saat bekleniyor, pay birakildi)
+    timeout-minutes: 120  # dilimli calisma ~25 dk surer; elle tam tetikleme icin pay
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,9 +31,25 @@ jobs:
           python-version: "3.12"
       - name: Kutuphaneleri yukle
         run: pip install isyatirimhisse pandas
-      - name: TAM finansal tarama (tum gecmis)
+      - name: Dilim numarasini belirle (ayin gununden)
+        id: dilim
+        run: |
+          gun=$(date -u +%d)
+          case "$gun" in
+            01) d=1 ;; 08) d=2 ;; 15) d=3 ;; 22) d=4 ;;
+            *)  d=0 ;;   # elle tetiklendi -> dilimleme yok, hepsi
+          esac
+          echo "no=$d" >> $GITHUB_OUTPUT
+          if [ "$d" = "0" ]; then
+            echo "Elle tetikleme: TUM hisseler yenilenecek (uzun surer)."
+          else
+            echo "Dilim $d/4 yenilenecek."
+          fi
+      - name: TAM finansal tarama
         env:
           TAM_YENILEME: "1"
+          TAM_DILIM: ${{ steps.dilim.outputs.no }}
+          TAM_DILIM_SAYISI: "4"
         run: python hisse_finansal_cek.py
       - name: Buyume hesapla
         run: python buyume_hesapla.py
@@ -38,7 +58,7 @@ jobs:
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
           git add gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
-          git commit -m "Hisse finansal TAM YENILEME (aylik)" || { echo "Degisiklik yok"; exit 0; }
+          git commit -m "Hisse finansal TAM YENILEME (dilim ${{ steps.dilim.outputs.no }}/4)" || { echo "Degisiklik yok"; exit 0; }
           # CAKISMA COZUMU (16 Agu 2026): Tam yenileme SAATLER suruyor; o pencerede
           # artimli workflow da ayni dosyalari yazip push edebiliyor ve duz rebase
           # 472 dosyada cakisiyordu. Tam yenileme TUM veriyi bastan, TEK vintage ile
