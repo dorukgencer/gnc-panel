@@ -102,6 +102,54 @@
   .oz-select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--surface-raised); font-size:16px; color:var(--ink); }
   .oz-btn { padding:9px 16px; border:1px solid var(--ink); border-radius:7px; background:var(--ink); color:#fff; font-size:12.5px; cursor:pointer; font-weight:600; white-space:nowrap; }
 
+  /* TMS 29 dönem işareti */
+  .fin-tablo th.tms-duz sup { color:var(--pine); font-size:8px; margin-left:2px; font-weight:700; }
+  .fin-tablo th.tms-ham { color:var(--ink-faint); opacity:.75; }
+
+  /* SPK yasal dipnot */
+  .spk-dipnot { margin-top:26px; padding:14px 16px; border-top:1px solid var(--line);
+    font-size:10.5px; line-height:1.65; color:var(--ink-faint); }
+
+  /* Kalem mini grafiği (sparkline) + popup */
+  .fin-tablo td:first-child { display:flex; align-items:center; gap:9px; justify-content:space-between; }
+  .fin-kalem-ad { flex:1; min-width:0; }
+  .fin-spark-btn { border:none; background:none; padding:2px 3px; cursor:pointer; border-radius:4px;
+    line-height:0; flex-shrink:0; opacity:.72; transition:opacity .12s, background .12s; }
+  .fin-spark-btn:hover { opacity:1; background:rgba(0,0,0,0.05); }
+  .fin-spark { width:54px; height:18px; display:block; }
+  .kp-ortu { position:fixed; inset:0; background:rgba(20,26,25,0.42); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px; }
+  .kp-kutu { background:var(--surface-raised); border-radius:12px; padding:20px 22px;
+    max-width:920px; width:100%; box-shadow:0 18px 50px rgba(0,0,0,.22); max-height:90vh; overflow:auto; }
+  .kp-ust { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+  .kp-ad { font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--ink); }
+  .kp-alt { font-size:11px; color:var(--ink-faint); margin-top:3px; }
+  .kp-kapat { border:1px solid var(--line); background:var(--surface); width:30px; height:30px;
+    border-radius:50%; font-size:19px; line-height:1; color:var(--ink-soft); cursor:pointer; flex-shrink:0; }
+  .kp-kapat:hover { background:var(--paper); color:var(--ink); }
+  .kp-not { font-size:10px; color:var(--ink-faint); margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); }
+
+  /* Değerleme kartları */
+  .dg-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media (max-width:1100px){ .dg-grid { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:560px){ .dg-grid { grid-template-columns:1fr; } }
+  .dg-kart { background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:13px 15px; }
+  .dg-baslik { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin-bottom:7px; }
+  .dg-deger { font-family:'IBM Plex Mono',monospace; font-size:21px; font-weight:600; color:var(--ink); line-height:1.15; }
+  .dg-alt { font-size:10px; color:var(--ink-faint); margin-top:5px; }
+
+  /* TMS 29 bilgi notu - enflasyon düğmesinin yerini aldı */
+  .sd-tms-not { background:var(--ochre-soft); border-radius:7px; padding:10px 13px;
+    font-size:11px; line-height:1.55; color:var(--ink); margin-bottom:16px; }
+
+  /* Dönemsel / Çeyreklik geçişi - yan yana, birleşik düğme */
+  .sd-gorunum-grup { display:inline-flex; border:1px solid var(--line-strong); border-radius:8px; overflow:hidden; flex-shrink:0; }
+  .sd-gorunum-btn { padding:6px 14px; font-size:11.5px; border:none; background:var(--surface-raised);
+    color:var(--ink-soft); cursor:pointer; font-family:'IBM Plex Sans',sans-serif; white-space:nowrap; }
+  .sd-gorunum-btn + .sd-gorunum-btn { border-left:1px solid var(--line-strong); }
+  .sd-gorunum-btn:hover { background:var(--surface); }
+  .sd-gorunum-btn.aktif { background:var(--ink); color:#fff; font-weight:600; }
+
   /* ---------- Mevsimsellik ısı haritası ---------- */
   .mv-tablo { width:100%; border-collapse:separate; border-spacing:3px; font-size:11px; min-width:760px; }
   .mv-tablo th { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.06em;
@@ -132,6 +180,18 @@
     <div class="gnc-content">
       <div id="liste-gorunum"></div>
       <div id="detay-gorunum" style="display:none;"></div>
+      <div class="spk-dipnot">
+        Bu sayfadaki tüm veriler ve oranlar <b>eğitim ve araştırma amaçlıdır</b>;
+        yatırım danışmanlığı kapsamında değildir. Burada yer alan bilgiler, yorumlar ve
+        hesaplamalar herhangi bir menkul kıymetin alım-satımı için tavsiye niteliği taşımaz.
+        Yatırım danışmanlığı hizmeti; aracı kurumlar, portföy yönetim şirketleri ve bankalar
+        ile müşteri arasında imzalanacak sözleşme çerçevesinde sunulmaktadır. Buradaki
+        değerlendirmeler kişisel mali durumunuz ile risk ve getiri tercihlerinize uygun
+        olmayabilir; yalnızca bu bilgilere dayanarak verilecek kararlar beklentilerinize
+        uygun sonuçlar doğurmayabilir. Geçmiş performans gelecek dönem için gösterge değildir.
+        Finansal veriler İş Yatırım'dan alınmaktadır; kaynaktan gelen hatalardan
+        GNC Insight sorumlu tutulamaz.
+      </div>
     </div>
   </main>
 </div>
@@ -154,11 +214,24 @@ let FIN = null;            // finansal/{KOD}.json
 let FIYAT = null;          // hisse_gecmis/{KOD}.json
 let SEKME = "finansallar"; // "finansallar" | "karne"
 let ALT_SEKME = "bilanco"; // "bilanco" | "gelir" | "nakit"
-let ENFLASYON = true;      // enflasyon düzeltmesi açık mı
+/* MEVSİMSELLİK'e özel: aylık FİYAT getirisini TÜFE'den arındırma.
+   DİKKAT: Bu, finansal tablolarla ilgisi OLMAYAN ayrı bir şey. Mali tablolarda
+   TÜFE KULLANILMAZ (bkz. TMS29 açıklaması). Burada kullanılır çünkü hisse
+   fiyatı resmi olarak enflasyona göre düzeltilmez; reel getiriyi görmek için
+   TÜFE tek doğru araçtır. */
+let REEL_GETIRI = true;
 let PERIYOT = "yillik";    // "ceyreklik" | "yillik" (yıllık = son 4 çeyrek toplamı)
 let OZEL_GRAFIKLER = [];   // kullanıcının eklediği ek grafikler
 let TUM_KALEMLER = false;  // false = tamamen boş/sıfır satırlar gizli
 let DEGISIM_GOSTER = true; // tabloda dönemler arası % değişim rozetleri
+/* TABLO GÖRÜNÜMÜ — "donemsel" | "ceyreklik"  (16 Ağu 2026)
+   DÖNEMSEL (varsayılan): Kaynaktan geldiği gibi, KÜMÜLATİF. 2026/6 = ilk 6 ay.
+     İş Yatırım, Fintables ve Finvest'in varsayılanı bu. Hiç çıkarma
+     yapılmadığı için kaynakla BİREBİR aynı olur - hata payı sıfır.
+   ÇEYREKLİK: Her dönemden bir öncekini çıkarıp o çeyreğe ait değeri verir.
+     Kullanışlı ama TMS 29 nedeniyle yıl içi değerler farklı satın alma
+     gücünde olabildiği için çıkarma bazen oynak sonuç üretir. */
+let TABLO_GORUNUM = "donemsel";
 
 /* ---------- Finansal tablo bölümleme ----------
    Kalemler kaynak dosyada DOĞAL SIRAYLA geliyor: önce bilanço,
@@ -208,16 +281,36 @@ function tufeBazDegeriniBelirle(donemler){
   }
   TUFE_BAZ_DONEM = null;
 }
-function enflasyonCarpani(donem){
-  if(!ENFLASYON) return 1;
-  const baz = TUFE_BAZ_DONEM ? TUFE[TUFE_BAZ_DONEM] : TUFE["_guncel"];
-  const o = TUFE[donem];
-  if(!baz || !o) return 1;
-  return baz / o;
+/* ============================================================
+   ENFLASYON MUHASEBESİ — TÜFE HESABI YOK (16 Ağu 2026, kesin karar)
+   ============================================================
+   ARAŞTIRMA SONUCU (KGK 23.11.2023 duyurusu + SPK 28.12.2023 kararı):
+     • TMS 29, 31 ARALIK 2023 ve sonrasında sona eren yıllık dönemler için
+       zorunlu oldu. Tablolarda "Tutarlar, TL'nin 31 Aralık 2023 tarihindeki
+       satın alma gücü cinsinden ifade edilmiştir" ibaresi yer alıyor.
+     • TMS 29 karşılaştırma dönemlerini de yeniden ifade ettirdiği için
+       FY2023 raporundaki 2022/12 sütunu da DÜZELTİLMİŞ gelir.
+     • Yani sınır: 2022/12 ve sonrası düzeltilmiş, ÖNCESİ HAM.
+     • SPK, düzeltilmemiş bilgilerin de açıklanmasına izin verdi -> piyasada
+       İKİ AYRI RESMİ VERİ SETİ var.
+
+   BUNDAN ÇIKAN SONUÇ: Finansal tablolara TÜFE ile dokunmak YANLIŞTIR.
+   Diğer platformlar da TÜFE hesabı yapmıyor; iki resmi veri setinden
+   birini gösteriyor. Biz kaynaktan TEK set aldığımız için veriyi
+   OLDUĞU GİBİ gösteriyor ve hangi dönemin ne olduğunu açıkça yazıyoruz.
+   Daha önceki TÜFE tabanlı düzeltme kaldırıldı - tüm sapmaların kaynağıydı. */
+const TMS29_SINIR = 202212;   // bu dönem ve sonrası kaynakta düzeltilmiş gelir
+
+function tms29DuzeltilmisMi(donem){
+  return donemAnahtar(donem) >= TMS29_SINIR;
 }
 
+/* Finansal tablo değerleri ARTIK HİÇ ÖLÇEKLENMEZ. Bu fonksiyon geriye
+   dönük uyumluluk için duruyor ve her zaman 1 döndürür. */
+function enflasyonCarpani(){ return 1; }
+
 /* Bir kalemin dönem->değer haritasını, seçili dönemler için diziye çevirir.
-   ENFLASYON açıksa her değeri kendi çeyreğinin çarpanıyla bugüne taşır. */
+   NOT: Artık hiçbir ölçekleme yapılmaz - değerler kaynaktan geldiği gibidir. */
 function seriHam(kalem, donemler){
   // HAM değerler - enflasyon UYGULANMAZ. Kümülatif çıkarma işlemi bu ham
   // değerler üzerinde yapılmalı (bkz. enflasyonUygula açıklaması).
@@ -268,6 +361,48 @@ function kumulatiftenCeyrege(seri, donemler){
     const j = donemler.indexOf(oncekiDonem);
     if(j < 0 || seri[j] === null || seri[j] === undefined) return null;
     return v - seri[j];
+  });
+}
+
+
+/* ============================================================
+   TTM (YILLIK) — KÜMÜLATİFTEN DOĞRUDAN
+   16 Ağu 2026'da bulunan sorun: Türk mali tablolarında yıl içi
+   kümülatif değerler FARKLI RAPOR SÜRÜMLERİNDEN gelebiliyor
+   (9 aylık rakam Eylül raporundan, yıllık rakam Aralık raporundan;
+   TMS 29 nedeniyle ikisi farklı satın alma gücünde). Çeyreklere
+   bölüp toplamak bu yüzden bozuluyordu:
+     - AGHOL 2023Ç3'te sonuç 2,54 KAT şişkindi
+     - Çeyreklik değerler Finvest'ten 4,9 kat daha oynaktı
+     - Ama 2 çeyreğin TOPLAMI doğruydu -> bölünme hatalı, toplam değil
+   ÇÖZÜM: TTM'i çeyreklere hiç bölmeden hesapla:
+     TTM(y/q) = FY(y-1) + YTD(y/q) − YTD(y-1/q)
+     q=12 ise: TTM = FY(y)  (HİÇ çıkarma yok)
+   Bu, kümülatif raporlayan piyasalarda standart yöntemdir ve
+   çıkarma sayısını 3'ten 2'ye (yıl sonlarında 0'a) indirir.
+   Enflasyon her bileşene KENDİ döneminin çarpanıyla uygulanır. */
+function ttmKumulatiften(hamSeri, donemler){
+  const harita = {};
+  donemler.forEach((d, i) => { harita[d] = hamSeri[i]; });
+  const m = (d) => enflasyonCarpani(d);
+
+  return donemler.map(d => {
+    const [y, q] = d.split("/").map(Number);
+    const ytd = harita[d];
+    if(ytd === null || ytd === undefined) return null;
+
+    // Tam yıl noktası: doğrudan kullan, çıkarma YOK
+    if(q === 12) return ytd * m(d);
+
+    const fyOncekiD  = `${y-1}/12`;
+    const ytdOncekiD = `${y-1}/${q}`;
+    const fyOnceki  = harita[fyOncekiD];
+    const ytdOnceki = harita[ytdOncekiD];
+    // Gerekli bileşen yoksa UYDURMA YAPMA - null döndür
+    if(fyOnceki === null || fyOnceki === undefined) return null;
+    if(ytdOnceki === null || ytdOnceki === undefined) return null;
+
+    return fyOnceki * m(fyOncekiD) + ytd * m(d) - ytdOnceki * m(ytdOncekiD);
   });
 }
 
@@ -625,6 +760,7 @@ async function detayYukle(){
   // TÜFE bazını bu şirketin EN SON finansal dönemine göre belirle
   // (TMS 29 standardı - Finvest/Fintables de böyle yapıyor).
   const tumDonemler = [...new Set(FIN.kalemler.flatMap(k => Object.keys(k.degerler)))];
+  TUM_DONEMLER_SET = new Set(tumDonemler);   // paraTarihi() bunu kullanır
   tufeBazDegeriniBelirle(tumDonemler);
   if(TUFE_BAZ_DONEM){
     document.getElementById("ust-donem").textContent = "Enflasyon bazı: " + donemEtiket(TUFE_BAZ_DONEM);
@@ -651,6 +787,7 @@ function detayCiz(){
     <div class="sd-sekmeler">
       <button class="sd-sekme ${SEKME==='finansallar'?'aktif':''}" onclick="sekmeSec('finansallar')">Finansallar</button>
       <button class="sd-sekme ${SEKME==='karne'?'aktif':''}" onclick="sekmeSec('karne')">Karne</button>
+      <button class="sd-sekme ${SEKME==='degerleme'?'aktif':''}" onclick="sekmeSec('degerleme')">Değerleme</button>
       <button class="sd-sekme ${SEKME==='mevsimsellik'?'aktif':''}" onclick="sekmeSec('mevsimsellik')">Mevsimsellik</button>
     </div>
     <div id="sekme-icerik"></div>`;
@@ -662,6 +799,7 @@ function altSekmeSec(s){ ALT_SEKME = s; sekmeIcerikCiz(); }
 
 function sekmeIcerikCiz(){
   if(SEKME === "finansallar") finansallarCiz();
+  else if(SEKME === "degerleme") degerlemeCiz();
   else if(SEKME === "mevsimsellik") mevsimsellikCiz();
   else karneCiz();
 }
@@ -859,27 +997,40 @@ function finansallarCiz(){
   const gizlenenSayi = hamKalemler.length - doluKalemler.length;
   const kalemler = TUM_KALEMLER ? hamKalemler : doluKalemler;
 
+  // ÖNEMLİ: Bu iki tanım, aşağıdaki html şablonundan ÖNCE gelmeli.
+  // (16 Ağu 2026: Önce şablonda kullanılıp sonra tanımlanmışlardı; const
+  // hoisting yapmadığı için Finansallar sekmesi hiç açılmıyordu.)
+  // Sadece AKIŞ tabloları (gelir/nakit) kümülatiftir; bilanço stok verisidir.
+  const akisTablosuMu = (ALT_SEKME === 'gelir' || ALT_SEKME === 'nakit');
+  const ceyreklikMi = akisTablosuMu && TABLO_GORUNUM === "ceyreklik";
+
   let html = `
     <div class="gnc-panel-kart" style="margin-bottom:18px;">
       <div class="gnc-panel-baslik">
         <div><h2 class="sd-grafik-baslik"><i class="bi bi-diagram-3"></i> Gelir Tablosu Akışı</h2>
-          <div class="sd-grafik-alt">${tumDonemler.length ? donemEtiket(tumDonemler[0]) : '—'} çeyreği · hasılattan net kâra kadar paranın izlediği yol${ENFLASYON ? ' · enflasyondan arındırılmış' : ''}</div></div>
+          <div class="sd-grafik-alt">${tumDonemler.length ? donemEtiket(tumDonemler[0]) : '—'} çeyreği · hasılattan net kâra kadar paranın izlediği yol</div></div>
         ${pngBtnHtml()}
       </div>
       <div id="gelir-akis"></div>
       <div class="gnc-spk-not">Yüzdeler hasılata oranı (marj) gösterir. Kırmızı kutular gideri ya da zararı ifade eder. Eğitim ve araştırma amaçlıdır.</div>
     </div>
-    <div class="sd-alt-sekmeler">
-      <button class="sd-alt-sekme ${ALT_SEKME==='bilanco'?'aktif':''}" onclick="altSekmeSec('bilanco')">Bilanço</button>
-      <button class="sd-alt-sekme ${ALT_SEKME==='gelir'?'aktif':''}" onclick="altSekmeSec('gelir')">Gelir Tablosu</button>
-      <button class="sd-alt-sekme ${ALT_SEKME==='nakit'?'aktif':''}" onclick="altSekmeSec('nakit')">Nakit Akım</button>
+    <div class="sd-alt-sekmeler" style="justify-content:space-between;align-items:center;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="sd-alt-sekme ${ALT_SEKME==='bilanco'?'aktif':''}" onclick="altSekmeSec('bilanco')">Bilanço</button>
+        <button class="sd-alt-sekme ${ALT_SEKME==='gelir'?'aktif':''}" onclick="altSekmeSec('gelir')">Gelir Tablosu</button>
+        <button class="sd-alt-sekme ${ALT_SEKME==='nakit'?'aktif':''}" onclick="altSekmeSec('nakit')">Nakit Akım</button>
+      </div>
+      ${akisTablosuMu ? `<div class="sd-gorunum-grup">
+        <button class="sd-gorunum-btn ${TABLO_GORUNUM==='donemsel'?'aktif':''}" onclick="tabloGorunumSec('donemsel')">Dönemsel</button>
+        <button class="sd-gorunum-btn ${TABLO_GORUNUM==='ceyreklik'?'aktif':''}" onclick="tabloGorunumSec('ceyreklik')">Çeyreklik</button>
+      </div>` : ''}
     </div>
-    <div class="sd-arac-satir">
-      <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
-      <span style="font-size:12px;">Enflasyon düzeltmesi</span>
-      <span class="sd-switch-not">${ENFLASYON
-        ? `Tüm dönemler TÜFE ile ${TUFE_BAZ_DONEM ? donemEtiket(TUFE_BAZ_DONEM) : "en son"} dönemin lirasına taşındı — dönemler karşılaştırılabilir.`
-        : "Rakamlar raporlandığı gibi (nominal). 2024 ve sonrası zaten TMS 29 ile düzeltilmiş, öncesi değil — bu iki dönem birebir karşılaştırılamaz."}</span>
+    <div class="sd-tms-not">
+      <b>Enflasyon muhasebesi (TMS 29):</b> 31 Aralık 2023'ten itibaren zorunlu.
+      Karşılaştırma dönemleri de yeniden ifade edildiği için <b>2022Ç4 ve sonrası
+      düzeltilmiş</b> (sütun başlığında <sup>E</sup> ile işaretli), <b>öncesi ham (nominal)</b> gelir. Rakamlar kaynaktan
+      geldiği gibi gösterilir; üzerinde hiçbir hesaplama yapılmaz.
+      Bu nedenle 2022 öncesi ile sonrası birebir karşılaştırılamaz.
     </div>
     <div class="gnc-panel-kart">
       <div class="gnc-panel-baslik"><h2><i class="bi bi-table"></i> ${secili}</h2>
@@ -888,15 +1039,20 @@ function finansallarCiz(){
         ${pngBtnHtml()}</div>
       <div style="overflow-x:auto;max-height:640px;-webkit-overflow-scrolling:touch;">
       <table class="fin-tablo"><thead><tr><th>Kalem</th>`;
-  tumDonemler.forEach(d => html += `<th>${donemEtiket(d)}</th>`);
+  // TMS 29 işareti: hangi sütunun enflasyon muhasebesine göre düzeltilmiş
+  // olduğunu göster. Kullanıcı iki dönemi karışdırmasın diye görsel ayrım şart.
+  tumDonemler.forEach(d => {
+    const duz = tms29DuzeltilmisMi(d);
+    html += `<th class="${duz ? 'tms-duz' : 'tms-ham'}" title="${duz
+      ? 'Enflasyon muhasebesine (TMS 29) göre düzeltilmiş dönem'
+      : 'Ham (nominal) dönem — enflasyon muhasebesi öncesi'}">${donemEtiket(d)}${duz ? '<sup>E</sup>' : ''}</th>`;
+  });
   html += `</tr></thead><tbody>`;
 
   // AKIŞ tablolarında (Gelir Tablosu / Nakit Akım) kaynak KÜMÜLATİF gelir.
   // "2026Ç2" sütunu gerçekten O ÇEYREĞİ göstersin diye çeyrekliğe çeviriyoruz -
   // yoksa Q2'ye bakan kişi aslında 6 aylık toplamı görür ve yanılır (Finvest de
   // böyle yapıyor). BİLANÇO stok verisidir, dokunulmaz.
-  const akisTablosuMu = (ALT_SEKME === 'gelir' || ALT_SEKME === 'nakit');
-
   kalemler.forEach(k => {
     const anaMi = anaKalemMi(k.ad);
     // DOĞRU SIRA: önce HAM değerler, sonra kümülatiften çeyreğe, EN SON
@@ -906,10 +1062,17 @@ function finansallarCiz(){
       const v = k.degerler[d];
       return (v === undefined || v === null) ? null : v;
     });
-    if(akisTablosuMu) degerler = kumulatiftenCeyrege(degerler, tumDonemler);
+    if(ceyreklikMi) degerler = kumulatiftenCeyrege(degerler, tumDonemler);
     degerler = enflasyonUygula(degerler, tumDonemler);
 
-    html += `<tr class="${anaMi?'ana':''}"><td>${k.ad}</td>`;
+    // Kalem adının yanına mini grafik; tıklanınca büyük grafik açılır
+    const pAnahtar = `${ALT_SEKME}|${k.ad}`;
+    KALEM_POPUP_VERI[pAnahtar] = { ad: k.ad, donemler: tumDonemler, degerler: degerler };
+    const spark = sparklineSvg(degerler);
+    html += `<tr class="${anaMi?'ana':''}"><td>
+      <span class="fin-kalem-ad">${k.ad}</span>
+      ${spark ? `<button class="fin-spark-btn" onclick="kalemPopupAc('${pAnahtar.replace(/'/g,"\\'")}')" title="Grafiği büyüt">${spark}</button>` : ''}
+    </td>`;
     degerler.forEach((v, i) => {
       // Değişim: bir ÖNCEKİ dönem = bir SONRAKİ sütun (tablo yeniden eskiye sıralı)
       let rozet = '';
@@ -927,7 +1090,9 @@ function finansallarCiz(){
     html += `</tr>`;
   });
   html += `</tbody></table></div>
-    <div class="gnc-spk-not">${akisTablosuMu ? 'Her sütun O ÇEYREĞE ait değeri gösterir (kümülatif değil) — "2026Ç2" sadece ikinci çeyrektir. ' : ''}Değerler TL cinsindendir. Kaynak: İş Yatırım. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>
+    <div class="gnc-spk-not">${akisTablosuMu ? (ceyreklikMi
+        ? 'ÇEYREKLİK görünüm: her sütun yalnızca o çeyreğe ait değerdir (bir önceki dönemden çıkarılarak hesaplanır). '
+        : 'DÖNEMSEL görünüm: değerler kaynaktan geldiği gibi, yıl başından o döneme kadar KÜMÜLATİFTİR — "2026Ç2" ilk 6 ayın toplamıdır. ') : ''}Değerler TL cinsindendir. Kaynak: İş Yatırım. Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.</div>
     <div class="sd-veri-zaman" id="fin-veri-zaman"></div>
     </div>`;
   kap.innerHTML = html;
@@ -938,9 +1103,10 @@ function finansallarCiz(){
   pngBtnBagla();
 }
 
-function enflasyonDegis(){ ENFLASYON = !ENFLASYON; sekmeIcerikCiz(); }
+function reelGetiriDegis(){ REEL_GETIRI = !REEL_GETIRI; sekmeIcerikCiz(); }
 function tumKalemleriDegis(){ TUM_KALEMLER = !TUM_KALEMLER; sekmeIcerikCiz(); }
 function degisimDegis(){ DEGISIM_GOSTER = !DEGISIM_GOSTER; sekmeIcerikCiz(); }
+function tabloGorunumSec(g){ TABLO_GORUNUM = g; sekmeIcerikCiz(); }
 function periyotDegis(p){ PERIYOT = p; sekmeIcerikCiz(); }
 
 /* ---------- KARNE ---------- */
@@ -982,7 +1148,7 @@ function karneCiz(){
   const faalKar = kalemBul(K, ["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","Esas Faaliyet Kârı (Zararı)",
                     "XI. NET FAALİYET KARI/ZARARI","X. NET FAALİYET KARI/ZARARI"]);
   const amort   = kalemBul(K, ["Amortisman Giderleri","Amortisman & İtfa Payları"]);
-  const serbest = kalemBul(K, ["Serbest Nakit Akım"]);
+  const serbest = kalemBul(K, ["Serbest Nakit Akım","Serbest Nakit Akımı","Serbest Nakit Akışı"]);
   const opNakit = kalemBul(K, ["İşletme Faaliyetlerinden Kaynaklanan Net Nakit",
                     "I. BANKACILIK FAALİYETLERİNDEN KAYNAKLANAN NET NAKİT AKIŞI"]);
   const ozkaynak= kalemBul(K, ["Özkaynaklar","XVI. ÖZKAYNAKLAR","Ana Ortaklığa Ait Özkaynaklar"]);
@@ -997,9 +1163,15 @@ function karneCiz(){
 
   // AKIŞ kalemleri (gelir tablosu / nakit akım): KÜMÜLATİF geliyor, önce
   // gerçek çeyrekliğe çevir, SONRA yıllıklandır.
-  // DOĞRU SIRA: ham → kümülatiften çeyreğe → enflasyon → yıllıklandır
-  const akis = (kalem) => yilliklandir(
-    enflasyonUygula(kumulatiftenCeyrege(seriHam(kalem, donemler), donemler), donemler), false);
+  // AKIŞ kalemleri:
+  //  - YILLIK (TTM): kümülatiften DOĞRUDAN hesapla (çeyreklere bölme yok,
+  //    bozuk ara değerlerden en az etkilenen yöntem)
+  //  - ÇEYREKLİK: bölmek zorunlu, ham → çeyrek → enflasyon
+  const akis = (kalem) => {
+    const ham = seriHam(kalem, donemler);
+    if(PERIYOT === "yillik") return ttmKumulatiften(ham, donemler);
+    return enflasyonUygula(kumulatiftenCeyrege(ham, donemler), donemler);
+  };
   // STOK kalemleri (bilanço): kümülatif DEĞİL, doğrudan enflasyon uygulanır.
   const stok = (kalem) => yilliklandir(seriCikar(kalem, donemler), true);
 
@@ -1014,58 +1186,37 @@ function karneCiz(){
   // FAVÖK = Faaliyet Kârı + Amortisman (standart yaklaşım; kaynakta hazır kalem yok)
   // FAVÖK = Faaliyet Kârı + Amortisman. İkisi de AKIŞ kalemi -> önce
   // kümülatiften çeyrekliğe çevrilir, sonra toplanır, sonra yıllıklandırılır.
-  // FAVÖK (EBITDA) — DÜZELTME (16 Ağu 2026):
-  // Önce "FAALİYET KARI + Amortisman" kullanıyorduk ama İş Yatırım'ın
-  // "FAALİYET KARI (ZARARI)" kalemi DİĞER faaliyet gelir/giderlerini de
-  // içeriyor; FAVÖK ise bunları dışlar. AGHOL'de bu yüzden 55,8 Mr çıkıyordu,
-  // Finvest 74,6 Mr gösteriyordu (%25 fark), oysa Satışlar ve Net Kâr birebir
-  // tutuyordu — yani sorun sadece bu formüldeydi.
-  // Standart tanım: FAVÖK = Brüt Kâr − (Pazarlama + Genel Yönetim + Ar-Ge) + Amortisman
-  // Bu kalemler bulunamazsa eski yönteme (Faaliyet Kârı + Amortisman) düşer.
-  const brutKarK  = kalemBul(K, ["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)"]);
-  const pazarlamaK= kalemBul(K, ["Pazarlama, Satış ve Dağıtım Giderleri (-)","Pazarlama Giderleri (-)"]);
-  const genelK    = kalemBul(K, ["Genel Yönetim Giderleri (-)"]);
-  const argeK     = kalemBul(K, ["Araştırma ve Geliştirme Giderleri (-)"]);
-
-  // FAVÖK bileşenleri de AKIŞ kalemi: ham → çeyreklik → enflasyon
-  const cev = (kalem) => enflasyonUygula(kumulatiftenCeyrege(seriHam(kalem, donemler), donemler), donemler);
-  const sBrutKar = cev(brutKarK);
-  const sPazarlama = cev(pazarlamaK);
-  const sGenel = cev(genelK);
-  const sArge = cev(argeK);
-  const sFaalKarC = cev(faalKar);
-  const sAmortC   = cev(amort);
-
-  const sFavokHam = donemler.map((_, i) => {
-    const am = sAmortC[i];
-    // Tercih edilen (standart) yöntem
-    if(brutKarK && sBrutKar[i] !== null && am !== null){
-      // Gider kalemleri kaynakta NEGATİF geliyor (adlarında "(-)" var),
-      // bu yüzden ÇIKARMAK yerine TOPLUYORUZ. Eksik olan gider 0 sayılır.
-      const giderler = (sPazarlama[i] || 0) + (sGenel[i] || 0) + (sArge[i] || 0);
-      return sBrutKar[i] + giderler + am;
-    }
-    // Yedek: eski yöntem
-    if(sFaalKarC[i] !== null && am !== null) return sFaalKarC[i] + am;
-    return null;
-  });
-  const sFavok = yilliklandir(sFavokHam, false);
+  // FAVÖK (EBITDA) = FAALİYET KARI + Amortisman
+  // 16 Ağu 2026: Bir ara "Brüt Kâr − faaliyet giderleri + amortisman" formülüne
+  // geçmiştim, YANLIŞTI. Finvest'in kendi tablosu doğruluyor:
+  //   FAALİYET KARI 6.438.826 + amortisman 31.592.388 = FAVÖK 38.031.214 ✓
+  // "Brüt Kâr − giderler" 17.359.855 veriyor; aradaki 10.921.029 diğer
+  // faaliyet gelir/giderleri ve FAVÖK'e DAHİL olmalı.
+  // FAVÖK bileşenleri de AKIŞ kalemi -> akis() ile aynı yöntem.
+  // (16 Ağu 2026: burada 'cev' adında ayrı bir yardımcı vardı, FAVÖK formülünü
+  //  geri alırken tanımı silinmiş ama çağrısı kalmıştı -> Karne sekmesi hiç
+  //  açılmıyordu. akis() zaten birebir aynı işi yapıyor.)
+  const sFaalKarC = akis(faalKar);
+  const sAmortC   = akis(amort);
+  const sFavok = sFaalKarC.map((v, i) =>
+    (v === null || sAmortC[i] === null) ? null : v + sAmortC[i]);
 
   const pEk = PERIYOT === "yillik" ? "(Yıllık) " : "";
   const birim = PERIYOT === "yillik" ? "Son 4 çeyrek toplamı" : "Çeyreklik";
 
   let html = `
     <div class="sd-arac-satir">
-      <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
-      <span style="font-size:12px;">Enflasyon düzeltmesi</span>
-      <div class="sd-alt-sekmeler" style="margin:0 0 0 14px;">
+      <div class="sd-alt-sekmeler" style="margin:0;">
         <button class="sd-alt-sekme ${PERIYOT==='yillik'?'aktif':''}" onclick="periyotDegis('yillik')">Yıllık</button>
         <button class="sd-alt-sekme ${PERIYOT==='ceyreklik'?'aktif':''}" onclick="periyotDegis('ceyreklik')">Çeyreklik</button>
       </div>
     </div>
-    <div class="sd-switch-not" style="margin:-8px 0 16px;">${ENFLASYON
-      ? `Tüm dönemler TÜFE ile ${TUFE_BAZ_DONEM ? donemEtiket(TUFE_BAZ_DONEM) : "en son"} dönemin lirasına taşındı — geçmişle bugün gerçekten karşılaştırılabilir.`
-      : "Rakamlar raporlandığı gibi (nominal). 2024 ve sonrası zaten TMS 29 ile düzeltilmiş, öncesi değil."}</div>
+    <div class="sd-tms-not" style="margin:-6px 0 16px;">
+      <b>Enflasyon muhasebesi (TMS 29):</b> 31 Aralık 2023'ten itibaren zorunlu; karşılaştırma
+      dönemleri de yeniden ifade edildiği için <b>2022Ç4 ve sonrası düzeltilmiş</b>, <b>öncesi ham</b>
+      gelir. Rakamlar kaynaktan geldiği gibidir, üzerinde hesaplama yapılmaz.
+    </div>
+    </div>
     ${bulunamayanlar.length ? `<div style="margin-bottom:14px;padding:10px 12px;background:var(--ochre-soft);border-radius:6px;font-size:11px;color:var(--ink);">
       <b>⚠ ${bulunamayanlar.length} kalem bu şirketin tablosunda bulunamadı:</b> ${bulunamayanlar.join(", ")}.
       İlgili grafikler boş görünecek. Bu genelde bankalar/sigorta gibi farklı tablo formatı kullanan
@@ -1123,10 +1274,16 @@ function grafikKartHtml(id, baslik, alt, lejant){
 
 /* ---------- ÖZEL GRAFİK PANELİ (5. ve sonrası) ---------- */
 function ozelPanelHtml(kalemler){
-  const secenekler = kalemler.map((k,i) => `<option value="${i}">${k.ad}</option>`).join("");
+  // VARSAYILAN: Özkaynaklar vs Hisse Fiyatı. Defter değeri ile piyasa fiyatı
+  // arasındaki makas, uzun vadede en çok konuşulan karşılaştırmalardan biridir
+  // ve kullanıcıya boş bir seçim yerine anlamlı bir başlangıç noktası verir.
+  const varsayilanIdx = kalemler.findIndex(k =>
+    ["Özkaynaklar", "XVI. ÖZKAYNAKLAR", "Ana Ortaklığa Ait Özkaynaklar"].includes(k.ad));
+  const secenekler = kalemler.map((k,i) =>
+    `<option value="${i}"${i === varsayilanIdx ? ' selected' : ''}>${k.ad}</option>`).join("");
   return `<div class="oz-panel">
     <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:600;margin-bottom:3px;">Kendi grafiğini oluştur</div>
-    <div style="font-size:11px;color:var(--ink-faint);margin-bottom:12px;">Bilançodan bir kalem seç, hisse fiyatıyla ya da başka bir kalemle karşılaştır.</div>
+    <div style="font-size:11px;color:var(--ink-faint);margin-bottom:12px;">Bilançodan bir kalem seç, hisse fiyatıyla ya da başka bir kalemle karşılaştır. Varsayılan olarak <b>Özkaynaklar ve Hisse Fiyatı</b> seçilidir — şirketin defter değeri ile piyasanın ona biçtiği fiyat arasındaki makası gösterir.</div>
     <div class="oz-form">
       <div><label class="oz-etiket">1. Kalem (sütun olarak çizilir)</label>
         <select class="oz-select" id="oz-k1">${secenekler}</select></div>
@@ -1157,7 +1314,7 @@ function ozelGrafikleriCiz(donemler, etiketler){
     html += `<div class="gnc-panel-kart">
       <div class="gnc-panel-baslik">
         <div><h2 class="sd-grafik-baslik">${k1?.ad || '—'} <span style="color:var(--ink-faint);font-weight:400;">vs</span> ${ad2}</h2>
-          <div class="sd-grafik-alt">${PERIYOT==='yillik'?'Son 4 çeyrek toplamı':'Çeyreklik'}${ENFLASYON?' · enflasyondan arındırılmış':''}</div></div>
+          <div class="sd-grafik-alt">${PERIYOT==='yillik'?'Son 4 çeyrek toplamı':'Çeyreklik'}</div></div>
         ${pngBtnHtml()}
         <span onclick="ozelSil(${idx})" title="Bu grafiği kaldır" style="cursor:pointer;color:var(--ink-faint);margin-left:8px;font-size:15px;">×</span>
       </div>
@@ -1176,20 +1333,22 @@ function ozelGrafikleriCiz(donemler, etiketler){
     // Bilanço kalemi STOK (kümülatif değil), diğerleri AKIŞ (kümülatif) -
     // akış olanlar önce gerçek çeyrekliğe çevrilir.
     const bilancoMu1 = bolumle(K).bilanco.includes(k1);
-    const ham1 = seriHam(k1, donemler);
-    const s1 = yilliklandir(bilancoMu1
-      ? enflasyonUygula(ham1, donemler)
-      : enflasyonUygula(kumulatiftenCeyrege(ham1, donemler), donemler), bilancoMu1);
+    // Karne grafikleriyle AYNI yöntem: stok kalemi dokunulmaz, akış kalemi
+    // yıllıkta kümülatiften doğrudan TTM, çeyreklikte bölünür.
+    const seriHesapla = (kalem, bilancoMu) => {
+      const ham = seriHam(kalem, donemler);
+      if(bilancoMu) return yilliklandir(enflasyonUygula(ham, donemler), true);
+      if(PERIYOT === "yillik") return ttmKumulatiften(ham, donemler);
+      return enflasyonUygula(kumulatiftenCeyrege(ham, donemler), donemler);
+    };
+    const s1 = seriHesapla(k1, bilancoMu1);
     let s2, ad2, paraMi = true;
     if(o.k2 === "fiyat"){
       s2 = fiyatSerisi(donemler); ad2 = "Hisse Fiyatı"; paraMi = false;
     } else {
       const k2 = K[parseInt(o.k2)];
       const bilancoMu2 = bolumle(K).bilanco.includes(k2);
-      const ham2 = seriHam(k2, donemler);
-      s2 = yilliklandir(bilancoMu2
-        ? enflasyonUygula(ham2, donemler)
-        : enflasyonUygula(kumulatiftenCeyrege(ham2, donemler), donemler), bilancoMu2);
+      s2 = seriHesapla(k2, bilancoMu2);
       ad2 = k2?.ad || "—";
     }
     grafikCiz(`g-oz${idx}`, { etiketler, bar:{ad:k1?.ad||"—", renk:"#1D6555", veriler:s1},
@@ -1233,7 +1392,7 @@ function aylikGetiriler(){
     if(!onceki || !simdi) continue;
     let g = (simdi / onceki - 1) * 100;
 
-    if(ENFLASYON){
+    if(REEL_GETIRI){
       // REEL getiri: nominal getiriden o ayın enflasyonu arındırılır
       // (1+nominal)/(1+enflasyon) − 1
       const t1 = TUFE_AYLIK[oncekiAy], t2 = TUFE_AYLIK[buAy];
@@ -1255,10 +1414,10 @@ function mevsimsellikCiz(){
 
   if(!getiri || !Object.keys(getiri).length){
     kap.innerHTML = `<div class="sd-arac-satir">
-        <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
-        <span style="font-size:12px;">Enflasyon düzeltmesi</span>
+        <div class="sd-switch ${REEL_GETIRI?'acik':''}" onclick="reelGetiriDegis()"></div>
+        <span style="font-size:12px;">Reel getiri (TÜFE'den arındır)</span>
       </div>
-      <div class="gnc-durum-kutu">${ENFLASYON
+      <div class="gnc-durum-kutu">${REEL_GETIRI
         ? "Reel getiri için aylık TÜFE verisi gerekiyor ama bulunamadı. Enflasyon düzeltmesini kapatarak nominal getirileri görebilirsin."
         : "Bu şirket için yeterli fiyat geçmişi bulunamadı."}</div>`;
     return;
@@ -1280,16 +1439,16 @@ function mevsimsellikCiz(){
 
   let html = `
     <div class="sd-arac-satir">
-      <div class="sd-switch ${ENFLASYON?'acik':''}" onclick="enflasyonDegis()"></div>
-      <span style="font-size:12px;">Enflasyon düzeltmesi</span>
-      <span class="sd-switch-not">${ENFLASYON
+      <div class="sd-switch ${REEL_GETIRI?'acik':''}" onclick="reelGetiriDegis()"></div>
+      <span style="font-size:12px;">Reel getiri (TÜFE'den arındır)</span>
+      <span class="sd-switch-not">${REEL_GETIRI
         ? "REEL getiri — her aydan o ayın enflasyonu arındırıldı. Paranın alım gücü cinsinden gerçek kazanç/kayıp."
         : "NOMİNAL getiri — fiyat değişimi, enflasyon arındırılmadı."}</span>
     </div>
     <div class="gnc-panel-kart">
       <div class="gnc-panel-baslik">
         <div><h2 class="sd-grafik-baslik"><i class="bi bi-calendar3"></i> Aylık Getiri Performansı (${AKTIF_KOD})</h2>
-          <div class="sd-grafik-alt">${yillar.length} yıllık periyodik getiri haritası · ${ENFLASYON ? 'reel (TÜFE\'den arındırılmış)' : 'nominal'} · ₺</div></div>
+          <div class="sd-grafik-alt">${yillar.length} yıllık periyodik getiri haritası · ${REEL_GETIRI ? 'reel (TÜFE\'den arındırılmış)' : 'nominal'} · ₺</div></div>
         ${pngBtnHtml()}
       </div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
@@ -1324,12 +1483,267 @@ function mevsimsellikCiz(){
   });
 
   html += `</tbody></table></div>
-    <div class="gnc-spk-not">Aylık getiri = ayın son kapanışının bir önceki ayın son kapanışına oranı. Yıllık toplam, ayların bileşik (çarpım) sonucudur. Eksik aylar hesaba katılmaz. Geçmiş performans gelecek için gösterge değildir; eğitim ve araştırma amaçlıdır.</div>
+    <div class="gnc-spk-not">
+      <b>Bu harita geçmişi gösterir, gelecek için sinyal değildir.</b> BIST verisi üzerinde yapılan
+      testlerde, bir hissenin geçmişteki "en iyi ayı"nın sonraki yıllarda ortalamasının üzerinde
+      getiri sağlamadığı görülmüştür; aylar arası farklar rastgele karıştırılmış verinin ürettiği
+      farktan büyük çıkmamaktadır. Haritayı bir şirketin geçmiş dalgalanmasını tanımak için
+      kullanın, "hangi ayda alayım" sorusuna cevap olarak değil.
+      <br><br>
+      Aylık getiri = ayın son kapanışının bir önceki ayın son kapanışına oranı. Yıllık toplam,
+      ayların bileşik (çarpım) sonucudur. Eksik aylar hesaba katılmaz. Eğitim ve araştırma
+      amaçlıdır, yatırım tavsiyesi değildir.</div>
     <div class="sd-veri-zaman" id="mv-veri-zaman"></div>
     </div>`;
   kap.innerHTML = html;
   veriZamaniYaz("mv-veri-zaman", FIYAT && FIYAT.guncelleme);
   pngBtnBagla();
+}
+
+
+/* ============================================================
+   DEĞERLEME
+   Hisse sayısı = Ödenmiş Sermaye (1 TL nominal varsayımı) — projenin
+   deger_hesapla.py dosyasında zaten doğrulanmış yöntem. Raporlanan
+   "Hisse Başına Kazanç" kalemi bazı şirketlerde 0'a yuvarlandığı için
+   EPS'i net kârdan yeniden hesaplıyoruz.
+   TÜM ORANLAR ham veriden; hiçbir TÜFE ölçeklemesi yok.
+   ============================================================ */
+function degerlemeHesapla(){
+  const K = FIN.kalemler;
+  const donemler = [...new Set(K.flatMap(k => Object.keys(k.degerler)))]
+    .sort((a,b) => donemAnahtar(a) - donemAnahtar(b));
+  if(!donemler.length) return null;
+
+  const bilgi = SIRKETLER.find(x => x.kod === AKTIF_KOD) || {};
+  const fiyat = bilgi.fiyat;
+
+  const netKarK   = kalemBul(K, ["DÖNEM KARI (ZARARI)","Dönem Net Kar/Zararı","Net Dönem Kârı (Zararı)",
+                      "XVIII. NET DÖNEM KARI/ZARARI","XVII. NET DÖNEM KARI/ZARARI"]);
+  const ozkaynakK = kalemBul(K, ["Özkaynaklar","XVI. ÖZKAYNAKLAR","Ana Ortaklığa Ait Özkaynaklar"]);
+  const sermayeK  = kalemBul(K, ["Ödenmiş Sermaye","16.1 Ödenmiş Sermaye"]);
+  const faalKarK  = kalemBul(K, ["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","XI. NET FAALİYET KARI/ZARARI"]);
+  const amortK    = kalemBul(K, ["Amortisman Giderleri","Amortisman & İtfa Payları"]);
+  const borcK     = kalemBul(K, ["Finansal Borçlar","Kısa Vadeli Borçlanmalar","Toplam Finansal Borçlar"]);
+  const nakitK    = kalemBul(K, ["Nakit ve Nakit Benzerleri","I. NAKİT DEĞERLER VE MERKEZ BANKASI"]);
+  const satisK    = kalemBul(K, ["Satış Gelirleri","Hasılat","III. NET FAİZ GELİRİ/GİDERİ (I - II)"]);
+  const brutKarK  = kalemBul(K, ["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)"]);
+
+  const sonDeger = (kalem) => {
+    if(!kalem) return null;
+    for(let i = donemler.length - 1; i >= 0; i--){
+      const v = kalem.degerler[donemler[i]];
+      if(v !== undefined && v !== null && v !== 0) return { deger: v, donem: donemler[i] };
+    }
+    return null;
+  };
+
+  // TTM: kümülatiften doğrudan (çeyreklere bölmeden)
+  const ttm = (kalem) => {
+    if(!kalem) return null;
+    const seri = ttmKumulatiften(donemler.map(d => {
+      const v = kalem.degerler[d];
+      return (v === undefined || v === null) ? null : v;
+    }), donemler);
+    for(let i = seri.length - 1; i >= 0; i--) if(seri[i] !== null) return { deger: seri[i], donem: donemler[i] };
+    return null;
+  };
+
+  const sermaye  = sonDeger(sermayeK);
+  const ozkaynak = sonDeger(ozkaynakK);
+  const netKar   = ttm(netKarK);
+  const faalKar  = ttm(faalKarK);
+  const amort    = ttm(amortK);
+  const satis    = ttm(satisK);
+  const brutKarT = ttm(brutKarK);
+  const borc     = sonDeger(borcK);
+  const nakit    = sonDeger(nakitK);
+
+  const hisseSayisi = sermaye ? sermaye.deger : null;   // 1 TL nominal
+  const favok = (faalKar && amort) ? faalKar.deger + amort.deger : null;
+
+  const eps = (hisseSayisi && netKar) ? netKar.deger / hisseSayisi : null;
+  const defterHisse = (hisseSayisi && ozkaynak) ? ozkaynak.deger / hisseSayisi : null;
+  const piyasaDegeri = (hisseSayisi && fiyat) ? hisseSayisi * fiyat : null;
+  const netBorc = (borc && nakit) ? borc.deger - nakit.deger : null;
+  const firmaDegeri = (piyasaDegeri !== null && netBorc !== null) ? piyasaDegeri + netBorc : null;
+
+  return {
+    fiyat, hisseSayisi, piyasaDegeri, netBorc, firmaDegeri,
+    eps, defterHisse, favok,
+    fk:   (eps && eps > 0 && fiyat) ? fiyat / eps : null,
+    pddd: (defterHisse && defterHisse > 0 && fiyat) ? fiyat / defterHisse : null,
+    fdFavok: (firmaDegeri !== null && favok && favok > 0) ? firmaDegeri / favok : null,
+    pdSatis: (piyasaDegeri !== null && satis && satis.deger > 0) ? piyasaDegeri / satis.deger : null,
+    roe:  (netKar && ozkaynak && ozkaynak.deger > 0) ? netKar.deger / ozkaynak.deger * 100 : null,
+    // Ters oranlar: PD/DD ve F/K'nın tersi. Küçük sayılarla uğraşmak yerine
+    // "1 TL piyasa değeri başına ne kadar özkaynak/brüt kâr" olarak okunur.
+    ozkaynakPd: (piyasaDegeri && ozkaynak && piyasaDegeri > 0) ? ozkaynak.deger / piyasaDegeri : null,
+    brutKarPd:  (piyasaDegeri && brutKarT && piyasaDegeri > 0) ? brutKarT.deger / piyasaDegeri : null,
+    favokMarj: (favok && satis && satis.deger > 0) ? favok / satis.deger * 100 : null,
+    netMarj: (netKar && satis && satis.deger > 0) ? netKar.deger / satis.deger * 100 : null,
+    sonDonem: netKar ? netKar.donem : (ozkaynak ? ozkaynak.donem : donemler[donemler.length-1]),
+    eksik: [
+      !sermayeK && "Ödenmiş Sermaye", !netKarK && "Net Kâr", !ozkaynakK && "Özkaynak",
+      !faalKarK && "Faaliyet Kârı", !amortK && "Amortisman",
+    ].filter(Boolean),
+  };
+}
+
+function degerlemeCiz(){
+  const kap = document.getElementById("sekme-icerik");
+  const d = degerlemeHesapla();
+  if(!d){ kap.innerHTML = '<div class="gnc-durum-kutu">Değerleme için yeterli veri yok.</div>'; return; }
+
+  const say = (v, ond) => v === null || v === undefined || !isFinite(v) ? "—"
+    : v.toLocaleString("tr-TR", { minimumFractionDigits: ond ?? 2, maximumFractionDigits: ond ?? 2 });
+
+  const kart = (baslik, deger, alt, ipucu) => `
+    <div class="dg-kart">
+      <div class="dg-baslik">${baslik}${ipucu ? `<span class="gnc-info">i<span class="gnc-tooltip"><p>${ipucu}</p></span></span>` : ''}</div>
+      <div class="dg-deger">${deger}</div>
+      ${alt ? `<div class="dg-alt">${alt}</div>` : ''}
+    </div>`;
+
+  kap.innerHTML = `
+    <div class="sd-tms-not">
+      <b>Değerleme oranları</b>, son 4 çeyreğin (TTM) kârı ve en güncel bilanço ile hesaplanır.
+      Hisse sayısı Ödenmiş Sermaye'den türetilir (1 TL nominal varsayımı).
+      2022Ç4 ve sonrası TMS 29 ile düzeltilmiş veriye dayanır; öncesiyle birebir karşılaştırılamaz.
+      Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.
+    </div>
+    ${d.eksik.length ? `<div style="margin-bottom:14px;padding:10px 12px;background:var(--brick-soft);border-radius:6px;font-size:11px;">
+      <b>⚠ Bazı kalemler bulunamadı:</b> ${d.eksik.join(", ")}. İlgili oranlar boş görünecek.
+      Bankalar ve sigorta şirketleri farklı tablo formatı kullanır.</div>` : ''}
+
+    <div class="gnc-panel-kart">
+      <div class="gnc-panel-baslik"><h2><i class="bi bi-calculator"></i> Değerleme Oranları</h2>
+        <span class="alt-etiket">${d.sonDonem ? donemEtiket(d.sonDonem) : ''} verisiyle</span>${pngBtnHtml()}</div>
+      <div class="dg-grid">
+        ${kart("F/K", say(d.fk, 1), "Fiyat ÷ hisse başına kâr", "Şirketin bir yıllık kârının kaç katına işlem gördüğü. Düşük olması ucuz anlamına gelmez; sektöre ve büyümeye göre değerlendirilmeli. Kâr negatifse hesaplanamaz.")}
+        ${kart("PD/DD", say(d.pddd, 2), "Fiyat ÷ hisse başına özkaynak", "Piyasa değerinin defter değerine oranı. 1'in altı, şirketin muhasebe değerinin altında işlem gördüğünü gösterir.")}
+        ${kart("FD/FAVÖK", say(d.fdFavok, 1), "Firma değeri ÷ FAVÖK", "Borç dahil şirket değerinin faaliyet kârlılığına oranı. Borçlu şirketleri karşılaştırırken F/K'dan daha adildir.")}
+        ${kart("PD/Satış", say(d.pdSatis, 2), "Piyasa değeri ÷ yıllık satış", "Kâr etmeyen ya da kârı dalgalı şirketlerde kullanılır.")}
+        ${kart("Özkaynak Kârlılığı", d.roe === null ? "—" : "%" + say(d.roe, 1), "Net kâr ÷ özkaynak", "Şirketin ortakların parasıyla ne kadar kâr ürettiği. Enflasyonun üzerinde olması beklenir.")}
+        ${kart("FAVÖK Marjı", d.favokMarj === null ? "—" : "%" + say(d.favokMarj, 1), "FAVÖK ÷ satış", "Her 100 TL satıştan kaç TL faaliyet kârı kaldığı. Fiyatlama gücünün göstergesidir.")}
+        ${kart("Net Kâr Marjı", d.netMarj === null ? "—" : "%" + say(d.netMarj, 1), "Net kâr ÷ satış", "Tüm giderler ve vergiler sonrası kalan pay.")}
+        ${kart("Hisse Başına Kâr", say(d.eps, 2) + " ₺", "Son 4 çeyrek", "Net kârın hisse sayısına bölümü.")}
+        ${kart("Özkaynak / PD", say(d.ozkaynakPd, 2), "PD/DD'nin tersi", "1 TL piyasa değeri başına kaç TL özkaynak. PD/DD'nin tersidir; 1'in üstü, şirketin defter değerinin altında işlem gördüğü anlamına gelir.")}
+        ${kart("Brüt Kâr / PD", say(d.brutKarPd, 3), "Yıllık brüt kâr ÷ piyasa değeri", "1 TL piyasa değeri başına kaç TL brüt kâr üretiliyor. Brüt kâr, muhasebe tercihlerinden net kâra göre daha az etkilendiği için şirketler arası karşılaştırmada daha istikrarlıdır.")}
+      </div>
+    </div>
+
+    <div class="gnc-panel-kart" style="margin-top:16px;">
+      <div class="gnc-panel-baslik"><h2><i class="bi bi-bank"></i> Büyüklük ve Borç</h2>${pngBtnHtml()}</div>
+      <div class="dg-grid">
+        ${kart("Fiyat", d.fiyat === null ? "—" : say(d.fiyat, 2) + " ₺", "Son kapanış")}
+        ${kart("Piyasa Değeri", paraKisa(d.piyasaDegeri) + " ₺", "Fiyat × hisse sayısı")}
+        ${kart("Hisse Sayısı", paraKisa(d.hisseSayisi), "Ödenmiş sermayeden", "1 TL nominal değer varsayımıyla hesaplanır. Farklı nominal değere sahip şirketlerde sapabilir.")}
+        ${kart("Net Borç", d.netBorc === null ? "—" : paraKisa(d.netBorc) + " ₺", "Finansal borç − nakit", "Negatif değer, şirketin borcundan çok nakdi olduğunu gösterir.")}
+        ${kart("Firma Değeri", paraKisa(d.firmaDegeri) + " ₺", "Piyasa değeri + net borç")}
+        ${kart("Defter Değeri/Hisse", say(d.defterHisse, 2) + " ₺", "Özkaynak ÷ hisse sayısı")}
+        ${kart("FAVÖK", paraKisa(d.favok) + " ₺", "Son 4 çeyrek")}
+        ${kart("Net Borç/FAVÖK", (d.netBorc !== null && d.favok && d.favok > 0) ? say(d.netBorc / d.favok, 1) + "x" : "—", "Borç ödeme kapasitesi", "Kabaca: 3'ün altı rahat, 3-5 arası dikkat, 5 üstü riskli kabul edilir. Sektöre göre değişir.")}
+      </div>
+      <div class="sd-veri-zaman" id="dg-veri-zaman"></div>
+    </div>`;
+  veriZamaniYaz("dg-veri-zaman", FIN.guncelleme);
+  pngBtnBagla();
+}
+
+
+/* ============================================================
+   KALEM MİNİ GRAFİĞİ (sparkline) + POPUP
+   Tablodaki her kalemin adının yanında küçük bir sütun grafik.
+   Tıklayınca büyük sütun grafik açılır. Finvest'teki davranışın aynısı.
+   ============================================================ */
+function sparklineSvg(degerler){
+  const v = degerler.filter(x => x !== null && x !== undefined);
+  if(v.length < 2) return '';
+  const G = 54, Y = 18, N = degerler.length;
+  const enB = Math.max(...v.map(Math.abs)) || 1;
+  const bg = Math.max(1, (G / N) * 0.68);
+  let svg = `<svg class="fin-spark" viewBox="0 0 ${G} ${Y}" preserveAspectRatio="none">`;
+  // Eskiden yeniye çizmek için ters (tablo yeniden eskiye sıralı)
+  degerler.slice().reverse().forEach((d, i) => {
+    if(d === null || d === undefined) return;
+    const h = Math.max(0.8, (Math.abs(d) / enB) * (Y - 2));
+    const x = (G / N) * i + ((G / N) - bg) / 2;
+    svg += `<rect x="${x.toFixed(1)}" y="${(Y - h).toFixed(1)}" width="${bg.toFixed(1)}" height="${h.toFixed(1)}" fill="${d < 0 ? '#C08579' : '#7FA88F'}" rx="0.6"/>`;
+  });
+  return svg + '</svg>';
+}
+
+let KALEM_POPUP_VERI = {};   // kalem adı -> {donemler, degerler}
+
+function kalemPopupAc(anahtar){
+  const v = KALEM_POPUP_VERI[anahtar];
+  if(!v) return;
+  const eski = document.getElementById("kalem-popup");
+  if(eski) eski.remove();
+
+  const gecerli = v.degerler.filter(x => x !== null && x !== undefined);
+  if(!gecerli.length) return;
+  const enB = Math.max(...gecerli.map(Math.abs)) || 1;
+  const enK = Math.min(0, ...gecerli);
+  const N = v.degerler.length;
+
+  const G = 860, Y = 320, ustPay = 30, altPay = 62;
+  const cizimY = Y - ustPay - altPay;
+  const tepe = Math.max(...gecerli), dip = Math.min(...gecerli, 0);
+  const aralik = (tepe - dip) || 1;
+  const y0 = ustPay + (tepe / aralik) * cizimY;   // sıfır çizgisi
+  const bg = Math.min((G / N) * 0.62, 34);
+
+  let svg = `<svg width="100%" height="auto" viewBox="0 0 ${G} ${Y}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;">`;
+  if(dip < 0) svg += `<line x1="0" y1="${y0.toFixed(1)}" x2="${G}" y2="${y0.toFixed(1)}" stroke="#CFD6CC" stroke-width="1"/>`;
+
+  // Eskiden yeniye
+  const ters = v.degerler.slice().reverse();
+  const tersD = v.donemler.slice().reverse();
+  const atla = Math.ceil(N / Math.max(1, Math.floor(G / 62)));
+  ters.forEach((d, i) => {
+    const xm = (G / N) * (i + 0.5);
+    if(d !== null && d !== undefined){
+      const h = (Math.abs(d) / aralik) * cizimY;
+      const ust = d >= 0 ? y0 - h : y0;
+      svg += `<rect x="${(xm - bg/2).toFixed(1)}" y="${ust.toFixed(1)}" width="${bg.toFixed(1)}" height="${Math.max(h,1).toFixed(1)}" fill="${d < 0 ? '#9B3A2C' : '#1D6555'}" rx="2"/>`;
+      // Değer etiketi (kalabalık değilse)
+      if(i % atla === 0 || i === N-1){
+        const ey = d >= 0 ? ust - 6 : ust + h + 13;
+        svg += `<text x="${xm.toFixed(1)}" y="${ey.toFixed(1)}" text-anchor="middle" font-size="10" font-family="IBM Plex Mono,monospace" fill="#565F5A">${paraKisa(d)}</text>`;
+      }
+    }
+    if(i % atla === 0 || i === N-1){
+      svg += `<text x="${xm.toFixed(1)}" y="${Y - 34}" text-anchor="middle" font-size="9" fill="#8D958E" font-family="IBM Plex Mono,monospace" transform="rotate(-45 ${xm.toFixed(1)} ${Y-34})">${donemEtiket(tersD[i])}</text>`;
+    }
+  });
+  svg += '</svg>';
+
+  const kutu = document.createElement("div");
+  kutu.id = "kalem-popup";
+  kutu.className = "kp-ortu";
+  kutu.innerHTML = `
+    <div class="kp-kutu" onclick="event.stopPropagation()">
+      <div class="kp-ust">
+        <div>
+          <div class="kp-ad">${v.ad}</div>
+          <div class="kp-alt">${ceyreklikMiEtiket()} · ${N} dönem · en son ${paraKisa(v.degerler[0])} ₺</div>
+        </div>
+        <button class="kp-kapat" onclick="kalemPopupKapat()" title="Kapat">×</button>
+      </div>
+      ${svg}
+      <div class="kp-not">Değerler TL cinsindendir. Kaynak: İş Yatırım. Eğitim ve araştırma amaçlıdır.</div>
+    </div>`;
+  kutu.addEventListener("click", kalemPopupKapat);
+  document.body.appendChild(kutu);
+}
+function ceyreklikMiEtiket(){
+  return (TABLO_GORUNUM === "ceyreklik") ? "Çeyreklik" : "Dönemsel (kümülatif)";
+}
+function kalemPopupKapat(){
+  const e = document.getElementById("kalem-popup");
+  if(e) e.remove();
 }
 
 /* ---------- PNG İNDİRME ---------- */
