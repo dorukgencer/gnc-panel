@@ -108,6 +108,21 @@ def sirket_listesi_uret():
             if e.get("tip") == "sektor":
                 sektor_ad[e["kod"]] = e.get("ad", e["kod"])
 
+    # ÖNEMLİ: Bu script her çalıştığında listeyi SIFIRDAN kuruyor. KAP
+    # kimlikleri ayrı bir script (kap_kimlik_cek.py) tarafından eklendiği için,
+    # mevcut kimlikleri okuyup yeni listeye TAŞIYORUZ - yoksa her piyasa
+    # güncellemesinde silinir ve linkler kırılırdı.
+    onceki_kap = {}
+    try:
+        onceki = json.loads((PANEL / "sirket_listesi.json").read_text(encoding="utf-8"))
+        for s in onceki.get("sirketler", []):
+            if s.get("kap"):
+                onceki_kap[s["kod"]] = s["kap"]
+    except Exception:
+        pass
+    if onceki_kap:
+        print(f"  {len(onceki_kap)} KAP kimliği korunuyor")
+
     liste = []
     for kod, v in hisse_veri.get("hisseler", {}).items():
         if not isinstance(v, dict):
@@ -122,6 +137,7 @@ def sirket_listesi_uret():
             "g1": v.get("g1"),
             "h1": v.get("h1"),
             "a1": v.get("a1"),
+            **({"kap": onceki_kap[kod]} if kod in onceki_kap else {}),
         })
     liste.sort(key=lambda x: x["kod"])
     return liste
