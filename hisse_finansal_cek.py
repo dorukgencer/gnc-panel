@@ -39,11 +39,25 @@ FINANSAL_KLASOR = KLASOR / "gnc-panel" / "finansal"
 BASE_COLS = {"SYMBOL", "FINANCIAL_ITEM_CODE", "FINANCIAL_ITEM_NAME_TR", "FINANCIAL_ITEM_NAME_EN"}
 DONEM_SAYISI = 40   # ~10 yil (ceyreklik) - TAM YENILEMEDE saklanacak donem sayisi
 GRUP_BOYUT = 40     # tek istekte kac sembol (25->40, daha az istek)
-PARALEL = 4         # es zamanli istek sayisi (piyasa_cek.py ile ayni, kanitlanmis)
+PARALEL = 6         # es zamanli istek sayisi.
+                    # 4 -> 6 (16 Agu 2026). piyasa_cek.py 4 ile sorunsuz calisiyor;
+                    # 6'da hata orani artarsa (loglarda cok sayida "hata" satiri)
+                    # 4'e geri dusurun - Is Yatirim rate-limit uygulayabilir.
 MIN_KALEM = 10
 ARTIMLI_GERI_YIL = 2  # artimli modda kac yil geriye bakilir (guvenli pay)
 
 TAM_YENILEME = os.environ.get("TAM_YENILEME", "").strip() in ("1", "true", "True", "evet")
+
+# KADEMELI TAM YENILEME (16 Agu 2026)
+# Sorun: Tam yenileme TEK SEFERDE 4-6 saat suruyordu. Bu sure boyunca:
+#   - baska bir workflow ayni dosyalari yazarsa git catismasi cikiyor
+#   - tek bir hata tum calismayi cope atiyor
+#   - kota tek kalemde buyuk darbe aliyor
+# Cozum: hisseleri DILIMLERE bolup her hafta bir dilimi yenilemek.
+# Ayda 4 calisma x ~25 dk = ayni is, ama her biri kisa ve guvenli.
+# TAM_DILIM=0 -> dilimleme YOK, hepsi tek seferde (eski davranis)
+TAM_DILIM = int(os.environ.get("TAM_DILIM", "0") or 0)
+TAM_DILIM_SAYISI = int(os.environ.get("TAM_DILIM_SAYISI", "4") or 4)
 
 
 def hisse_kodlari():
@@ -221,8 +235,16 @@ def main():
     #   atlanan     -> zaten guncel -> HIC CEKME (asil tasarruf burada)
     tam_gerekli, artimli, atlanan = [], [], 0
     if TAM_YENILEME:
-        print("=== TAM YENILEME MODU (tum gecmis bastan cekiliyor - YAVAS) ===")
-        tam_gerekli = list(kodlar)
+        if TAM_DILIM and 1 <= TAM_DILIM <= TAM_DILIM_SAYISI:
+            # Alfabetik siraya gore her N'inci hisse -> dilimler dengeli dagilir
+            tam_gerekli = [k for i, k in enumerate(kodlar)
+                           if i % TAM_DILIM_SAYISI == (TAM_DILIM - 1)]
+            print(f"=== TAM YENILEME - DILIM {TAM_DILIM}/{TAM_DILIM_SAYISI} "
+                  f"({len(tam_gerekli)}/{len(kodlar)} hisse) ===")
+            print("    Diger dilimler sonraki calismalarda yenilenecek.")
+        else:
+            tam_gerekli = list(kodlar)
+            print("=== TAM YENILEME MODU (TUMU tek seferde - UZUN SURER) ===")
     else:
         hedef = beklenen_son_donem()
         print(f"=== ARTIMLI MOD - beklenen son donem: {hedef[0]}/{hedef[1]} ===")
