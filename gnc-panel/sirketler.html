@@ -957,10 +957,20 @@ function gelirAkisiCiz(hedefId, K, donem){
                     "Satışların Maliyeti (Zararı)","SATIŞLARIN MALİYETİ (-)"]);
   const brutKar  = al(["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)",
                     "Brüt Kar (Zarar)","BRÜT KAR/ZARAR","Brüt Esas Faaliyet Karı (Zararı)"]);
+  /* FAALİYET GİDERLERİ — "Diğer Faaliyet" kalemleri DE dahil (16 Ağu 2026).
+     Önceden yalnızca Pazarlama + Genel Yönetim + ArGe toplanıyordu; oysa
+     Faaliyet Kârı = Brüt Kâr − bu üçü + Diğer Faaliyet Gelirleri − Diğer
+     Faaliyet Giderleri. Diğer kalemler dışarıda kalınca akış KAPANMIYOR:
+     HEKTS 2026/6'da 106,6 Mn TL'lik görünmez boşluk oluşuyordu.
+     Diğer Faaliyet GELİRLERİ pozitiftir; toplama katılınca gideri azaltır,
+     bu doğrudur — kutu "faaliyet kârına giden yolda kaybedilen net tutar"ı
+     gösterir. */
   const faalGider= toplamAl(["Pazarlama, Satış ve Dağıtım Giderleri (-)","Genel Yönetim Giderleri (-)",
                     "Araştırma ve Geliştirme Giderleri (-)","Pazarlama Giderleri (-)",
                     "Faaliyet Giderleri (-)","PAZARLAMA, SATIŞ VE DAĞITIM GİDERLERİ (-)",
-                    "GENEL YÖNETİM GİDERLERİ (-)"]);
+                    "GENEL YÖNETİM GİDERLERİ (-)",
+                    "Diğer Faaliyet Gelirleri","Diğer Faaliyet Giderleri (-)",
+                    "DİĞER FAALİYET GELİRLERİ","Diğer Faaliyet Giderleri"]);
   const faalKar  = al(["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","Esas Faaliyet Kârı (Zararı)",
                     "XI. NET FAALİYET KARI/ZARARI","X. NET FAALİYET KARI/ZARARI"]);
   const vergiOnc = al(["SÜRDÜRÜLEN FAALİYETLER VERGİ ÖNCESİ KARI (ZARARI)",
@@ -1000,6 +1010,16 @@ function gelirAkisiCiz(hedefId, K, donem){
   let faalGiderD = faalGider;
   if(faalGiderD === null && brutKarD !== null && faalKar !== null){
     faalGiderD = faalKar - brutKarD;  turetilen.add("Faaliyet Giderleri");
+  } else if(faalGiderD !== null && brutKarD !== null && faalKar !== null){
+    /* DENGE KONTROLÜ: kalem adları şirketten şirkete değiştiği için toplam
+       eksik kalabilir. Brüt Kâr + Giderler = Faaliyet Kârı tutmuyorsa
+       (%1'den fazla sapma) farkı hesaplayıp kullanıyoruz — akış diyagramında
+       kapanmayan bir denklem göstermek, yaklaşık bir kutu göstermekten kötüdür. */
+    const beklenen = faalKar - brutKarD;
+    const olcek = Math.max(Math.abs(brutKarD), Math.abs(faalKar), 1);
+    if(Math.abs(faalGiderD - beklenen) / olcek > 0.01){
+      faalGiderD = beklenen;  turetilen.add("Faaliyet Giderleri");
+    }
   }
   // Satışların Maliyeti = Brüt Kâr − Hasılat (negatif)
   let satMalD = satMal;
