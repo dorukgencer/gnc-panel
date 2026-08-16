@@ -102,6 +102,40 @@
   .oz-select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--surface-raised); font-size:16px; color:var(--ink); }
   .oz-btn { padding:9px 16px; border:1px solid var(--ink); border-radius:7px; background:var(--ink); color:#fff; font-size:12.5px; cursor:pointer; font-weight:600; white-space:nowrap; }
 
+  /* Şirket Yapısı */
+  .yp-satir { display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:11px 0; border-bottom:1px solid var(--line); }
+  .yp-satir:last-of-type { border-bottom:none; }
+  .yp-satir.vurgu { background:var(--ochre-soft); margin:0 -12px; padding:11px 12px; border-radius:6px; border-bottom:none; }
+  .yp-sol { flex:1; min-width:0; }
+  .yp-ad { font-size:13px; font-weight:600; color:var(--ink); }
+  .yp-not { font-size:10.5px; color:var(--ink-faint); margin-top:2px; line-height:1.45; }
+  .yp-deger { font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600;
+    color:var(--ink); white-space:nowrap; flex-shrink:0; }
+  .yp-cubuk { display:flex; height:24px; border-radius:5px; overflow:hidden; margin-bottom:8px; }
+  .yp-dolgu { height:100%; }
+  .yp-lejant { display:flex; gap:18px; flex-wrap:wrap; font-size:11px; color:var(--ink-soft); margin-bottom:14px; }
+  .yp-lejant .kutu { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .yp-grafik { flex-shrink:0; width:150px; }
+  .yp-spark { width:150px; height:34px; display:block; }
+  .yp-dgs { display:inline-block; margin-left:7px; padding:1px 6px; border-radius:8px; font-size:9.5px; font-weight:600; }
+  .yp-dgs.artti { background:var(--pine-soft); color:var(--pine-dark); }
+  .yp-dgs.azaldi { background:var(--brick-soft); color:var(--brick); }
+  .yp-dgs.notr { background:var(--paper); color:var(--ink-faint); }
+  @media (max-width:640px){ .yp-grafik { display:none; } }
+  .yp-akis { margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }
+  .yp-akis-baslik { font-size:11px; color:var(--ink-faint); margin-bottom:8px; }
+  .yp-akis-satir { display:flex; justify-content:space-between; padding:5px 0; font-size:12.5px; }
+  .yp-akis-ad { color:var(--ink-soft); }
+  .yp-akis-deger { font-family:'IBM Plex Mono',monospace; font-weight:600; }
+
+  /* Bilanço okuması — otomatik gözlemler */
+  .bo-liste { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px; }
+  .bo-liste li { font-size:13px; line-height:1.55; color:var(--ink); padding:9px 13px 9px 14px;
+    border-left:3px solid var(--line-strong); background:var(--surface); border-radius:0 6px 6px 0; }
+  .bo-liste li.bo-yuksek { border-left-color:var(--copper); background:var(--ochre-soft); }
+  .bo-liste li.bo-orta { border-left-color:var(--line-strong); }
+
   /* Genel Bakış — toparlanma kartları */
   .gb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
   .gb-kart { border:1px solid var(--line); border-radius:9px; padding:12px 14px 10px; background:var(--surface); }
@@ -884,6 +918,7 @@ function detayCiz(){
     </div>
     <div class="sd-sekmeler">
       <button class="sd-sekme ${SEKME==='genel'?'aktif':''}" onclick="sekmeSec('genel')">Genel Bakış</button>
+      <button class="sd-sekme ${SEKME==='yapi'?'aktif':''}" onclick="sekmeSec('yapi')">Şirket Yapısı</button>
       <button class="sd-sekme ${SEKME==='finansallar'?'aktif':''}" onclick="sekmeSec('finansallar')">Finansallar</button>
       <button class="sd-sekme ${SEKME==='karne'?'aktif':''}" onclick="sekmeSec('karne')">Karne</button>
       <button class="sd-sekme ${SEKME==='degerleme'?'aktif':''}" onclick="sekmeSec('degerleme')">Değerleme</button>
@@ -898,6 +933,7 @@ function altSekmeSec(s){ ALT_SEKME = s; sekmeIcerikCiz(); }
 
 function sekmeIcerikCiz(){
   if(SEKME === "genel") genelBakisCiz();
+  else if(SEKME === "yapi") yapiCiz();
   else if(SEKME === "finansallar") finansallarCiz();
   else if(SEKME === "degerleme") degerlemeCiz();
   else if(SEKME === "mevsimsellik") mevsimsellikCiz();
@@ -951,8 +987,11 @@ function gelirAkisiCiz(hedefId, K, donem){
 
   // BANKA formatı desteği: bankalarda "hasılat" yok, karşılığı faiz/toplam
   // faaliyet geliri. Sanayi adları bulunamazsa banka adlarına düşer.
+  /* 16 Ağu 2026: Banka kalem adları Karne'ye eklenmiş ama BURAYA eklenmemişti;
+     bankalarda Sankey hiç çizilmiyordu ("hasılat bulunamadı" mesajı). */
   const hasilat  = al(["Satış Gelirleri","Hasılat","Esas Faaliyet Gelirleri",
-                    "VII. TOPLAM FAALİYET GELİRİ/GİDERİ (III+IV+V+VI)","III. NET FAİZ GELİRİ/GİDERİ (I - II)","I. FAİZ GELİRLERİ"]);
+                    "VII. TOPLAM FAALİYET GELİRİ/GİDERİ (III+IV+V+VI)","III. NET FAİZ GELİRİ/GİDERİ (I - II)","I. FAİZ GELİRLERİ",
+                    "NET FAİZ GELİRİ VEYA GİDERİ","FAİZ GELİRLERİ","Faiz Gelirleri"]);
   const satMal   = al(["Satışların Maliyeti (-)","Satışların Maliyeti",
                     "Satışların Maliyeti (Zararı)","SATIŞLARIN MALİYETİ (-)"]);
   const brutKar  = al(["BRÜT KAR (ZARAR)","Ticari Faaliyetlerden Brüt Kar (Zarar)","Brüt Kâr (Zarar)",
@@ -2127,8 +2166,24 @@ function genelBakisCiz(){
     : (v >= 0 ? "+" : "") + v.toLocaleString("tr-TR", { minimumFractionDigits: ond ?? 1, maximumFractionDigits: ond ?? 1 }) + "%";
   const yon = v => v === null || v === undefined ? "notr" : (v > 1 ? "up" : (v < -1 ? "down" : "notr"));
 
-  kap.innerHTML = seciciHtml + `
-    <div class="gnc-panel-kart">
+  const gozlemler = bilancoOkumasi();
+  const gozlemHtml = gozlemler.length ? `
+    <div class="gnc-panel-kart bo-kart">
+      <div class="gnc-panel-baslik">
+        <div><h2 class="sd-grafik-baslik"><i class="bi bi-eye"></i> Son Bilançoda Öne Çıkanlar</h2>
+          <div class="sd-grafik-alt">${donemEtiket(tumD[tumD.length-1])} verisinden otomatik çıkarılan gözlemler</div></div>
+        ${pngBtnHtml()}
+      </div>
+      <ul class="bo-liste">
+        ${gozlemler.map(g => `<li class="bo-${g.onem>=3?'yuksek':'orta'}">${g.metin}</li>`).join("")}
+      </ul>
+      <div class="gnc-spk-not">Bu satırlar <b>yalnızca olgu tespitidir</b> — verideki kalıplar
+        cümleye dökülmüştür. Gelecek tahmini, yorum ya da yatırım tavsiyesi içermez.
+        Her gözlem aşağıdaki grafiklerden ve Finansallar sekmesinden doğrulanabilir.</div>
+    </div>` : "";
+
+  kap.innerHTML = seciciHtml + gozlemHtml + `
+    <div class="gnc-panel-kart" style="margin-top:16px;">
       <div class="gnc-panel-baslik">
         <div><h2 class="sd-grafik-baslik"><i class="bi bi-activity"></i> Bilanço Trendi</h2>
           <div class="sd-grafik-alt">Her kalem kendi geçmişiyle karşılaştırılır —
@@ -2235,6 +2290,491 @@ function dogrulamaLinkleri(bilgi){
     <a class="kap-link" href="https://fintables.com/sirketler/${AKTIF_KOD}/finansal-tablolar/bilanco"
        target="_blank" rel="noopener"
        title="Bağımsız ikinci kaynak — rakamları karşılaştır">Fintables ↗</a>`;
+}
+
+
+/* ============================================================
+   BİLANÇO OKUMASI — otomatik gözlem üretici
+   ============================================================
+   AMAÇ: "Gözden kaçırdığım bir şey var mı?" sorusuna cevap vermek.
+   Son bilançoda dikkat çeken kalıpları tespit edip cümleye döker.
+
+   KURAL: Yalnızca OLGU yazılır. "Özkaynak 3 çeyrektir artıyor" bir olgudur.
+   "Bu yüzden yükselir" bir tahmindir ve BURAYA YAZILMAZ. Tavsiye, hedef fiyat,
+   al/sat imasi kesinlikle yok — hem SPK açısından hem de dürüstlük açısından.
+
+   Her gözlemin bir ÖNEM puanı var (1-3); en yüksek 5 tanesi gösteriliyor ki
+   önemsiz ayrıntı, önemli bulgunun önüne geçmesin.
+   ============================================================ */
+
+function bilancoOkumasi(){
+  const K = FIN.kalemler;
+  const D = [...new Set(K.flatMap(k => Object.keys(k.degerler)))]
+    .sort((a,b) => donemAnahtar(a) - donemAnahtar(b));
+  if(D.length < 4) return [];
+
+  /* AKIŞ kalemlerinde ÇEYREKLİK seri kullanılmaz — mevsimsellik içerir.
+     Perakendede Q4 hep yüksektir; "2 çeyrektir artıyor" demek yanıltıcı olur.
+     Bunun yerine TTM (son 4 çeyrek toplamı) kullanıyoruz: mevsimsellikten
+     arınmış, gerçek eğilimi gösterir. STOK kalemleri (özkaynak, borç, nakit)
+     zaten nokta değerdir, olduğu gibi kullanılır. */
+  const oku = (adaylar, stok) => {
+    const kalem = kalemBul(K, adaylar);
+    if(!kalem) return null;
+    const ham = seriHam(kalem, D);
+    const seri = stok ? ham : ttmKumulatiften(ham, D);
+    return seri.filter(v => v !== null).length >= 3 ? seri : null;
+  };
+  /* Son çeyreğin TEK BAŞINA değeri (zarar tespiti gibi anlık durumlar için) */
+  const ceyrekOku = (adaylar) => {
+    const kalem = kalemBul(K, adaylar);
+    if(!kalem) return null;
+    return kumulatiftenCeyrege(seriHam(kalem, D), D);
+  };
+
+  const S = {
+    ozkaynak: oku(OZKAYNAK_ADAYLARI, true),
+    netKar:   oku(NET_KAR_ADAYLARI, false),
+    satis:    oku(["Satış Gelirleri","Hasılat","NET FAİZ GELİRİ VEYA GİDERİ","III. NET FAİZ GELİRİ/GİDERİ (I - II)"], false),
+    brutKar:  oku(["BRÜT KAR (ZARAR)","Brüt Kar (Zarar)","Ticari Faaliyetlerden Brüt Kar (Zarar)","FAALİYET BRÜT KÂRI"], false),
+    faalKar:  oku(["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","NET FAALİYET KARI (ZARARI)","XI. NET FAALİYET KARI/ZARARI"], false),
+    vergiOnc: oku(["SÜRDÜRÜLEN FAALİYETLER VERGİ ÖNCESİ KARI (ZARARI)","VERGİ ÖNCESİ KAR (ZARAR)"], false),
+    opNakit:  oku(["İşletme Faaliyetlerinden Kaynaklanan Net Nakit"], false),
+    borc:     oku(["Finansal Borçlar","Kısa Vadeli Borçlanmalar"], true),
+    nakit:    oku(["Nakit ve Nakit Benzerleri","I. NAKİT DEĞERLER VE MERKEZ BANKASI"], true),
+  };
+
+  const sonD = D[D.length - 1];
+  const son = seri => { if(!seri) return null;
+    for(let i = seri.length-1; i >= 0; i--) if(seri[i] !== null) return seri[i]; return null; };
+  /* Art arda kaç dönem aynı yönde ilerledi */
+  const seriUzunluk = (dizi, yukari) => {
+    if(!dizi) return 0;
+    let n = 0;
+    for(let i = dizi.length-1; i > 0; i--){
+      if(dizi[i] === null || dizi[i-1] === null) break;
+      if(yukari ? dizi[i] > dizi[i-1] : dizi[i] < dizi[i-1]) n++; else break;
+    }
+    return n;
+  };
+  const yuzde = (a,b) => (b === null || Math.abs(b) < 1e-9) ? null : (a-b)/Math.abs(b)*100;
+  const G = [];
+  const ekle = (onem, tur, metin) => G.push({onem, tur, metin});
+
+  /* SERİ GÖZLEMLERİ KALDIRILDI (16 Ağu 2026)
+     441 şirket × 41 çeyreklik testte "kalem üst üste arttı" kuralının sonraki
+     dönem getirisiyle ilişkisi sıfır çıktı (özkaynak 0,0 puan, t 0,01), toplam
+     varlıkta ters yönde (−10,2 puan). Tek başına yazmak kullanıcıyı yanlış
+     okumaya itiyordu. Serinin değeri yalnızca FİYATLA BİRLİKTE okunduğunda var
+     — o da aşağıdaki makas gözleminde. */
+
+  /* --- TEMEL ile FİYAT MAKASI ---
+     Araştırma bulgusu (441 şirket, 41 çeyrek, BH düzeltmeli): "kalem artıyor"
+     tek başına bilgi taşımıyor, ama "kalem artıyor AMA fiyat çok daha fazla
+     arttı" güçlü bir OLUMSUZ işaret (brüt kâr: −18,8 puan, t −3,67).
+     Tersi de var: "artıyor ve fiyat geride" (+9,8 puan, t 2,86).
+     Bu yüzden seriyi TEK BAŞINA değil, fiyatla BİRLİKTE okuyoruz. */
+  const fiyatDegisimYuzde = (donemSayisi) => {
+    if(!FIYAT || !FIYAT.seri || FIYAT.seri.length < 2) return null;
+    const fs = FIYAT.seri.slice().sort((a,b) => a.tarih.localeCompare(b.tarih));
+    const basD = D[Math.max(0, D.length - 1 - donemSayisi)];
+    if(!basD) return null;
+    const [y,q] = basD.split("/");
+    const sinir = `${y}-${String(q).padStart(2,'0')}-31`;
+    let bas = null;
+    for(const pt of fs){ if(pt.tarih <= sinir) bas = pt.kapanis; else break; }
+    const simdi = fs[fs.length-1]?.kapanis;
+    return (bas && simdi) ? (simdi/bas - 1) * 100 : null;
+  };
+
+  [["Özkaynak", S.ozkaynak, true], ["Brüt kâr", S.brutKar, false],
+   ["Faaliyet kârı", S.faalKar, false]].forEach(([ad, seri]) => {
+    if(!seri) return;
+    const n = seriUzunluk(seri, true);
+    if(n < 3) return;
+    const basI = seri.length - 1 - n;
+    if(basI < 0 || seri[basI] === null) return;
+    const temelArtis = yuzde(son(seri), seri[basI]);
+    const fiyatArtis = fiyatDegisimYuzde(n);
+    if(temelArtis === null || fiyatArtis === null) return;
+    /* ORANSAL karşılaştırma (puan farkı DEĞİL): %117'ye karşı %173 ile
+       %10'a karşı %66 aynı puan farkını verir ama bambaşka şeylerdir.
+       Fiyat, temelin KAÇ KATI kadar hareket etmiş, ona bakıyoruz.
+       Eşikler: fiyat temelin yarısından az arttıysa "geride",
+       iki katından fazla arttıysa "önde". Aradaki bölge "dengeli" sayılır
+       ve hiç yazılmaz — yanlış alarm üretmemek için geniş bırakıldı. */
+    if(temelArtis <= 5) return;                 // temel anlamlı artmamışsa karşılaştırma boş
+    const oran = fiyatArtis / temelArtis;
+    if(oran < 0.5)
+      ekle(3, "makas", `<b>${ad} ${n} çeyrekte %${temelArtis.toFixed(0)} arttı, hisse fiyatı aynı dönemde %${fiyatArtis.toFixed(0)}</b> — fiyat, temeldeki iyileşmenin gerisinde kalmış.`);
+    else if(oran > 2)
+      ekle(3, "makas", `<b>${ad} %${temelArtis.toFixed(0)} artarken hisse %${fiyatArtis.toFixed(0)} yükselmiş</b> — fiyat, temeldeki iyileşmenin belirgin biçimde ötesine geçmiş.`);
+  });
+
+  // --- Kâr kalitesi: kâr ile nakit ayrışması ---
+  if(S.netKar && S.opNakit){
+    const nk = son(S.netKar), on = son(S.opNakit);
+    if(nk !== null && on !== null && nk > 0 && on < 0)
+      ekle(3, "kalite", `Net kâr pozitif ama <b>operasyonel nakit akışı negatif</b> — kâr bu çeyrek nakde dönmemiş.`);
+    else if(nk !== null && on !== null && nk > 0 && on > 0 && on < nk * 0.5)
+      ekle(2, "kalite", `Operasyonel nakit akışı, net kârın yarısından az — kârın nakde dönüşümü zayıf.`);
+  }
+
+  // --- 3) Tek seferlik etki: sonucu ana iş mi belirledi? ---
+  if(S.faalKar && S.vergiOnc){
+    const f = son(S.faalKar), v = son(S.vergiOnc);
+    if(f !== null && v !== null && Math.abs(f) > 0){
+      const fark = v - f;
+      if(Math.abs(fark) > Math.abs(f) * 1.5)
+        ekle(3, "tekseferlik", `Vergi öncesi kâr ile faaliyet kârı arasında büyük fark var — sonucu <b>ana iş dışı kalemler</b> (kur, faiz, yatırım) belirlemiş.`);
+    }
+    if(f !== null && v !== null && f < 0 && v > 0)
+      ekle(3, "tekseferlik", `Şirket <b>ana işinden zarar</b> etmiş ama faaliyet dışı gelirlerle vergi öncesi kârı pozitife dönmüş.`);
+  }
+
+  // --- 4) Marj değişimi ---
+  if(S.brutKar && S.satis){
+    const marj = (i) => (S.satis[i] && S.brutKar[i] !== null && S.satis[i] !== 0)
+      ? S.brutKar[i]/S.satis[i]*100 : null;
+    const sonI = S.satis.length - 1;
+    const m = marj(sonI);
+    const gecmis = [];
+    for(let i = Math.max(0, sonI-4); i < sonI; i++){ const x = marj(i); if(x !== null) gecmis.push(x); }
+    if(m !== null && gecmis.length >= 2){
+      const ort = gecmis.reduce((a,b)=>a+b,0)/gecmis.length;
+      const fark = m - ort;
+      /* Taban negatifse yüzde puan karşılaştırması anlamsız: zarardan kâra
+         geçen şirkette "+29,8 puan" gibi gürültü çıkıyordu. İkisi de pozitifse
+         karşılaştır; değilse zaten zarar gözlemi ayrıca yazılıyor. */
+      if(m > 0 && ort > 0 && Math.abs(fark) >= 3)
+        ekle(2, "marj", `Brüt marj %${m.toFixed(1)} — son dört çeyrek ortalamasının <b>${fark>0?'üzerinde':'altında'}</b> (${fark>0?'+':''}${fark.toFixed(1)} puan).`);
+    }
+  }
+
+  // --- 5) Zarar durumu ---
+  const fkC = son(ceyrekOku(["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","NET FAALİYET KARI (ZARARI)"]));
+  const nkC = son(ceyrekOku(NET_KAR_ADAYLARI));
+  if(fkC !== null && fkC < 0) ekle(3, "zarar", `Bu çeyrek <b>faaliyet zararı</b> açıklanmış — giderler brüt kârı aşmış.`);
+  if(nkC !== null && nkC < 0) ekle(3, "zarar", `Dönem <b>net zararla</b> kapanmış.`);
+
+  // --- 6) Borç ve nakit ---
+  if(S.borc && S.nakit){
+    const b = son(S.borc), n = son(S.nakit);
+    if(b !== null && n !== null){
+      const netBorc = b - n;
+      if(netBorc < 0) ekle(2, "borc", `Şirketin nakdi finansal borcundan <b>fazla</b> (net nakit pozisyonu).`);
+    }
+    const bArtis = seriUzunluk(S.borc, true);
+    if(bArtis >= 3) ekle(2, "borc", `Finansal borç ${bArtis} çeyrektir kesintisiz artıyor.`);
+  }
+
+  /* --- TOPLAM VARLIK BÜYÜMESİ ---
+     Testte en net negatif bulgu: 3 çeyrek üst üste artış −10,2 puan (t −2,79),
+     4 çeyrek −15,6 puan (t −3,22). Sebebi genelde borç ya da sermaye
+     artırımıyla finanse edilmesi. Bu yüzden ayrıca uyarılıyor. */
+  const varlik = oku(["TOPLAM VARLIKLAR","Toplam Varlıklar","AKTİF TOPLAMI"], true);
+  if(varlik){
+    const n = seriUzunluk(varlik, true);
+    if(n >= 3) ekle(2, "varlik", `Toplam varlıklar ${n} çeyrektir kesintisiz büyüyor — bu büyümenin borçla mı özkaynakla mı finanse edildiğine bakmakta fayda var.`);
+  }
+
+  // --- Özkaynak erimesi ---
+  if(S.ozkaynak){
+    const o = son(S.ozkaynak);
+    if(o !== null && o < 0) ekle(3, "ozkaynak", `<b>Özkaynak negatif</b> — birikmiş zararlar sermayeyi aşmış.`);
+    else if(S.ozkaynak.length >= 5){
+      const oncekiler = S.ozkaynak.slice(-5, -1).filter(v => v !== null);
+      if(oncekiler.length && o !== null){
+        const d = yuzde(o, oncekiler[0]);
+        if(d !== null && d <= -15)
+          ekle(2, "ozkaynak", `Özkaynak dört çeyrekte %${Math.abs(d).toFixed(0)} <b>erimiş</b>.`);
+      }
+    }
+  }
+
+  // Aynı türden en fazla 2 gözlem; toplam 5
+  const sayac = {};
+  return G.sort((a,b) => b.onem - a.onem)
+    .filter(g => { sayac[g.tur] = (sayac[g.tur]||0)+1; return sayac[g.tur] <= 2; })
+    .slice(0, 5);
+}
+
+
+/* ============================================================
+   ŞİRKET YAPISI — karakter tarifi, tahmin değil
+   ============================================================
+   FELSEFE: Burada hiçbir şey "yükselir/düşer" demez. Yalnızca şirketin
+   NASIL KURULDUĞUNU tarif eder: parayı nereden buluyor, nerede tutuyor,
+   kısa vadede sıkışır mı, kârı nakde dönüyor mu.
+
+   Bunlar muhasebe gerçekleridir; 2016'da da doğruydu, 2036'da da doğru
+   olacak. Geriye dönük teste, rejim varsayımına, getiri tahminine
+   DAYANMAZLAR. Ortamı kullanıcı okur; panel yalnızca şirketin o ortama
+   hangi yapıyla baktığını gösterir.
+
+   Örnek: "Finansman gideri faaliyet kârının %180'i" bir olgudur. Bundan
+   "faiz inerse yükselir" sonucunu ÇIKARMAK kullanıcının işidir, panelin
+   değil. Tooltip'ler mekanizmayı anlatır, sonucu değil.
+   ============================================================ */
+
+function yapiKalemleri(){
+  return {
+    ozkaynak:  OZKAYNAK_ADAYLARI,
+    toplamKay: ["TOPLAM KAYNAKLAR","Toplam Kaynaklar","PASİF TOPLAMI","TOPLAM VARLIKLAR","Toplam Varlıklar"],
+    borcKV:    ["Finansal Borçlar","Kısa Vadeli Borçlanmalar","Kısa Vadeli Finansal Borçlar"],
+    borcUV:    ["Uzun Vadeli Finansal Borçlar","Uzun Vadeli Borçlanmalar"],
+    nakit:     ["Nakit ve Nakit Benzerleri","I. NAKİT DEĞERLER VE MERKEZ BANKASI","Nakit ve Nakit Benzerleri Değerler"],
+    donenVar:  ["Toplam Dönen Varlıklar","Dönen Varlıklar","TOPLAM DÖNEN VARLIKLAR"],
+    kvYuk:     ["Toplam Kısa Vadeli Yükümlülükler","Kısa Vadeli Yükümlülükler","TOPLAM KISA VADELİ YÜKÜMLÜLÜKLER"],
+    dovizPoz:  ["Hedge Dahil Net Yabancı Para Pozisyonu","Net Yabancı Para Pozisyonu"],
+  };
+}
+function yapiAkisKalemleri(){
+  return {
+    finGider: ["(Esas Faaliyet Dışı) Finansal Giderler (-)","Finansman Giderleri (-)","Finansal Giderler (-)",
+               "Finansman Gideri (-)","FİNANSMAN GİDERLERİ (-)"],
+    faalKar:  ["FAALİYET KARI (ZARARI)","Net Faaliyet Kar/Zararı","NET FAALİYET KARI (ZARARI)",
+               "XI. NET FAALİYET KARI/ZARARI","Esas Faaliyet Kârı (Zararı)"],
+    amort:    ["Amortisman Giderleri","Amortisman","Amortisman & İtfa Payları"],
+    netKar:   NET_KAR_ADAYLARI,
+    opNakit:  ["İşletme Faaliyetlerinden Kaynaklanan Net Nakit","İşletme Faaliyetlerinden Nakit Akışları",
+               "A. İŞLETME FAALİYETLERİNDEN NAKİT AKIŞLARI","İşletme Faaliyetlerinden Net Nakit Akışları"],
+    yatNakit: ["Yatırım Faaliyetlerinden Kaynaklanan Net Nakit","Yatırım Faaliyetlerinden Nakit Akışları",
+               "B. YATIRIM FAALİYETLERİNDEN KAYNAKLANAN NAKİT AKIŞLARI"],
+    finNakit: ["Finansman Faaliyetlerinden Kaynaklanan Net Nakit","Finansman Faaliyetlerinden Nakit Akışları",
+               "C. FİNANSMAN FAALİYETLERİNDEN NAKİT AKIŞLARI"],
+  };
+}
+
+/* ------------------------------------------------------------
+   YAPI — BELİRLİ BİR DÖNEM İÇİN (16 Ağu 2026'da yeniden yazıldı)
+   ------------------------------------------------------------
+   ÖNCEKİ HATA: "son dolu değeri bul" mantığı kullanılıyordu. Özkaynak
+   2026/6'da, finansal borç sadece 2025/12'de varsa ikisi bölünüyor ve
+   FARKLI DÖNEMLERİN rakamlarından oran üretiliyordu.
+   ŞİMDİ: her ölçüm TEK BİR DÖNEMDEN okunur; o dönemde kalem yoksa null
+   döner ve oran hesaplanmaz. Karışık dönem oranı üretmektense boş
+   göstermek doğrudur.
+
+   Ayrıca artık HER DÖNEM için hesaplanabiliyor — böylece şirketin
+   yapısının zaman içinde değişip değişmediği görülebiliyor. Bir şirket
+   borçtan özkaynağa geçebilir, nakit biriktirmeye başlayabilir; tek
+   fotoğrafla bu görülmez.
+   ------------------------------------------------------------ */
+function yapiHesapla(donem, D){
+  const K = FIN.kalemler;
+  const S = yapiKalemleri(), A = yapiAkisKalemleri();
+
+  const nokta = (adaylar) => {
+    const kalem = kalemBul(K, adaylar);
+    if(!kalem) return null;
+    const v = kalem.degerler[donem];
+    return typeof v === "number" ? v : null;
+  };
+  const akisTtm = (adaylar) => {
+    const kalem = kalemBul(K, adaylar);
+    if(!kalem) return null;
+    const seri = ttmKumulatiften(seriHam(kalem, D), D);
+    const i = D.indexOf(donem);
+    return (i >= 0 && seri[i] !== null) ? seri[i] : null;
+  };
+
+  const ozkaynak = nokta(S.ozkaynak), toplamKay = nokta(S.toplamKay);
+  const bKV = nokta(S.borcKV), bUV = nokta(S.borcUV);
+  const toplamBorc = (bKV === null && bUV === null) ? null : (bKV||0) + (bUV||0);
+  const nakit = nokta(S.nakit), donenVar = nokta(S.donenVar), kvYuk = nokta(S.kvYuk);
+  const dovizPoz = nokta(S.dovizPoz);
+
+  const faalKar = akisTtm(A.faalKar), amort = akisTtm(A.amort);
+  const finGider = akisTtm(A.finGider), netKar = akisTtm(A.netKar);
+  const opNakit = akisTtm(A.opNakit), yatNakit = akisTtm(A.yatNakit), finNakit = akisTtm(A.finNakit);
+  const favok = (faalKar !== null && amort !== null) ? faalKar + amort : null;
+  const netBorc = (toplamBorc === null) ? null : toplamBorc - (nakit || 0);
+  const serbestNakit = (opNakit !== null && yatNakit !== null) ? opNakit + yatNakit : null;
+
+  /* Bölmeden önce payda kontrolü: sıfır ya da null ise oran YOK.
+     Negatif paydada da oran anlamsızlaşır (negatif özkaynak gibi). */
+  const bol = (pay, payda, carpan) =>
+    (pay === null || payda === null || payda <= 0) ? null : pay/payda*(carpan||1);
+
+  return {
+    donem, ozkaynak, toplamKay, toplamBorc, nakit, netBorc, donenVar, kvYuk, dovizPoz,
+    finGider, faalKar, netKar, opNakit, yatNakit, finNakit, serbestNakit, favok,
+    ozkaynakOrani: bol(ozkaynak, toplamKay, 100),
+    borcOrani:     bol(toplamBorc, toplamKay, 100),
+    cariOran:      bol(donenVar, kvYuk),
+    // Finansman gideri kaynakta negatif de pozitif de gelebilir -> mutlak değer
+    finGiderYuku:  (finGider === null || faalKar === null || faalKar <= 0)
+                     ? null : Math.abs(finGider)/faalKar*100,
+    netBorcFavok:  (netBorc === null || favok === null || favok <= 0) ? null : netBorc/favok,
+    nakitDonusum:  (opNakit === null || netKar === null || netKar <= 0) ? null : opNakit/netKar*100,
+  };
+}
+
+/* Tüm dönemler için yapı — değişimi yakalamak üzere */
+function yapiSerisi(){
+  const D = [...new Set(FIN.kalemler.flatMap(k => Object.keys(k.degerler)))]
+    .sort((a,b) => donemAnahtar(a) - donemAnahtar(b));
+  if(!D.length) return { D: [], seri: [], son: null };
+  const seri = D.map(d => yapiHesapla(d, D));
+  return { D, seri, son: seri[seri.length-1] };
+}
+
+/* Bir oranın zaman içindeki seyri — küçük çizgi. Yapının DEĞİŞİP
+   değişmediğini gösterir; tek dönem fotoğrafı bunu saklıyordu. */
+function oranSerisiSvg(degerler, esik){
+  const g = degerler.filter(v => v !== null && isFinite(v));
+  if(g.length < 3) return "";
+  const G = 150, Y = 34, p = 3;
+  const tepe = Math.max(...g, esik ?? -Infinity), dip = Math.min(...g, esik ?? Infinity);
+  const ar = (tepe - dip) || 1;
+  const x = i => (G/(degerler.length-1))*i;
+  const y = v => p + (1 - (v-dip)/ar)*(Y-2*p);
+  let d = "", ilk = true;
+  degerler.forEach((v,i) => {
+    if(v === null || !isFinite(v)) { ilk = true; return; }
+    d += (ilk ? "M" : "L") + x(i).toFixed(1) + " " + y(v).toFixed(1) + " ";
+    ilk = false;
+  });
+  let svg = `<svg class="yp-spark" viewBox="0 0 ${G} ${Y}" preserveAspectRatio="none">`;
+  if(esik !== undefined && esik >= dip && esik <= tepe)
+    svg += `<line x1="0" y1="${y(esik).toFixed(1)}" x2="${G}" y2="${y(esik).toFixed(1)}" stroke="#C08579" stroke-width="1" stroke-dasharray="3 2"/>`;
+  svg += `<path d="${d}" fill="none" stroke="#1D6555" stroke-width="1.6" stroke-linejoin="round"/>`;
+  const sonI = degerler.length - 1;
+  if(degerler[sonI] !== null && isFinite(degerler[sonI]))
+    svg += `<circle cx="${x(sonI).toFixed(1)}" cy="${y(degerler[sonI]).toFixed(1)}" r="2.4" fill="#1D6555"/>`;
+  return svg + `</svg>`;
+}
+
+function yapiCiz(){
+  const kap = document.getElementById("sekme-icerik");
+  const { D, seri, son: y } = yapiSerisi();
+  if(!y){ kap.innerHTML = '<div class="gnc-durum-kutu">Bu şirket için yapı verisi yok.</div>'; return; }
+
+  const gD = zamanFiltrele(D);
+  const bas = D.length - gD.length;
+  const dilim = alan => seri.slice(bas).map(x => x[alan]);
+
+  const s2 = (v,o) => v === null || v === undefined || !isFinite(v) ? "—"
+    : v.toLocaleString("tr-TR", {minimumFractionDigits:o??1, maximumFractionDigits:o??1});
+  const yuz = (v,o) => v === null ? "—" : "%" + s2(v,o??0);
+
+  /* Aynı oranın 4 çeyrek önceki hâliyle karşılaştırması — yapı değişti mi? */
+  const degisim = (alan, birim) => {
+    const i = D.indexOf(y.donem), j = i - 4;
+    if(j < 0 || !seri[j]) return "";
+    const eski = seri[j][alan], simdi = y[alan];
+    if(eski === null || simdi === null) return "";
+    const f = simdi - eski;
+    if(Math.abs(f) < (birim === "kat" ? 0.15 : 3)) return `<span class="yp-dgs notr">4 çeyrekte değişmedi</span>`;
+    const yon = f > 0 ? "artti" : "azaldi";
+    const gost = birim === "kat" ? s2(Math.abs(f),2)+"x" : s2(Math.abs(f),0)+" puan";
+    return `<span class="yp-dgs ${yon}">4 çeyrekte ${f>0?"+":"−"}${gost}</span>`;
+  };
+
+  const satir = (ad, deger, alt, ipucu, alan, birim, esik, vurgu) => `
+    <div class="yp-satir${vurgu ? ' vurgu' : ''}">
+      <div class="yp-sol">
+        <div class="yp-ad">${ad}${ipucu ? `<span class="gnc-info">i<span class="gnc-tooltip"><p>${ipucu}</p></span></span>` : ''}</div>
+        <div class="yp-not">${alt}${alan ? " " + degisim(alan, birim) : ""}</div>
+      </div>
+      ${alan ? `<div class="yp-grafik">${oranSerisiSvg(dilim(alan), esik)}</div>` : ""}
+      <div class="yp-deger">${deger}</div>
+    </div>`;
+
+  const cubuk = (sa, sd, sga, sgd, sr, sgr) => {
+    if(sd === null || sgd === null) return "";
+    const t = Math.abs(sd) + Math.abs(sgd);
+    if(!t) return "";
+    const p = Math.abs(sd)/t*100;
+    return `<div class="yp-cubuk">
+      <div class="yp-dolgu" style="width:${p.toFixed(1)}%;background:${sr}"></div>
+      <div class="yp-dolgu" style="width:${(100-p).toFixed(1)}%;background:${sgr}"></div></div>
+    <div class="yp-lejant">
+      <span><span class="kutu" style="background:${sr}"></span>${sa} ${yuz(p)}</span>
+      <span><span class="kutu" style="background:${sgr}"></span>${sga} ${yuz(100-p)}</span></div>`;
+  };
+
+  const akislar = [
+    {ad:"İşletme faaliyeti", v:y.opNakit},
+    {ad:"Yatırım faaliyeti", v:y.yatNakit},
+    {ad:"Finansman faaliyeti", v:y.finNakit},
+  ].filter(a => a.v !== null);
+
+  kap.innerHTML = `
+    <div class="sd-arac-satir" style="justify-content:flex-end;">${zamanSeciciHtml()}</div>
+    <div class="sd-tms-not">
+      Bu sayfa şirketin <b>ne kadar kazandığını değil, nasıl kurulduğunu</b> gösterir.
+      Her satırın yanındaki küçük çizgi, o oranın <b>zaman içindeki seyridir</b> —
+      şirket yapısını değiştirdiyse (borçtan özkaynağa geçiş, nakit biriktirme,
+      borç kapatma) burada görünür. Rakamlar ${donemEtiket(y.donem)} bilançosundan;
+      akış kalemleri son 4 çeyrek toplamıdır. Hiçbiri gelecek tahmini değildir.
+    </div>
+
+    <div class="gnc-panel-kart">
+      <div class="gnc-panel-baslik"><div>
+        <h2 class="sd-grafik-baslik"><i class="bi bi-cash-stack"></i> Nakit Gerçeği</h2>
+        <div class="sd-grafik-alt">Kâr kâğıt üzerinde mi, kasada mı</div></div>${pngBtnHtml()}</div>
+      ${satir("Net kâr", paraKisa(y.netKar)+" ₺", "Son 4 çeyrek toplamı",
+        "Muhasebe kârı. Tahsil edilmemiş satışlar ve amortisman gibi nakit çıkışı olmayan kalemler içerir.")}
+      ${satir("Operasyonel nakit akışı", paraKisa(y.opNakit)+" ₺", "Ana işten fiilen kasaya giren",
+        "Esas faaliyetten gerçekten elde edilen nakit. Kârdan çok daha zor manipüle edilir.", null, null, null, true)}
+      ${satir("Nakde dönüşüm", yuz(y.nakitDonusum), "Operasyonel nakit ÷ net kâr",
+        "Kârın yüzde kaçı nakde dönmüş. Sürekli düşük kalması, kârın tahsil edilemediğini gösterebilir.",
+        "nakitDonusum", "puan", 100)}
+      ${satir("Serbest nakit akışı", y.serbestNakit===null?"—":paraKisa(y.serbestNakit)+" ₺", "İşletme + yatırım nakdi",
+        "Yatırım harcamaları düşüldükten sonra kalan. Negatifse şirket kendini finanse edemiyor.")}
+      ${akislar.length ? `<div class="yp-akis">
+        <div class="yp-akis-baslik">Para bu dönem nereden geldi, nereye gitti (son 4 çeyrek)</div>
+        ${akislar.map(a => `<div class="yp-akis-satir"><span class="yp-akis-ad">${a.ad}</span>
+          <span class="yp-akis-deger" style="color:${a.v>=0?'#1D6555':'#9B3A2C'}">${a.v>=0?'+':''}${paraKisa(a.v)} ₺</span></div>`).join("")}
+      </div>` : ""}
+    </div>
+
+    <div class="gnc-panel-kart" style="margin-top:16px;">
+      <div class="gnc-panel-baslik"><div>
+        <h2 class="sd-grafik-baslik"><i class="bi bi-diagram-3"></i> Finansman Yapısı</h2>
+        <div class="sd-grafik-alt">Şirket kimin parasıyla dönüyor</div></div>${pngBtnHtml()}</div>
+      ${cubuk("Özkaynak", y.ozkaynak, "Finansal borç", y.toplamBorc, "#1D6555", "#A8552A")}
+      ${satir("Özkaynak payı", yuz(y.ozkaynakOrani), "Kaynakların içindeki payı",
+        "Ortakların koyduğu ve şirkette biriken sermaye. Payının artması, şirketin dış finansmana bağımlılığının azaldığını gösterir.",
+        "ozkaynakOrani", "puan")}
+      ${satir("Finansal borç payı", yuz(y.borcOrani), "Kaynakların içindeki payı",
+        "Bankalara ve tahvil sahiplerine olan borç. Faiz yükü doğurur; faiz seviyesindeki değişime duyarlıdır.",
+        "borcOrani", "puan")}
+      ${satir("Net borç", y.netBorc===null?"—":paraKisa(y.netBorc)+" ₺",
+        y.netBorc!==null&&y.netBorc<0?"Nakit, borçtan fazla":"Finansal borç − nakit",
+        "Negatif değer, şirketin borcundan çok nakdi olduğu anlamına gelir.",
+        null, null, null, y.netBorc!==null&&y.netBorc<0)}
+      ${satir("Net borç / FAVÖK", y.netBorcFavok===null?"—":s2(y.netBorcFavok)+"x", "Borcu kaç yıllık faaliyet kârıyla öder",
+        "Kabaca 3'ün altı rahat, 3-5 dikkat, 5 üstü yüksek kabul edilir. Sermaye yoğun sektörlerde doğal olarak yüksektir.",
+        "netBorcFavok", "kat", 3)}
+      ${satir("Finansman gideri yükü", yuz(y.finGiderYuku), "Finansman gideri ÷ faaliyet kârı",
+        "Ana işten kazanılanın yüzde kaçı faize gidiyor. %100'ü aşması, faaliyet kârının finansman giderini karşılamadığı anlamına gelir. Bu oran faiz seviyesine doğrudan duyarlıdır.",
+        "finGiderYuku", "puan", 100, y.finGiderYuku!==null&&y.finGiderYuku>100)}
+    </div>
+
+    <div class="gnc-panel-kart" style="margin-top:16px;">
+      <div class="gnc-panel-baslik"><div>
+        <h2 class="sd-grafik-baslik"><i class="bi bi-shield-check"></i> Kısa Vade Dayanıklılığı</h2>
+        <div class="sd-grafik-alt">Bir yılda ödenecekler, bir yılda nakde dönecekler</div></div>${pngBtnHtml()}</div>
+      ${cubuk("Dönen varlık", y.donenVar, "KV yükümlülük", y.kvYuk, "#3D5A72", "#C08579")}
+      ${satir("Cari oran", s2(y.cariOran,2),
+        y.cariOran!==null&&y.cariOran<1?"Yükümlülükler, dönen varlıkları aşıyor":"Dönen varlık ÷ KV yükümlülük",
+        "1'in altı, bir yılda ödenecek borçların aynı sürede nakde dönecek varlıkları aştığı anlamına gelir. Bu durumda şirket ya yeni borç bulmalı, ya duran varlık satmalı, ya ortaklardan kaynak istemelidir. Hızlı nakit döngüsü olan perakende gibi sektörlerde 1'in altı olağan olabilir.",
+        "cariOran", "kat", 1, y.cariOran!==null&&y.cariOran<1)}
+      ${satir("Dönen varlıklar", paraKisa(y.donenVar)+" ₺", "Bir yılda nakde dönmesi beklenen",
+        "Nakit, alacaklar, stoklar.")}
+      ${satir("Kısa vadeli yükümlülükler", paraKisa(y.kvYuk)+" ₺", "Bir yılda ödenmesi gereken",
+        "Ticari borçlar, kısa vadeli krediler, ödenecek vergiler.")}
+      ${y.dovizPoz !== null ? satir("Net yabancı para pozisyonu", paraKisa(y.dovizPoz)+" ₺",
+        y.dovizPoz>=0?"Döviz varlıkları fazla":"Döviz yükümlülükleri fazla",
+        "Pozitifse kur yükseldiğinde şirket kazanır, negatifse kaybeder. Şirketin kur hareketine hangi yönde duyarlı olduğunu gösterir.",
+        null, null, null, y.dovizPoz<0) : ""}
+      <div class="sd-veri-zaman" id="yp-veri-zaman"></div>
+    </div>`;
+  veriZamaniYaz("yp-veri-zaman", FIN.guncelleme);
+  pngBtnBagla();
 }
 
 /* ---------- PNG İNDİRME ---------- */
