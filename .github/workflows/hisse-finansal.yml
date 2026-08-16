@@ -1,13 +1,20 @@
-name: Hisse finansal TAM YENILEME (aylik)
+name: Hisse finansal verisi guncelle (ARTIMLI)
 
 on:
   schedule:
-    # Ayda BIR KEZ (her ayin 1'i, 02:00 UTC - trafigin en dusuk oldugu saat).
-    # Neden gerekli: TMS 29 (enflasyon muhasebesi) GECMIS donemleri de
-    # yeniden ifade edebiliyor - artimli mod sadece yeni ceyrekleri ceker,
-    # gecmisteki bir duzeltmeyi kacirir. Ayda bir tam tarama bunu yakalar.
-    - cron: "0 2 1 * *"
-  workflow_dispatch: {}
+    # ARTIMLI MOD: gunde bir DEGIL, HAFTADA 3 KEZ (Pzt/Car/Cum 19:30 TR).
+    # Bilancolar zaten ceyrek sonlarinda aciklanir - her gun taramak
+    # gereksiz. Artimli oldugu icin zaten cogu calisma "hicbir sey
+    # cekilmedi" deyip saniyeler icinde biter.
+    - cron: "30 16 * * 1,3,5"
+  workflow_dispatch:
+    inputs:
+      tam_yenileme:
+        description: "TAM YENILEME (tum gecmisi bastan cek - YAVAS, ~4 saat)"
+        required: false
+        default: "hayir"
+        type: choice
+        options: ["hayir", "evet"]
 
 permissions:
   contents: write
@@ -17,38 +24,60 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  tam_yenile:
+  guncelle:
     runs-on: ubuntu-latest
-    timeout-minutes: 180  # ~3 saat (paralel cekimle ~1-1.5 saat bekleniyor, pay birakildi)
+    # Artimli modda dakikalar surer; tam yenilemede saatler. Emniyet payi:
+    timeout-minutes: 60   # artimli mod dakikalar surer, 60dk fazlasiyla yeterli
     steps:
       - uses: actions/checkout@v4
+      # EK KORUMA (16 Agu 2026): concurrency grubu ayni olmasina ragmen tam
+      # yenileme ile ust uste bindigi gorulduu. Tam yenileme SAATLER surdugu
+      # icin, calisiyorsa artimli isi bastan atliyoruz - nasil olsa tam
+      # yenileme her seyi zaten guncelleyecek.
+      - name: TAM YENILEME calisiyor mu kontrol et
+        id: kontrol
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          calisan=$(gh run list --workflow "hisse-finansal-tam.yml" --status in_progress --json databaseId --jq 'length' 2>/dev/null || echo "0")
+          if [ "$calisan" != "0" ]; then
+            echo "TAM YENILEME su an calisiyor - artimli is ATLANIYOR."
+            echo "atla=evet" >> $GITHUB_OUTPUT
+          else
+            echo "atla=hayir" >> $GITHUB_OUTPUT
+          fi
       - uses: actions/setup-python@v5
+        if: steps.kontrol.outputs.atla != 'evet'
         with:
           python-version: "3.12"
       - name: Kutuphaneleri yukle
+        if: steps.kontrol.outputs.atla != 'evet'
         run: pip install isyatirimhisse pandas
-      - name: TAM finansal tarama (tum gecmis)
+      - name: Finansal verileri cek
+        if: steps.kontrol.outputs.atla != 'evet'
         env:
-          TAM_YENILEME: "1"
+          TAM_YENILEME: ${{ github.event.inputs.tam_yenileme == 'evet' && '1' || '' }}
         run: python hisse_finansal_cek.py
-      - name: Buyume hesapla
+      - name: Buyume hesapla (finansal veriden turetilir)
+        if: steps.kontrol.outputs.atla != 'evet'
         run: python buyume_hesapla.py
       - name: Kaydet
+        if: steps.kontrol.outputs.atla != 'evet'
         run: |
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
           git add gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
-          git commit -m "Hisse finansal TAM YENILEME (aylik)" || { echo "Degisiklik yok"; exit 0; }
-          # CAKISMA COZUMU (16 Agu 2026): Tam yenileme SAATLER suruyor; o pencerede
-          # artimli workflow da ayni dosyalari yazip push edebiliyor ve duz rebase
-          # 472 dosyada cakisiyordu. Tam yenileme TUM veriyi bastan, TEK vintage ile
-          # urettigi icin OTORITE kabul edilir -> cakismada BIZIM surum kazanir.
-          # NOT: rebase'de "theirs" = replay edilen (bizim) commit'tir, "ours" =
-          # uzerine alinan dal. Bu ters gibi gorunur ama git'in tanimi boyledir.
+          git commit -m "Hisse finansal verisi guncellendi (artimli)" || { echo "Degisiklik yok"; exit 0; }
+          # CAKISMA ONCELIGI (16 Agu 2026): Artimli calisma SADECE eksik ceyregi
+          # ceker, kismi bir guncellemedir. Eger bu sirada TAM YENILEME push
+          # ettiyse UZAKTAKI surum daha otoriterdir (tum gecmis, tek vintage) ->
+          # cakismada UZAKTAKI kazanir.
+          # NOT: rebase'de "ours" = uzerine alinan dal (origin/main), "theirs" =
+          # replay edilen bizim commit. Bu ters gorunur ama git'in tanimi boyledir.
           basarili=0
           for deneme in 1 2 3; do
             git fetch origin main
-            if git rebase -X theirs origin/main; then
+            if git rebase -X ours origin/main; then
               if git push; then basarili=1; break; fi
             fi
             git rebase --abort 2>/dev/null || true
