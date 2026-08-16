@@ -31,11 +31,24 @@ jobs:
         with:
           python-version: "3.12"
       - name: Kutuphaneleri yukle
-        run: pip install isyatirimhisse pandas
+        run: pip install isyatirimhisse pandas requests
       - name: Piyasa verisini cek (sektor + hisse, ayni anda)
         run: python piyasa_cek.py
       - name: Sirket listesi + ceyreklik TUFE hazirla (Sirketler sayfasi icin)
         run: python sirket_listesi_hazirla.py
+      # KAP kimlikleri NADIREN degisir (yeni halka arz / unvan degisikligi).
+      # Her 30 dakikada bir KAP'a gitmek gereksiz ve kabaca; sadece gunun ilk
+      # calismasinda (saat 07) deneniyor. Basarisiz olursa mevcut kimlikler
+      # korunuyor, panel yine calisiyor (Fintables linkine dusuyor).
+      - name: KAP sirket kimliklerini guncelle (gunde bir kez)
+        continue-on-error: true
+        run: |
+          saat=$(date -u +%H)
+          if [ "$saat" = "07" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python kap_kimlik_cek.py
+          else
+            echo "Saat $saat - KAP kimlikleri sadece 07 UTC'de ve elle tetiklemede guncellenir, atlandi."
+          fi
       - name: Kaydet
         run: |
           git config user.name "gnc-bot"
