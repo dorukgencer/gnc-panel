@@ -61,12 +61,17 @@ jobs:
       - name: Buyume hesapla (finansal veriden turetilir)
         if: steps.kontrol.outputs.atla != 'evet'
         run: python buyume_hesapla.py
+      # Her cekimden sonra TUM sirketleri denetle. Sorun bulursa uyarir ama
+      # pipeline'i kirmaz - amac bilgilendirmek. veri_denetim.json panele yazilir.
+      - name: Veri denetimi (tum sirketler)
+        continue-on-error: true
+        run: python veri_denetim.py
       - name: Kaydet
         if: steps.kontrol.outputs.atla != 'evet'
         run: |
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
+          git add gnc-panel/veri_denetim.json gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
           git commit -m "Hisse finansal verisi guncellendi (artimli)" || { echo "Degisiklik yok"; exit 0; }
           # CAKISMA ONCELIGI (16 Agu 2026): Artimli calisma SADECE eksik ceyregi
           # ceker, kismi bir guncellemedir. Eger bu sirada TAM YENILEME push
