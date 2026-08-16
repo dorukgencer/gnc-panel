@@ -2,7 +2,10 @@ name: Kripto global metrikleri guncelle (BTC dominans, toplam PD)
 
 on:
   schedule:
-    - cron: "45 */6 * * *"  # gunde 4 kez, agir olmayan bir istek
+    # DEGISIKLIK (16 Agu 2026): 6 saatte bir -> 12 saatte bir.
+    # BTC dominans ve toplam piyasa degeri YAVAS degisen gostergeler;
+    # gunde 4 kez cekmek gereksiz. 120 -> 60 calisma/ay.
+    - cron: "45 */12 * * *"  # gunde 4 kez, agir olmayan bir istek
   workflow_dispatch: {}
 
 permissions:
