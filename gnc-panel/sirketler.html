@@ -823,9 +823,7 @@ function detayCiz(){
       <span class="sd-kod">${AKTIF_KOD}</span>
       ${bilgi.ad && bilgi.ad !== AKTIF_KOD ? `<span class="sd-ad">${bilgi.ad}</span>` : ''}
       ${bilgi.sektor_ad ? `<span class="sl-sektor-etiket">${bilgi.sektor_ad}</span>` : ''}
-      <a class="kap-link" href="https://www.kap.org.tr/tr/sirket-bilgileri/ozet/${AKTIF_KOD}"
-         target="_blank" rel="noopener" title="Resmi finansal raporları KAP'ta aç ve karşılaştır">
-        KAP'ta doğrula ↗</a>
+      ${dogrulamaLinkleri(bilgi)}
       <div class="sd-fiyat">
         <div class="buyuk">${sonFiyat != null ? sonFiyat.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺" : "—"}</div>
         <div class="mono ${gncYon(bilgi.g1)}" style="font-size:11.5px;">${bilgi.g1 != null ? gncYuzde(bilgi.g1) : ''}</div>
@@ -1996,12 +1994,28 @@ function genelBakisCiz(){
   const kap = document.getElementById("sekme-icerik");
   const K = FIN.kalemler;
   const tumD = [...new Set(K.flatMap(k => Object.keys(k.degerler)))].sort((a,b) => donemAnahtar(a) - donemAnahtar(b));
-  const donemler = zamanFiltrele(tumD);
-  if(donemler.length < 6){
-    kap.innerHTML = '<div class="gnc-durum-kutu">Bu şirket için yeterli geçmiş veri yok.</div>';
+
+  /* ÖNEMLİ AYRIM (16 Ağu 2026'da bulunan hata):
+     Ortalamalar HER ZAMAN TÜM GEÇMİŞTEN hesaplanır; zaman seçici yalnızca
+     GRAFİKTE GÖSTERİLEN aralığı kısar.
+     Neden: 4 çeyreklik ortalamayı 4 çeyreklik veriyle hesaplamak anlamsızdır.
+     Önceden zaman seçici veriyi de kırpıyordu; "1 Yıl" seçilince okuma
+     yapılamıyor, sayfa "yeterli veri yok" deyip zaman seçicisiyle birlikte
+     kayboluyordu ve kullanıcı geri dönemiyordu. */
+  const gosterD = zamanFiltrele(tumD);
+  const etiketler = gosterD.map(donemEtiket);
+
+  // Zaman seçici HER DURUMDA basılır - kullanıcı asla kilitli kalmaz
+  const seciciHtml = `<div class="sd-arac-satir" style="justify-content:flex-end;">${zamanSeciciHtml()}</div>`;
+
+  if(tumD.length < KISA_PENCERE + 2){
+    kap.innerHTML = seciciHtml + `<div class="gnc-durum-kutu">
+      Bu şirketin geçmişi trend okuması için çok kısa (${tumD.length} dönem).
+      Anlamlı bir kısa/uzun ortalama karşılaştırması için en az ${KISA_PENCERE + 2} çeyrek gerekiyor.
+      <br><span style="font-size:10.5px;color:var(--ink-faint);">Finansallar ve Karne sekmelerinde mevcut veriyi görebilirsin.</span>
+    </div>`;
     return;
   }
-  const etiketler = donemler.map(donemEtiket);
 
   const IZLENEN = [
     { ad:"Özkaynak",            adaylar:OZKAYNAK_ADAYLARI, stok:true,
@@ -2016,22 +2030,26 @@ function genelBakisCiz(){
       not:"Kârın nakde dönüp dönmediği. Kâr artarken bu artmıyorsa dikkat." },
   ];
 
-  const okumalar = IZLENEN.map(m => ({
-    ...m, okuma: toparlanmaOku(kalemBul(K, m.adaylar), donemler, m.stok)
-  }));
+  // Okuma TÜM geçmişten (ortalamalar anlamlı olsun), grafik seçili aralıktan
+  const okumalar = IZLENEN.map(m => {
+    const kalem = kalemBul(K, m.adaylar);
+    const tam = toparlanmaOku(kalem, tumD, m.stok);
+    if(!tam) return { ...m, okuma:null };
+    // Grafikte yalnızca seçili aralığı göster (ortalamalar aynı kalır)
+    const bas = tumD.length - gosterD.length;
+    return { ...m, okuma: { ...tam, seri: tam.seri.slice(bas) } };
+  });
   const bulunan = okumalar.filter(o => o.okuma);
 
   // Fiyat: son 4 çeyreğin her birinden bugüne
-  const sonDonemler = donemler.slice(-4);
+  const sonDonemler = tumD.slice(-4);
   const fiyatlar = sonDonemler.map(d => ({ donem:d, ...(fiyatDegisimi(d) || {}) }));
 
   const yuz = (v, ond) => v === null || v === undefined || !isFinite(v) ? "—"
     : (v >= 0 ? "+" : "") + v.toLocaleString("tr-TR", { minimumFractionDigits: ond ?? 1, maximumFractionDigits: ond ?? 1 }) + "%";
   const yon = v => v === null || v === undefined ? "notr" : (v > 1 ? "up" : (v < -1 ? "down" : "notr"));
 
-  kap.innerHTML = `
-    <div class="sd-arac-satir" style="justify-content:flex-end;">${zamanSeciciHtml()}</div>
-
+  kap.innerHTML = seciciHtml + `
     <div class="gnc-panel-kart">
       <div class="gnc-panel-baslik">
         <div><h2 class="sd-grafik-baslik"><i class="bi bi-activity"></i> Bilanço Trendi</h2>
@@ -2117,6 +2135,28 @@ function fiyatKarsilastirmaCiz(hedefId, veriler){
       <span style="color:var(--ink-faint);">Üstteki sayı: aradaki fark</span>
     </div>`;
   kap.innerHTML = svg;
+}
+
+
+/* DOĞRULAMA BAĞLANTILARI (16 Ağu 2026)
+   KAP'in sirket sayfasi hisse koduyla DEGIL dahili bir kimlikle calisiyor
+   (orn. HEKTS -> 4028e4a140ee35c00140ee5d194a0055). Bu kimlik
+   kap_kimlik_cek.py tarafindan toplanip sirket_listesi.json'a yaziliyor.
+   Kimlik varsa DOGRUDAN KAP sayfasina, yoksa hisse koduyla calisan bagimsiz
+   bir kaynaga yonlendiriyoruz - link asla kirik kalmiyor. */
+function dogrulamaLinkleri(bilgi){
+  const kap = bilgi && bilgi.kap;
+  const kapLink = kap
+    ? `<a class="kap-link" href="https://www.kap.org.tr/tr/sirket-bilgileri/ozet/${kap}"
+         target="_blank" rel="noopener"
+         title="Resmi finansal raporlar — nihai kaynak">KAP ↗</a>`
+    : `<a class="kap-link" href="https://www.kap.org.tr/tr/bist-sirketler"
+         target="_blank" rel="noopener"
+         title="KAP şirket kimliği henüz eşlenmedi — listeden ${AKTIF_KOD} aratabilirsin">KAP listesi ↗</a>`;
+  return kapLink + `
+    <a class="kap-link" href="https://fintables.com/sirketler/${AKTIF_KOD}/finansal-tablolar/bilanco"
+       target="_blank" rel="noopener"
+       title="Bağımsız ikinci kaynak — rakamları karşılaştır">Fintables ↗</a>`;
 }
 
 /* ---------- PNG İNDİRME ---------- */
