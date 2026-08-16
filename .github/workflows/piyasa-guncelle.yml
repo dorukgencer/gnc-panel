@@ -7,6 +7,10 @@ on:
     # GitHub'in 2.000 dk ucretsiz kotasinin yarisindan fazlasi. Panel zaten
     # "donemsel okuma" felsefesinde, 10 dakikalik tazelik gereksiz.
     # 30 dk ile ayni is ~420 dk'ya duser, veri kalitesi ayni kalir.
+    # 30 DAKIKA - BILINCLI TERCIH (16 Agu 2026)
+    # Borsa verisinin taze olmasi panelin en kritik ozelligi. 60 dk denendi ama
+    # cron gecikmesiyle birlikte fiili tazelik 75 dk'ya cikiyordu - fazla eski.
+    # 30 dk'da ayda ~387 calisma / ~580 dk tuketir; 3.000 dk'lik kotada sorun yok.
     - cron: "*/30 7-15 * * 1-5"
   workflow_dispatch: {}
 
