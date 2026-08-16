@@ -19,7 +19,7 @@ concurrency:
 jobs:
   tam_yenile:
     runs-on: ubuntu-latest
-    timeout-minutes: 330  # ~5.5 saat (tam tarama ~4 saat surer)
+    timeout-minutes: 180  # ~3 saat (paralel cekimle ~1-1.5 saat bekleniyor, pay birakildi)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,5 +39,20 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
           git commit -m "Hisse finansal TAM YENILEME (aylik)" || { echo "Degisiklik yok"; exit 0; }
-          git pull --rebase --autostash origin main
-          git push
+          # CAKISMA COZUMU (16 Agu 2026): Tam yenileme SAATLER suruyor; o pencerede
+          # artimli workflow da ayni dosyalari yazip push edebiliyor ve duz rebase
+          # 472 dosyada cakisiyordu. Tam yenileme TUM veriyi bastan, TEK vintage ile
+          # urettigi icin OTORITE kabul edilir -> cakismada BIZIM surum kazanir.
+          # NOT: rebase'de "theirs" = replay edilen (bizim) commit'tir, "ours" =
+          # uzerine alinan dal. Bu ters gibi gorunur ama git'in tanimi boyledir.
+          basarili=0
+          for deneme in 1 2 3; do
+            git fetch origin main
+            if git rebase -X theirs origin/main; then
+              if git push; then basarili=1; break; fi
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Deneme $deneme basarisiz, 15sn sonra tekrar..."
+            sleep 15
+          done
+          [ "$basarili" = "1" ] || { echo "3 denemede de push edilemedi"; exit 1; }
