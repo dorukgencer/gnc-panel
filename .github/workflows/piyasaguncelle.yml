@@ -1,0 +1,66 @@
+name: Piyasa guncelle (sektor + hisse)
+
+# DAKIKA BUTCESI NOTU
+# Bu is akisi tum Actions tuketiminin ~%55'i. Iki degisiklik yapildi:
+#   1) pip cache (composite action) -> calisma basina ~40 sn tasarruf
+#   2) cancel-in-progress: true -> bir onceki calisma bitmediyse iptal edilir;
+#      eskiden kuyruga girip iki kat dakika yiyordu.
+# Siklik 30 dk'da BIRAKILDI - tazelik panelin en kritik ozelligi.
+
+on:
+  schedule:
+    # BIST seans saatleri 07:00-15:00 UTC (10:00-18:00 TR)
+    - cron: "*/30 7-15 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: veri-piyasa
+  cancel-in-progress: true    # DEGISTI: false -> true
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12       # DEGISTI: 30 -> 12. Is ~2 dk suruyor; asilirsa
+                              # takilmistir ve 30 dk yakmasina gerek yok.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/py
+
+      - name: Piyasa verisini cek (sektor + hisse)
+        run: python piyasa_cek.py
+
+      - name: Sirket listesi + ceyreklik TUFE
+        run: python sirket_listesi_hazirla.py
+
+      - name: KAP kimlikleri (gunde bir kez)
+        continue-on-error: true
+        run: |
+          saat=$(date -u +%H)
+          if [ "$saat" = "07" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python kap_kimlik_cek.py
+          else
+            echo "Saat $saat - atlandi."
+          fi
+
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/sektor_verisi.json gnc-panel/sektor_hisse_veri.json \
+                  gnc-panel/sirket_listesi.json gnc-panel/tufe_ceyreklik.json
+          git commit -m "Piyasa verisi guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          for d in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push denemesi $d basarisiz"; sleep 10
+          done
+          exit 1
+
+      - name: Hata bildir
+        if: failure()
+        uses: ./.github/actions/hata-bildir
+        with:
+          isim: "Piyasa guncelle"

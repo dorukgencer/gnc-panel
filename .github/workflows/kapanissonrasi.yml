@@ -1,0 +1,62 @@
+name: Kapanis sonrasi (fiyat gecmisi + endeks + degerleme)
+
+# BIRLESTIRME NOTU
+# Eskiden 3 ayri is akisiydi: hisse-gecmis (16:15), endeks-gecmis (16:20),
+# deger-hesapla (15:30). Ucu de seans kapanisindan sonra calisir ve
+# BIRBIRINE BAGLIDIR: degerleme, fiyat gecmisinden turetilir.
+# Ayri calistiklarinda deger-hesapla, o gunun fiyatini HENUZ gormeden
+# calisiyordu (15:30 < 16:15) - yani her gun bir gun eski fiyatla hesapliyordu.
+# Birlesince hem ~2 dk/gun tasarruf hem de SIRA DOGRU olur.
+
+on:
+  schedule:
+    - cron: "20 16 * * 1-5"   # 19:20 TR - kapanistan ~1 saat sonra
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: veri-kapanis
+  cancel-in-progress: false
+
+jobs:
+  kapanis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/py
+
+      - name: 1) Hisse fiyat gecmisi
+        run: python hisse_gecmis_cek.py
+      - name: 2) Endeks fiyat gecmisi
+        run: python endeks_gecmis_cek.py
+      - name: 3) Sektor F/K degerleme (1 ve 2'den turetilir)
+        run: python deger_hesapla.py
+      - name: 4) Gunluk arsiv
+        run: python gunluk_arsiv.py
+      - name: 5) Rotasyon turetilmis
+        continue-on-error: true
+        run: python rotasyon_turetilmis_hesapla.py
+      - name: 6) TARAMA (fiyat + bilanco + rotasyon hepsi guncellendikten SONRA)
+        run: python tarama_hesapla.py
+
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/hisse_gecmis/ gnc-panel/endeks_gecmis/ gnc-panel/*.json
+          git commit -m "Kapanis sonrasi veri guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          for d in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Hata bildir
+        if: failure()
+        uses: ./.github/actions/hata-bildir
+        with:
+          isim: "Kapanis sonrasi"

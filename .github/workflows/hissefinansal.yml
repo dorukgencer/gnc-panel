@@ -1,0 +1,96 @@
+name: Hisse finansal verisi guncelle (ARTIMLI)
+
+on:
+  schedule:
+    # ARTIMLI MOD: gunde bir DEGIL, HAFTADA 3 KEZ (Pzt/Car/Cum 19:30 TR).
+    # Bilancolar zaten ceyrek sonlarinda aciklanir - her gun taramak
+    # gereksiz. Artimli oldugu icin zaten cogu calisma "hicbir sey
+    # cekilmedi" deyip saniyeler icinde biter.
+    - cron: "30 16 * * 1,3,5"
+  workflow_dispatch:
+    inputs:
+      tam_yenileme:
+        description: "TAM YENILEME (tum gecmisi bastan cek - YAVAS, ~4 saat)"
+        required: false
+        default: "hayir"
+        type: choice
+        options: ["hayir", "evet"]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: veri-hisse-finansal
+  cancel-in-progress: false
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    # Artimli modda dakikalar surer; tam yenilemede saatler. Emniyet payi:
+    timeout-minutes: 60   # artimli mod dakikalar surer, 60dk fazlasiyla yeterli
+    steps:
+      - uses: actions/checkout@v4
+      # EK KORUMA (16 Agu 2026): concurrency grubu ayni olmasina ragmen tam
+      # yenileme ile ust uste bindigi gorulduu. Tam yenileme SAATLER surdugu
+      # icin, calisiyorsa artimli isi bastan atliyoruz - nasil olsa tam
+      # yenileme her seyi zaten guncelleyecek.
+      - name: TAM YENILEME calisiyor mu kontrol et
+        id: kontrol
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          calisan=$(gh run list --workflow "hisse-finansal-tam.yml" --status in_progress --json databaseId --jq 'length' 2>/dev/null || echo "0")
+          if [ "$calisan" != "0" ]; then
+            echo "TAM YENILEME su an calisiyor - artimli is ATLANIYOR."
+            echo "atla=evet" >> $GITHUB_OUTPUT
+          else
+            echo "atla=hayir" >> $GITHUB_OUTPUT
+          fi
+      - uses: ./.github/actions/py
+      - name: Finansal verileri cek
+        if: steps.kontrol.outputs.atla != 'evet'
+        env:
+          TAM_YENILEME: ${{ github.event.inputs.tam_yenileme == 'evet' && '1' || '' }}
+        run: python hisse_finansal_cek.py
+      - name: Buyume hesapla (finansal veriden turetilir)
+        if: steps.kontrol.outputs.atla != 'evet'
+        run: python buyume_hesapla.py
+      # Her cekimden sonra TUM sirketleri denetle. Sorun bulursa uyarir ama
+      # pipeline'i kirmaz - amac bilgilendirmek. veri_denetim.json panele yazilir.
+      - name: Veri denetimi (tum sirketler)
+        continue-on-error: true
+        run: python veri_denetim.py
+      - name: Tarama (yeni bilancolarla yeniden)
+        continue-on-error: true
+        run: python tarama_hesapla.py
+      - name: Kaydet
+        if: steps.kontrol.outputs.atla != 'evet'
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/veri_denetim.json gnc-panel/karantina.json gnc-panel/tarama.json gnc-panel/finansal/ gnc-panel/buyume_gecmis.json
+          git commit -m "Hisse finansal verisi guncellendi (artimli)" || { echo "Degisiklik yok"; exit 0; }
+          # CAKISMA ONCELIGI (16 Agu 2026): Artimli calisma SADECE eksik ceyregi
+          # ceker, kismi bir guncellemedir. Eger bu sirada TAM YENILEME push
+          # ettiyse UZAKTAKI surum daha otoriterdir (tum gecmis, tek vintage) ->
+          # cakismada UZAKTAKI kazanir.
+          # NOT: rebase'de "ours" = uzerine alinan dal (origin/main), "theirs" =
+          # replay edilen bizim commit. Bu ters gorunur ama git'in tanimi boyledir.
+          basarili=0
+          for deneme in 1 2 3; do
+            git fetch origin main
+            if git rebase -X ours origin/main; then
+              if git push; then basarili=1; break; fi
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Deneme $deneme basarisiz, 15sn sonra tekrar..."
+            sleep 15
+          done
+          [ "$basarili" = "1" ] || { echo "3 denemede de push edilemedi"; exit 1; }
+
+      - name: Hata bildir
+        if: failure()
+        uses: ./.github/actions/hata-bildir
+        with:
+          isim: "hisse-finansal"
