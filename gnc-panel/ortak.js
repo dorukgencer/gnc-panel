@@ -5,27 +5,19 @@
    ============================================================ */
 
 const GNC_NAV_GRUPLARI = [
-  { grup: "Genel", ogeler: [
-    { id: "genel-bakis",      ad: "Genel Bakış",       href: "gnc_panel.html" },
-    { id: "ortam-modelleme",  ad: "Ortam Modelleme",   href: "ortam-modelleme.html" },
-    { id: "sektor-rotasyonu", ad: "Sektör Rotasyonu",  href: "sektor-rotasyonu.html" },
-    { id: "sirketler",        ad: "Şirketler",         href: "sirketler.html" },
+  { grup: "Ortam", ogeler: [
+    { id: "genel-bakis",      ad: "Genel Bakış",      href: "gnc_panel.html" },
+    { id: "sektor-rotasyonu", ad: "Sektör Rotasyonu", href: "sektor-rotasyonu.html" },
   ]},
-  { grup: "Değerlendirme", ogeler: [
-    { id: "makro-ortam",  ad: "Makro Ortam",   href: "makro-ortam.html" },
-    { id: "kripto-ortam", ad: "Kripto Ortamı", href: "kripto-ortam.html" },
-    { id: "bist-gorunumu", ad: "BIST Görünümü", href: "bist-gorunumu.html" },
-  ]},
-  { grup: "Araştırma", ogeler: [
-    { id: "haftalik-raporlar", ad: "Haftalık Raporlar", href: "raporlar.html" },
-    { id: "makro-takvim",      ad: "Makro Takvim",      href: "takvim.html" },
-    { id: "arsiv",             ad: "Arşiv",             href: "arsiv.html" },
-  ]},
-  { grup: "Hesap", ogeler: [
-    { id: "uyelik",  ad: "Üyelik",  href: "uyelik.html" },
-    { id: "ayarlar", ad: "Ayarlar", href: "ayarlar.html" },
+  { grup: "Seçim", ogeler: [
+    { id: "tarama",    ad: "Tarama",    href: "tarama.html" },
+    { id: "sirketler", ad: "Şirketler", href: "sirketler.html" },
   ]},
 ];
+// NOT (29 Agu 2026): Menude 12 baglanti vardi, karsiliginda 3 sayfa mevcuttu -
+// 9 olu link. Yapilmayacak sayfalar menuden CIKARILDI. Sistem, metodoloji
+// zincirinin ilk uc adimini (ORTAM -> VARLIK -> RISK) karsilayan dort sayfadan
+// olusur. Sayfa eklemek yerine var olani dogru calistirmak onceliklidir.
 
 /**
  * Sidebar'i olusturur (gruplu nav + marka + alt not, tasarim mockup'iyla birebir).

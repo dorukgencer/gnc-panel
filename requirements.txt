@@ -1,0 +1,6 @@
+# GNC Panel - sabitlenmis surumler.
+# pip cache anahtari bu dosyanin hash'i; dosya degismedikce cache kullanilir
+# ve her calismada ~40 saniyelik kurulum suresi harcanmaz.
+isyatirimhisse==5.0.1
+pandas==2.2.3
+requests==2.32.3

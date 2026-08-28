@@ -33,7 +33,7 @@ SERILER = {
     # muhtemelen IP bazli toptan engelleme. Guvenilir bir gercek-DXY kaynagi
     # bulana kadar bu YAKLASIK deger kullaniliyor - sayfada "gerçek DXY" diye
     # SUNULMAMALI, acikca "FED genis endeksi" diye etiketlenmeli.
-    "dxy_genis":  {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi (FED, geniş - 26 para birimi)", "birim": "endeks (2006=100)"},
+    "dxy_genis":  {"kod": "DTWEXBGS",         "ad": "Dolar Endeksi — FED geniş (26 para birimi)", "birim": "endeks (2006=100)", "uyari": "ICE DXY DEGILDIR; farkli olcek. Panelde bu adla gosterilmelidir."},
     "us10y":      {"kod": "DGS10",            "ad": "ABD 10Y Tahvil",          "birim": "%"},
     "us10y_reel": {"kod": "DFII10",           "ad": "ABD 10Y Reel Getiri (TIPS, resmi)", "birim": "%"},
     "vix":        {"kod": "VIXCLS",           "ad": "VIX (Volatilite Endeksi)","birim": "endeks"},
@@ -188,6 +188,12 @@ def main():
         "seriler": cikti_seriler,
     }
     HEDEF.parent.mkdir(parents=True, exist_ok=True)
+    # Gercek ICE DXY denemesi (basarisizsa sessizce atlanir, FRED serisi kalir)
+    try:
+        dxy_seriyi_ekle(cikti_seriler)
+    except Exception as e:
+        print(f"DXY eklenemedi: {e}")
+
     HEDEF.write_text(json.dumps(cikti, ensure_ascii=False), encoding="utf-8")
     print(f"\nTamamlandi -> {HEDEF}")
     if bos_olanlar:
@@ -196,3 +202,88 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ---------------------------------------------------------------------------
+# GERCEK DXY (ICE Dolar Endeksi) - Stooq denemesi          [29 Agu 2026]
+# ---------------------------------------------------------------------------
+# SORUN: Panel "Dolar Endeksi" diye FRED'in DTWEXBGS serisini gosteriyordu.
+# Bu GERCEK DXY DEGIL - FED'in 26 para birimli genis endeksi, 2006=100 olcekli.
+# Yani ~97 beklerken ~120 goruluyordu. Sayi yanlis degil, ETIKET yanlisti.
+#
+# COZUM: Once Stooq'tan gercek ICE DXY (^DX) denenir. Stooq ucretsiz, anahtar
+# istemez ve CSV doner. BASARISIZ OLURSA sessizce eski FRED serisine dusulur
+# ama etiket "FED genis endeksi" olarak kalir - yani panelde ASLA yanlis isim
+# gorunmez.
+#
+# DIKKAT - DOGRULANMAMIS: Bu fonksiyon yazildigi ortamda dis ag kapali oldugu
+# icin CALISTIRILARAK test EDILEMEDI. Ilk calismada loglara bakin:
+#   "DXY: Stooq'tan alindi"  -> calisiyor
+#   "DXY: Stooq basarisiz"   -> Stooq BIST/DXY vermiyor, FRED'e dusuldu
+# Ikinci durumda alternatif: EVDS kurlarindan ICE formuluyle kendimiz hesaplariz.
+
+STOOQ_DXY_URL = "https://stooq.com/q/d/l/?s=^dx&i=d"
+
+
+def dxy_seriyi_ekle(seriler_cikti):
+    """
+    Ana akisa baglanti noktasi. main() icinde, FRED serileri yazildiktan
+    HEMEN SONRA cagrilmalidir:
+        dxy_seriyi_ekle(cikti["seriler"])
+    Basarisizsa hicbir sey yapmaz - panel FRED genis endeksini gostermeye
+    devam eder ve etiketi zaten dogrudur ("Dolar Endeksi (FED, genis)").
+    """
+    seri = gercek_dxy_dene()
+    if not seri:
+        return False
+    # Aylik ortalamaya indirge (makro_gecmis.json aylik seri tutar)
+    from collections import defaultdict
+    aylik = defaultdict(list)
+    for r in seri:
+        aylik[r["tarih"][:7]].append(r["deger"])
+    seriler_cikti["dxy_gercek"] = {
+        "ad": "Dolar Endeksi (ICE DXY)",
+        "seri_kod": "^DX (Stooq)",
+        "birim": "endeks",
+        "seri": [{"tarih": a, "deger": round(sum(v)/len(v), 2)} for a, v in sorted(aylik.items())],
+    }
+    return True
+
+
+def gercek_dxy_dene(gun_sayisi=3650):
+    """
+    Stooq'tan gunluk ICE DXY serisi. Basarisizsa None doner - CAGIRAN TARAF
+    None'i "veri yok" olarak ele almali, sifir veya tahmin URETMEMELI.
+    """
+    try:
+        import csv
+        import io
+        import urllib.request
+        istek = urllib.request.Request(
+            STOOQ_DXY_URL, headers={"User-Agent": "Mozilla/5.0 (GNC Insight panel)"})
+        with urllib.request.urlopen(istek, timeout=25) as y:
+            metin = y.read().decode("utf-8", "replace")
+        satirlar = list(csv.DictReader(io.StringIO(metin)))
+        if not satirlar or "Close" not in satirlar[0]:
+            print("DXY: Stooq beklenen formatta yanit vermedi")
+            return None
+        seri = []
+        for r in satirlar[-gun_sayisi:]:
+            try:
+                seri.append({"tarih": r["Date"], "deger": float(r["Close"])})
+            except (KeyError, ValueError):
+                continue
+        if len(seri) < 100:
+            print(f"DXY: Stooq'tan sadece {len(seri)} kayit geldi, guvenilmez")
+            return None
+        son = seri[-1]["deger"]
+        # Akil saglama testi: ICE DXY tarihsel olarak 70-130 bandinda hareket eder.
+        # Bu bandin disindaki bir deger yanlis seriyi cektigimizi gosterir.
+        if not (60 <= son <= 140):
+            print(f"DXY: Stooq degeri bantta degil ({son}) - reddedildi")
+            return None
+        print(f"DXY: Stooq'tan alindi - {len(seri)} kayit, son deger {son}")
+        return seri
+    except Exception as e:
+        print(f"DXY: Stooq basarisiz ({type(e).__name__}: {e}) - FRED genis endeksine dusuluyor")
+        return None

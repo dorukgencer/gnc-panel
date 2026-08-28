@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarama — GNC Insight</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="ortak.css" rel="stylesheet">
+<style>
+  .tr-band{background:var(--surface-raised);border:1px solid var(--line);padding:22px 24px;margin-bottom:18px}
+  .tr-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px}
+  .tr-baslik{font-family:'Fraunces',serif;font-size:24px;color:var(--copper-dark);line-height:1.2}
+  .tr-ozet{font-size:12.5px;color:var(--ink-soft);margin-top:6px;max-width:640px;line-height:1.6}
+  .tr-top{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start}
+  .tr-sayac{display:flex;gap:22px;text-align:right}
+  .tr-sayac .k{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;line-height:1}
+  .tr-sayac .l{font-size:10px;color:var(--ink-faint);margin-top:4px;letter-spacing:.06em;text-transform:uppercase}
+  .tr-sayac .aday .k{color:var(--pine-dark)} .tr-sayac .izl .k{color:var(--ochre)}
+
+  /* huni */
+  .huni{display:flex;flex-direction:column;gap:2px;margin-top:16px}
+  .h-row{display:grid;grid-template-columns:minmax(105px,150px) 1fr 116px;gap:12px;align-items:center;cursor:pointer;padding:3px 4px;border-radius:var(--radius-sm)}
+  .h-row:hover{background:var(--paper)}
+  .h-row .hl{display:block;font-size:11.5px;color:var(--ink-soft);text-align:right;font-weight:500}
+  .h-bar{display:block;height:22px;background:var(--surface);border:1px solid var(--line);position:relative;overflow:hidden;border-radius:2px}
+  .h-fill{display:block;height:100%;background:var(--pine-soft);border-right:2px solid var(--pine);transition:width .25s}
+  .h-row.son .h-fill{background:var(--pine);border-right-color:var(--pine-dark)}
+  .h-row.son .hl{color:var(--pine-dark);font-weight:600}
+  .h-say{display:block;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .h-say b{color:var(--brick);font-weight:600}
+  .h-kirilim{display:none;grid-column:1/-1;background:var(--paper);border:1px solid var(--line);padding:9px 12px;margin:2px 0 6px;font-size:11.5px;border-radius:var(--radius-sm)}
+  .h-kirilim.acik{display:block}
+  .h-kirilim div{display:flex;justify-content:space-between;padding:2px 0;color:var(--ink-soft)}
+  .h-kirilim b{font-family:'IBM Plex Mono',monospace;color:var(--brick)}
+  .h-uyari{color:var(--ochre);font-size:11px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--line)}
+
+  /* sekmeler */
+  .sekmeler{display:flex;gap:2px;margin-bottom:0;flex-wrap:wrap}
+  .sekme{padding:9px 16px;font-size:12.5px;font-weight:500;border:1px solid var(--line);border-bottom:none;background:var(--paper);color:var(--ink-soft);cursor:pointer;border-radius:var(--radius-sm) var(--radius-sm) 0 0}
+  .sekme.aktif{background:var(--surface-raised);color:var(--ink);font-weight:600}
+  .sekme .n{font-family:'IBM Plex Mono',monospace;color:var(--ink-faint);margin-left:5px}
+
+  .arac{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 0;font-size:12px}
+  .arac input,.arac select{font-family:inherit;font-size:12px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--radius-sm)}
+  .arac .bilgi{color:var(--ink-faint);margin-left:auto;font-size:11.5px}
+
+  .tablo-sar{overflow-x:auto;border:1px solid var(--line);background:var(--surface-raised)}
+  table{border-collapse:collapse;width:100%;font-size:12px;min-width:900px}
+  th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);text-align:right;font-weight:500;padding:10px 11px;border-bottom:1px solid var(--line-strong);background:var(--paper);white-space:nowrap;cursor:pointer;user-select:none}
+  th:first-child,th:nth-child(2){text-align:left}
+  th:hover{color:var(--ink)}
+  th .ok{opacity:.4;font-size:9px}
+  td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  td:first-child,td:nth-child(2){text-align:left}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--paper)}
+  .kod{font-weight:600;font-family:'IBM Plex Mono',monospace}
+  .ad{font-size:11px;color:var(--ink-faint);max-width:190px;overflow:hidden;text-overflow:ellipsis}
+  .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  .iyi{color:var(--pine-dark)} .kotu{color:var(--brick)}
+
+  .etiket{display:inline-block;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:2px;margin-left:5px;font-weight:500}
+  .e-daralma{background:var(--brick-soft);color:var(--brick)}
+  .e-genisleme{background:var(--pine-soft);color:var(--pine-dark)}
+  .e-uzamis{background:var(--ochre-soft);color:var(--ochre)}
+  .e-bekle{background:var(--copper-soft);color:var(--copper-dark)}
+
+  .kutu{background:var(--surface-raised);border:1px solid var(--line);padding:16px 18px;margin-top:18px}
+  .kutu h3{font-family:'Fraunces',serif;font-size:14px;margin:0 0 10px;color:var(--ink)}
+  .kutu.uyari{border-left:3px solid var(--ochre)}
+  .eksik-satir{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12px}
+  .eksik-satir:last-child{border-bottom:none}
+  .eksik-satir .n{color:var(--ink-soft);flex:1}
+  .rozet{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:2px;background:var(--brick-soft);color:var(--brick);white-space:nowrap;height:fit-content}
+  .rozet.orta{background:var(--ochre-soft);color:var(--ochre)}
+
+  .sekt{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .sekt span{font-size:11px;padding:4px 9px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--ink-soft)}
+  .sekt span b{font-family:'IBM Plex Mono',monospace;color:var(--ink)}
+
+  .not{font-size:11.5px;color:var(--ink-faint);line-height:1.6;margin-top:8px}
+  .detay{background:var(--paper);font-size:11.5px}
+  .detay td{padding:12px 14px}
+  .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px 18px}
+  .dgrid div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted var(--line);padding-bottom:3px}
+  .dgrid span:first-child{color:var(--ink-faint)}
+  .dgrid span:last-child{font-family:'IBM Plex Mono',monospace}
+  @media(max-width:700px){.h-row{grid-template-columns:1fr;gap:3px}.h-row .hl{text-align:left}}
+</style>
+</head>
+<body>
+<div class="gnc-shell">
+  <aside class="gnc-sidebar" id="gnc-sidebar"></aside>
+  <main class="gnc-main">
+    <div class="gnc-topbar">
+      <div class="baslik-satiri"><h1>Tarama</h1></div>
+      <span class="gnc-donem" id="donem-etiketi">—</span>
+    </div>
+    <div class="gnc-content">
+
+    <div class="tr-band">
+      <div class="tr-top">
+        <div>
+          <div class="tr-eyebrow">Metodoloji · Varlık ve Risk</div>
+          <div class="tr-baslik">Tarama</div>
+          <div class="tr-ozet">
+            Hangi hissenin kazanacağını bilmiyoruz. Hangi şirketin yapısal olarak riskli
+            olduğunu biliyoruz. Bu sayfa 472 şirketi sırayla kapılardan geçirir; her elemenin
+            kimi, neden düşürdüğü kayıt altındadır. Skor üretilmez — şirket ya kapıdan geçer
+            ya geçmez.
+          </div>
+        </div>
+        <div class="tr-sayac">
+          <div class="aday"><div class="k" id="s-aday">—</div><div class="l">Aday</div></div>
+          <div class="izl"><div class="k" id="s-izleme">—</div><div class="l">İzleme</div></div>
+          <div><div class="k" id="s-toplam">—</div><div class="l">Taranan</div></div>
+        </div>
+      </div>
+      <div class="huni" id="huni"></div>
+    </div>
+
+    <div class="sekmeler" id="sekmeler"></div>
+    <div class="arac">
+      <input type="search" id="ara" placeholder="Kod veya şirket ara…" style="min-width:190px">
+      <select id="f-sektor"><option value="">Tüm sektörler</option></select>
+      <label style="display:flex;align-items:center;gap:5px;color:var(--ink-soft)">
+        <input type="checkbox" id="f-daralma"> Daralma evresindekileri gizle
+      </label>
+      <span class="bilgi" id="satir-bilgi"></span>
+    </div>
+    <div class="tablo-sar"><table id="tablo"><thead></thead><tbody></tbody></table></div>
+
+    <div class="kutu">
+      <h3>Aday sektör dağılımı</h3>
+      <div class="sekt" id="sektor-dagilim"></div>
+      <div class="not">Sıralamadan ilk N şirketi almak, farkında olmadan tek sektöre yığılmak
+      olabilir. Portföy kurulurken sektör tavanı bu dağılıma bakılarak uygulanır.</div>
+    </div>
+
+    <div class="kutu uyari">
+      <h3>Çalışmayan filtreler</h3>
+      <div class="not" style="margin-top:0;margin-bottom:10px">Verisi olmadığı için devrede
+      olmayan filtreler. Sistem kendi körlüğünü gizlemez — bunlar eklenene kadar tarama
+      "temiz evren" garantisi vermez.</div>
+      <div id="eksik-filtreler"></div>
+    </div>
+
+    <div class="kutu">
+      <h3>Eşik notları</h3>
+      <div id="filtre-notlari"></div>
+    </div>
+
+    <div class="sr-veri-zaman" id="veri-zaman" style="margin-top:14px"></div>
+    </div>
+  </main>
+</div>
+
+<script src="ortak.js"></script>
+<script>
+let VERI = null, SEKME = "aday", SIRA = {alan:"fd_favok", yon:1}, ACIK = null;
+
+const KOLONLAR = [
+  {a:"kod",           b:"Kod",         t:"metin"},
+  {a:"sektor_ad",     b:"Sektör",      t:"metin"},
+  {a:"fd_favok",      b:"FD/FAVÖK",    t:"sayi", f:1, ipucu:"Firma Değeri / FAVÖK — enflasyon muhasebesine en dayanıklı çarpan"},
+  {a:"net_borc_favok",b:"Net Borç/FAVÖK", t:"sayi", f:1, ters:1},
+  {a:"tahakkuk",      b:"Tahakkuk",    t:"yuzde", f:1, ters:1, ipucu:"(Net kâr − işletme nakdi) / toplam varlık. Yüksek = kâr nakde dönmüyor"},
+  {a:"faiz_karsilama",b:"Faiz Karş.",  t:"sayi", f:2},
+  {a:"halka_aciklik", b:"Halka Açıklık", t:"yuzde100", f:0},
+  {a:"ma_mesafe",     b:"200g Ort.",   t:"yuzdefark", f:1},
+  {a:"pd",            b:"Piyasa Değeri", t:"mr", f:1},
+];
+
+function fmt(o, k){
+  const v = o[k.a];
+  if (v === null || v === undefined) return '<span style="color:var(--ink-faint)">—</span>';
+  if (k.t === "metin") return v;
+  if (k.t === "mr")   return (v/1e9).toFixed(k.f) + '<span style="color:var(--ink-faint)"> mr</span>';
+  if (k.t === "yuzde")  return (v*100).toFixed(k.f) + '%';
+  if (k.t === "yuzde100") return (v*100).toFixed(k.f) + '%';
+  if (k.t === "yuzdefark"){
+    const c = v >= 0 ? 'iyi' : 'kotu';
+    return `<span class="${c}">${v>=0?'+':''}${v.toFixed(k.f)}%</span>`;
+  }
+  return v.toFixed(k.f);
+}
+
+function satirlar(){
+  if (!VERI) return [];
+  const ix = {}; VERI.sirketler.forEach(o => ix[o.kod] = o);
+  let l;
+  if (SEKME === "aday")       l = VERI.adaylar.map(k => ix[k]);
+  else if (SEKME === "izleme") l = VERI.izleme.map(k => ix[k]);
+  else l = VERI.sirketler.filter(o => o.elendi);
+  const q = document.getElementById("ara").value.trim().toLowerCase();
+  const sk = document.getElementById("f-sektor").value;
+  const gd = document.getElementById("f-daralma").checked;
+  return l.filter(o => o
+    && (!q  || o.kod.toLowerCase().includes(q) || (o.ad||"").toLowerCase().includes(q))
+    && (!sk || o.sektor === sk)
+    && (!gd || !o.ortam_uyari));
+}
+
+function tabloCiz(){
+  const l = satirlar();
+  const th = document.querySelector("#tablo thead");
+  const tb = document.querySelector("#tablo tbody");
+  const elenenMi = SEKME === "elenen";
+
+  let kols = KOLONLAR.slice();
+  if (elenenMi) kols = [KOLONLAR[0], KOLONLAR[1], {a:"elendi",b:"Elendiği kapı",t:"metin"}, {a:"elenme_sebebi",b:"Sebep",t:"metin"}];
+  if (SEKME === "izleme") kols = kols.concat([{a:"zamanlama_not",b:"Durum",t:"metin"}]);
+
+  th.innerHTML = "<tr>" + kols.map(k =>
+    `<th data-a="${k.a}" title="${k.ipucu||''}">${k.b}${SIRA.alan===k.a?`<span class="ok"> ${SIRA.yon>0?'▲':'▼'}</span>`:''}</th>`).join("") + "</tr>";
+
+  const yon = SIRA.yon;
+  l.sort((a,b) => {
+    let x = a[SIRA.alan], y = b[SIRA.alan];
+    if (x === null || x === undefined) return 1;
+    if (y === null || y === undefined) return -1;
+    if (typeof x === "string") return yon * x.localeCompare(y, "tr");
+    return yon * (x - y);
+  });
+
+  tb.innerHTML = l.map(o => {
+    let et = "";
+    if (o.ortam_uyari) et += '<span class="etiket e-daralma">daralma</span>';
+    else if (o.ortam_evre === "genisleme") et += '<span class="etiket e-genisleme">genişleme</span>';
+    if (o.asiri_uzamis) et += '<span class="etiket e-uzamis">uzamış</span>';
+    if (SEKME === "izleme") et += '<span class="etiket e-bekle">bekle</span>';
+    const hucre = kols.map(k => {
+      if (k.a === "kod") return `<td><span class="kod">${o.kod}</span>${et}<div class="ad">${o.ad||""}</div></td>`;
+      if (k.t === "metin") return `<td>${o[k.a] ?? "—"}</td>`;
+      return `<td class="num">${fmt(o,k)}</td>`;
+    }).join("");
+    const detay = ACIK === o.kod ? detaySatiri(o, kols.length) : "";
+    return `<tr data-kod="${o.kod}" style="cursor:pointer">${hucre}</tr>${detay}`;
+  }).join("") || `<tr><td colspan="${kols.length}" style="text-align:center;padding:26px;color:var(--ink-faint)">Kayıt yok</td></tr>`;
+
+  document.getElementById("satir-bilgi").textContent = `${l.length} kayıt`;
+  th.querySelectorAll("th").forEach(h => h.onclick = () => {
+    const a = h.dataset.a;
+    SIRA = (SIRA.alan === a) ? {alan:a, yon:-SIRA.yon} : {alan:a, yon: a==="fd_favok"?1:-1};
+    tabloCiz();
+  });
+  tb.querySelectorAll("tr[data-kod]").forEach(r => r.onclick = () => {
+    ACIK = (ACIK === r.dataset.kod) ? null : r.dataset.kod; tabloCiz();
+  });
+}
+
+function detaySatiri(o, n){
+  const s = (v, d=1, b="") => (v===null||v===undefined) ? "—" : (typeof v==="number" ? v.toFixed(d)+b : v);
+  const mr = v => (v===null||v===undefined) ? "—" : (v/1e9).toFixed(1)+" mr";
+  const alanlar = [
+    ["Son dönem", o.son_donem], ["Dönem sayısı", o.donem_sayisi], ["Format", o.format],
+    ["Gelir (TTM)", mr(o.gelir_ttm)], ["Net kâr (TTM)", mr(o.net_kar_ttm)],
+    ["FAVÖK (TTM)", mr(o.favok_ttm)], ["İşletme nakdi (TTM)", mr(o.isletme_nakit_ttm)],
+    ["Net borç", mr(o.net_borc)], ["Özkaynak", mr(o.ozkaynak)], ["Toplam varlık", mr(o.toplam_varlik)],
+    ["Firma değeri", mr(o.fd)], ["PD/DD", s(o.pd_dd,2)],
+    ["Net YP poz./özkaynak", o.yp_pozisyon_oran===null||o.yp_pozisyon_oran===undefined ? "—" : (o.yp_pozisyon_oran*100).toFixed(1)+"%"],
+    ["Değerleme eşiği", o.degerleme_esigi_kaynagi==="evren" ? "evren (sektör yetersiz)" : "sektör"],
+    ["Ortam evresi", o.ortam_evre || "—"], ["Zamanlama", o.zamanlama_not || "—"],
+  ];
+  return `<tr class="detay"><td colspan="${n}"><div class="dgrid">` +
+    alanlar.map(([a,b]) => `<div><span>${a}</span><span>${b ?? "—"}</span></div>`).join("") +
+    `</div></td></tr>`;
+}
+
+function huniCiz(){
+  const h = VERI.huni, en = h[0].kalan;
+  document.getElementById("huni").innerHTML = h.map((r,i) => {
+    const w = (r.kalan/en*100).toFixed(1);
+    const son = i === h.length-1 ? " son" : "";
+    const kir = r.kirilim && Object.keys(r.kirilim).length
+      ? `<div class="h-kirilim" id="kir-${i}">` +
+        Object.entries(r.kirilim).sort((a,b)=>b[1]-a[1])
+          .map(([k,v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("") +
+        (r.uyari ? `<div class="h-uyari">⚠ ${r.uyari}</div>` : "") + `</div>` : "";
+    return `<div class="h-row${son}" data-i="${i}">
+        <span class="hl">${r.kapi}</span>
+        <span class="h-bar"><span class="h-fill" style="width:${w}%"></span></span>
+        <span class="h-say">${r.elenen ? `<b>−${r.elenen}</b> → ` : ""}${r.kalan}</span>
+      </div>${kir}`;
+  }).join("");
+  document.querySelectorAll(".h-row").forEach(r => r.onclick = () => {
+    const k = document.getElementById("kir-" + r.dataset.i);
+    if (k) k.classList.toggle("acik");
+  });
+}
+
+function sekmeCiz(){
+  const s = [["aday","Adaylar",VERI.aday_sayisi],["izleme","İzleme",VERI.izleme_sayisi],
+             ["elenen","Elenenler",VERI.sirketler.filter(o=>o.elendi).length]];
+  document.getElementById("sekmeler").innerHTML = s.map(([id,ad,n]) =>
+    `<div class="sekme ${SEKME===id?'aktif':''}" data-s="${id}">${ad}<span class="n">${n}</span></div>`).join("");
+  document.querySelectorAll(".sekme").forEach(e => e.onclick = () => {
+    SEKME = e.dataset.s; ACIK = null;
+    SIRA = SEKME === "elenen" ? {alan:"kod", yon:1} : {alan:"fd_favok", yon:1};
+    sekmeCiz(); tabloCiz();
+  });
+}
+
+async function yukle(){
+  // DIGER SAYFALARLA AYNI YOL: veri, Netlify proxy'si uzerinden PRIVATE
+  // repodan cekilir. Dogrudan fetch("tarama.json") yerel testte calisir ama
+  // uretimde veriyi public'e acar - mimarinin tamami bunu onlemek uzerine kurulu.
+  VERI = await gncVeriCek("gnc-panel/tarama.json");
+  if (!VERI) {                                    // yerel gelistirme yedegi
+    VERI = await (await fetch("tarama.json?v=" + Date.now())).json();
+  }
+
+  document.getElementById("s-aday").textContent   = VERI.aday_sayisi;
+  document.getElementById("s-izleme").textContent = VERI.izleme_sayisi;
+  document.getElementById("s-toplam").textContent = VERI.huni[0].kalan;
+
+  huniCiz(); sekmeCiz();
+
+  const sekt = {};
+  VERI.sirketler.forEach(o => { if (o.sektor) sekt[o.sektor] = o.sektor_ad || o.sektor; });
+  const sel = document.getElementById("f-sektor");
+  Object.entries(sekt).sort((a,b)=>a[1].localeCompare(b[1],"tr"))
+    .forEach(([k,v]) => sel.insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
+  const url = new URLSearchParams(location.search).get("sektor");
+  if (url) sel.value = url;
+
+  document.getElementById("sektor-dagilim").innerHTML =
+    Object.entries(VERI.sektor_dagilim || {}).sort((a,b)=>b[1]-a[1])
+      .map(([a,n]) => `<span>${a} <b>${n}</b></span>`).join("") || '<span>—</span>';
+
+  document.getElementById("eksik-filtreler").innerHTML = (VERI.eksik_filtreler||[]).map(f =>
+    `<div class="eksik-satir"><span class="n"><b>${f.ad}</b> — ${f.neden}</span>
+     <span class="rozet ${f.onem==='orta'?'orta':''}">${f.onem}</span></div>`).join("");
+
+  document.getElementById("filtre-notlari").innerHTML = (VERI.filtre_notlari||[]).map(f =>
+    `<div class="eksik-satir"><span class="n"><b>${f.filtre}</b> — ${f.not}</span></div>`).join("");
+
+  const d = new Date(VERI.tarih);
+  document.getElementById("donem-etiketi").textContent = "Bilanço dönemi " + VERI.beklenen_donem;
+  document.getElementById("veri-zaman").textContent =
+    `Son tarama: ${d.toLocaleString("tr-TR")} · Beklenen bilanço dönemi: ${VERI.beklenen_donem} · ${VERI.not}`;
+
+  ["ara","f-sektor","f-daralma"].forEach(id =>
+    document.getElementById(id).addEventListener("input", () => { ACIK=null; tabloCiz(); }));
+  tabloCiz();
+}
+
+gncSidebarOlustur("tarama", "gnc-sidebar");
+yukle().catch(e => {
+  document.querySelector("#tablo tbody").innerHTML =
+    `<tr><td style="padding:26px;color:var(--brick)">tarama.json yüklenemedi: ${e.message}<br>
+     <span style="color:var(--ink-faint);font-size:11px">Önce <code>python tarama_hesapla.py</code> çalıştırılmalı.</span></td></tr>`;
+});
+</script>
+</body>
+</html>
