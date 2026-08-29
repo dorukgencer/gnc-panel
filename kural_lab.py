@@ -35,14 +35,40 @@ import kural_motoru as KM
 PANEL = Path(__file__).parent / "gnc-panel"
 
 # Taramada kullanılacak süzgeç havuzu. Hepsi bağımsız ve tek boyutlu.
-HAVUZ = ["nakit_akisi", "faiz_karsilama", "borcluluk", "tahakkuk",
-         "ucuzluk", "ma_ustu", "momentum_pozitif", "buyume_pozitif", "kar_pozitif"]
+#
+# HAVUZ DEĞİŞİKLİĞİ (29 Ağu 2026) — ölçüme dayanıyor, tercihe değil:
+#   ÇIKAN  borcluluk        : 24 kombinasyonun hepsinde ETKİSİZ çıktı. Sebebi
+#                             mantıklı: FD/FAVÖK net borcu zaten paya dahil
+#                             eder, borçlu şirket otomatik "pahalı" görünür.
+#   ÇIKAN  buyume_pozitif   : "gelir büyümesi > 0" %30 enflasyonda evrenin
+#                             %68'ini geçiriyor (262/387 ölçüldü) — süzgeç
+#                             değil. Yerine reel eşikli hâli girdi.
+#   GİREN  reel_buyume      : eşik sıfır değil, o ayda BİLİNEN yıllık TÜFE.
+#                             Aynı evrenin %17'sini geçirir.
+#   GİREN  marj_genisleyen, nakit_donusum, kar_istikrarli, yp_riski_dusuk
+#          — temel katman. Hepsi oran ya da aynı-baz büyüme, yani TMS 29
+#          yeniden ifadesinden etkilenmez.
+#   KALDI  momentum_pozitif : kazananların %0'ında çıkmıştı. NEGATİF KONTROL
+#                             olarak bilerek havuzda tutuluyor — çalışmadığını
+#                             göstermek, listeden çıkarmaktan daha dürüst.
+#
+# Havuz 12 süzgeç: k=2..5 için 1573 kombinasyon × 2 koruma = 3146 test (~20 dk).
+HAVUZ = ["nakit_akisi", "faiz_karsilama", "tahakkuk", "ucuzluk",
+         "ma_ustu", "momentum_pozitif", "kar_pozitif",
+         "reel_buyume", "marj_genisleyen", "nakit_donusum",
+         "kar_istikrarli", "yp_riski_dusuk"]
 
 # Elle tanımlanmış referans setler — "bunlarla başlayalım" dediklerimiz
 REFERANSLAR = [
     {"ad": "Kontrol (kural yok)", "suzgecler": [], "siralama": "buyuk", "koruma": "yok"},
     {"ad": "2 kural — sağlamlık", "suzgecler": ["nakit_akisi", "faiz_karsilama"],
      "siralama": "ucuz", "koruma": "yok"},
+    {"ad": "Temel kalite", "suzgecler": ["marj_genisleyen", "nakit_donusum", "kar_istikrarli"],
+     "siralama": "marj_artan", "koruma": "yok"},
+    {"ad": "Reel büyüme", "suzgecler": ["reel_buyume", "ozkaynak_reel"],
+     "siralama": "reel_buyuyen", "koruma": "yok"},
+    {"ad": "Temel + değer", "suzgecler": ["reel_buyume", "nakit_donusum", "kar_istikrarli", "ucuzluk"],
+     "siralama": "ucuz_satis", "koruma": "yok"},
     {"ad": "3 kural — sağlamlık + ucuzluk", "suzgecler": ["nakit_akisi", "faiz_karsilama", "borcluluk"],
      "siralama": "ucuz", "koruma": "yok"},
     {"ad": "4 kural — sistem çekirdeği", "suzgecler": ["nakit_akisi", "faiz_karsilama", "borcluluk", "tahakkuk"],
@@ -79,6 +105,56 @@ def isaretler(sonuc, rejim_getiri, kontrol_yillik):
     if sonuc["islem_sayisi"] > 600:
         u.append("çok yüksek devir")
     return u
+
+
+def one_cikanlar(sonuclar):
+    """
+    "Hangi kural one cikiyor?" — TEK bir siralamaya bakmak yerine, bir suzgecin
+    KAZANANLAR arasindaki gorulme orani ile GENEL gorulme orani karsilastirilir.
+
+    Genel oran zaten ~%44'tur (her suzgec kombinasyonlarin benzer bir kismina
+    girer). Bir suzgec kazananlarda bu oranin UZERINDEyse, sonucu o suzgec
+    tasiyor demektir; ALTINDAysa zarar veriyor demektir.
+
+    Kazanan tanimi bilerek DAR: kontrol grubunu getiri/dusus ORANINDA gecen VE
+    hic uyari almamis olanlar. Getiriyi tek basina olcut almak, en cok risk
+    alani odullendirir.
+    """
+    kon = next((x for x in sonuclar if x.get("tip") == "referans"), None)
+    aday = [x for x in sonuclar if x.get("tip") != "referans"
+            and (x.get("olcut") or {}).get("getiri_dusus_orani") is not None]
+    if not kon or not aday:
+        return {}
+    esik = kon["olcut"]["getiri_dusus_orani"]
+    gecen = [x for x in aday if x["olcut"]["getiri_dusus_orani"] > esik]
+    ust = [x for x in gecen if not x["uyarilar"]]
+
+    def say(kume):
+        c = {}
+        for x in kume:
+            for f in x["suzgecler"]:
+                c[f] = c.get(f, 0) + 1
+        return c
+
+    ca, cu = say(aday), say(ust)
+    satir = []
+    for f in ca:
+        ga = ca[f] / len(aday) * 100
+        gu = cu.get(f, 0) / len(ust) * 100 if ust else 0.0
+        satir.append({"suzgec": f, "ust_oran": round(gu, 1),
+                      "genel_oran": round(ga, 1), "fark": round(gu - ga, 1)})
+    satir.sort(key=lambda r: -r["fark"])
+    return {
+        "toplam": len(aday), "gecen": len(gecen), "gecen_uyarisiz": len(ust),
+        "kontrol_oran": esik,
+        "kontrol_yillik": kon["olcut"].get("yillik_getiri"),
+        "kontrol_dusus": kon["olcut"].get("max_dusus"),
+        "suzgecler": satir,
+        "not": ("Kazanan sayısı azsa (744'te 6 gibi) bu bir KEŞİFTİR, kanıt değildir. "
+                "Yüzlerce deneme içinde birkaç kazanan şansla da çıkabilir. Bir süzgeci "
+                "ancak mantığı savunulabiliyorsa ve rejimlerin hepsinde ayakta kalıyorsa "
+                "sisteme alın."),
+    }
 
 
 def main():
@@ -176,6 +252,8 @@ def main():
     # 25'in disinda oluyor ve grafik hic gorunmuyordu. Artik HERKESE aylik
     # cozunurlukte seri veriliyor (250px'lik grafik icin fazlasiyla yeterli),
     # one cikanlara daha sik ornekleme.
+    _TARIH_DIZI = {}
+    _BM_SERI = list(sonuclar[0]["seri"])
     onemli = {id(s) for s in sirali[:25]}
     onemli |= {id(s) for s in sonuclar if s["tip"] == "referans"}
     for s in sonuclar:
@@ -188,9 +266,16 @@ def main():
         else:
             # ay sonu benzeri: ~62 nokta
             adim = max(1, len(tam) // 62)
-        s["seri"] = tam[::adim]
-        if s["seri"][-1] is not tam[-1]:
-            s["seri"].append(tam[-1])
+        nokta = tam[::adim]
+        if nokta[-1] is not tam[-1]:
+            nokta.append(tam[-1])
+        # BOYUT: her nokta {"tarih":..,"deger":..} olarak yazilinca 3157 sonuc
+        # icin 9.2 MB ediyordu - anahtarlar her noktada tekrarlaniyor. Tarihler
+        # tum sonuclarda AYNI oldugu icin bir kez ustte tutulur, sonuclar
+        # sadece DEGER dizisi tasir. Sayfa yuklenirken geri acilir.
+        s["seri"] = [round(r["deger"]) for r in nokta]
+        s["seri_tip"] = "sik" if id(s) in onemli else "seyrek"
+        _TARIH_DIZI.setdefault(s["seri_tip"], [r["tarih"] for r in nokta])
         s["seri_var"] = True
 
     print(f"\nEN İYİ 10 (getiri/düşüş oranına göre, uyarı cezalı)")
@@ -212,7 +297,9 @@ def main():
         "rejim_adlari": KM.REJIM_ADI,
         "rejim_serisi": {a: v for a, v in rejimler.items()
                          if GT.BASLANGIC.isoformat()[:7] <= a <= GT.BITIS.isoformat()[:7]},
-        "benchmark": _benchmark(xu, sonuclar[0]["seri"], rejimler),
+        "seri_tarihleri": _TARIH_DIZI,
+        "benchmark": _benchmark(xu, _BM_SERI, rejimler),
+        "one_cikanlar": one_cikanlar(sonuclar),
         "sonuclar": sonuclar,
         "uyari": ("Yüzlerce kombinasyon deneyip en iyisini seçmek, veriye uydurmanın "
                   "kendisidir. Buradaki sıralama bir KEŞİF aracıdır, seçim gerekçesi "

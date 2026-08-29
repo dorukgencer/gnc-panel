@@ -42,6 +42,32 @@ KLASOR = Path(__file__).parent
 PANEL = KLASOR / "gnc-panel"
 
 
+# ===================================================================== ENFLASYON
+# NEDEN: %30 enflasyonda "gelir buyumesi > 0" bir suzgec degildir - evrenin
+# ucte ikisi gecer (olculdu: 262/387). Gercekte kuculen sirket "buyuyor"
+# sayilir. Temel katmandaki buyume kurallari bu yuzden REEL calisir:
+# esik sifir degil, o ayda BILINEN yillik TUFE'dir.
+#
+# "Bilinen": TUIK enflasyonu ayin basinda bir onceki ay icin acikladigi icin
+# karar gununden onceki son yayinlanmis deger kullanilir. Ileri bakis yok.
+
+_TUFE_ONBELLEK = {}
+
+
+def tufe_asof(gun):
+    """gun tarihinde BILINEN son yillik TUFE (%). Yoksa None."""
+    if not _TUFE_ONBELLEK:
+        for ay, v in rejim_serisi().items():
+            t = v.get("tufe_yillik")
+            if t is not None:
+                _TUFE_ONBELLEK[ay] = t
+    if not _TUFE_ONBELLEK:
+        return None
+    ay = gun[:7]
+    uygun = [a for a in _TUFE_ONBELLEK if a < ay]      # kesin gecmis
+    return _TUFE_ONBELLEK[max(uygun)] if uygun else None
+
+
 # ===================================================================== SÜZGEÇLER
 # Her süzgeç: (olcum, baglam) -> True (KALSIN) / False (ELENSIN)
 # baglam: o karar gününün kesitsel eşikleri
@@ -93,6 +119,53 @@ def _f_ozkaynak_saglam(o, b):
     return o.get("pd_dd") is not None and 0 < o["pd_dd"] <= (b.get("pddd_esik") or 1e9)
 
 
+# --- TEMEL KATMAN -----------------------------------------------------------
+# TMS 29 notu: buradaki olculerin hepsi ORAN ya da AYNI BAZDA buyumedir; pay
+# ve payda ayni donemin ayni bazinda oldugu icin yeniden ifadeden etkilenmez.
+# ROE/ROA/ROIC/F/K bilerek SUZGEC olarak eklenmedi - 2024 oncesinde mekanik
+# olarak kayarlar; sadece bilgi olarak tasiniyorlar.
+
+def _f_reel_buyume(o, b):
+    """Gelir buyumesi ENFLASYONUN uzerinde mi - yani gercekten buyuyor mu."""
+    t = b.get("tufe")
+    if t is None or o.get("gelir_buyume") is None:
+        return False
+    return o["gelir_buyume"] > t
+
+def _f_ozkaynak_reel(o, b):
+    t = b.get("tufe")
+    if t is None or o.get("ozkaynak_buyume") is None:
+        return False
+    return o["ozkaynak_buyume"] > t
+
+def _f_marj_genisleyen(o, b):
+    return o.get("marj_trend") is not None and o["marj_trend"] > 0
+
+def _f_marj_ust_yari(o, b):
+    e = b.get("marj_medyan")
+    return e is not None and o.get("favok_marj") is not None and o["favok_marj"] > e
+
+def _f_nakit_donusum(o, b):
+    return o.get("nakit_donusum") is not None and o["nakit_donusum"] >= 0.8
+
+def _f_kar_istikrarli(o, b):
+    return o.get("kar_istikrar") is not None and o["kar_istikrar"] >= 75
+
+def _f_yp_riski_dusuk(o, b):
+    """Net YP pozisyonu ozkaynagin %25'inden fazla ACIK degil.
+
+    BIST'e ozgu risk: kur soku, acik YP pozisyonu tasiyan sirketin ozkaynagini
+    dogrudan yer. Veri yoksa ELEMEZ - eksik veri ceza sebebi degildir."""
+    v = o.get("yp_ozkaynak")
+    return True if v is None else v > -0.25
+
+def _f_borc_ozkaynak(o, b):
+    e = b.get("borc_ozk_esik")
+    if e is None or o.get("borc_ozkaynak") is None:
+        return True
+    return o["borc_ozkaynak"] <= e
+
+
 SUZGECLER = {
     "nakit_akisi":     ("İşletme nakit akışı pozitif", "Kârın nakde döndüğünün en basit kanıtı", _f_nakit_akisi),
     "favok_pozitif":   ("FAVÖK pozitif", "Faaliyetten para kazanıyor mu", _f_favok_pozitif),
@@ -106,6 +179,16 @@ SUZGECLER = {
     "buyume_pozitif":  ("Gelir büyümesi pozitif", "Küçülen şirketi alma", _f_buyume_pozitif),
     "kar_pozitif":     ("Net kâr pozitif", "Zarar eden şirketi alma", _f_kar_pozitif),
     "ozkaynak_saglam": ("PD/DD makul aralıkta", "Defter değerine göre aşırı pahalı değil", _f_ozkaynak_saglam),
+
+    # --- temel katman ---
+    "reel_buyume":     ("Gelir büyümesi enflasyonun üstünde", "REEL büyüme. 'Büyüme > 0' %30 enflasyonda evrenin %68'ini geçirir; bu %17'sini", _f_reel_buyume),
+    "ozkaynak_reel":   ("Özkaynak büyümesi enflasyonun üstünde", "Sermaye reel olarak büyüyor mu", _f_ozkaynak_reel),
+    "marj_genisleyen": ("FAVÖK marjı geçen yıla göre artmış", "Marj yönü, marj seviyesinden daha çok şey söyler", _f_marj_genisleyen),
+    "marj_ust_yari":   ("FAVÖK marjı evren medyanının üstünde", "Kesitsel marj eşiği — mutlak eşik değil", _f_marj_ust_yari),
+    "nakit_donusum":   ("İşletme nakdi / FAVÖK ≥ 0.8", "FAVÖK'ün nakde dönme oranı", _f_nakit_donusum),
+    "kar_istikrarli":  ("Son 8 çeyreğin en az 6'sında kâr", "Kâr seviyesi değil, SÜREKLİLİĞİ", _f_kar_istikrarli),
+    "yp_riski_dusuk":  ("Açık YP pozisyonu özkaynağın %25'ini aşmıyor", "Kur şokuna dayanıklılık — veri yoksa elemez", _f_yp_riski_dusuk),
+    "borc_ozkaynak":   ("Borç/Özkaynak en kötü %25 elenir", "Kaldıraç kesitsel eşik", _f_borc_ozkaynak),
 }
 
 
@@ -119,6 +202,11 @@ SIRALAMALAR = {
     "buyuyen":     ("En hızlı gelir büyümesi", lambda o: o.get("gelir_buyume"), False),
     "momentumlu":  ("En güçlü 6 ay momentum", lambda o: o.get("mom6"), False),
     "buyuk":       ("En büyük piyasa değeri", lambda o: o.get("pd"), False),
+    "reel_buyuyen":("En hızlı REEL gelir büyümesi", lambda o: o.get("gelir_buyume"), False),
+    "marj_artan":  ("Marjı en çok genişleyen", lambda o: o.get("marj_trend"), False),
+    "nakit_uretken":("En yüksek nakit getirisi (İşl. nakdi/PD)", lambda o: o.get("nakit_getirisi"), False),
+    "istikrarli":  ("Kâr sürekliliği en yüksek", lambda o: o.get("kar_istikrar"), False),
+    "ucuz_satis":  ("En ucuz (FD/Satış)", lambda o: o.get("fd_satis"), True),
     "karli":       ("En yüksek FAVÖK marjı", lambda o: (o["favok"] / o["gelir"]) if (o.get("favok") and o.get("gelir")) else None, False),
     "siralamasiz": ("Sıralama yok — hepsi eşit ağırlık", lambda o: 0, True),
 }
@@ -207,7 +295,7 @@ def panel_kur(veri, baslangic=None, bitis=None, min_pd=None):
     return kararlar, panel, gunler, fiyat, xu_ma, xu
 
 
-def esikleri_hesapla(ev, dilim=0.25):
+def esikleri_hesapla(ev, dilim=0.25, gun=None):
     """O karar gününün kesitsel eşikleri. Mutlak eşik YOK, hep dağılımdan."""
     def ust(alan, poz_sart=False):
         v = sorted(o[alan] for o in ev.values()
@@ -226,7 +314,13 @@ def esikleri_hesapla(ev, dilim=0.25):
     genel = sorted(o["fd_favok"] for o in ev.values() if o.get("fd_favok") and o["fd_favok"] > 0)
     genel_esik = genel[int(len(genel) * (1 - dilim))] if len(genel) >= 8 else None
 
+    marjlar = sorted(o["favok_marj"] for o in ev.values() if o.get("favok_marj") is not None)
+    marj_medyan = marjlar[len(marjlar) // 2] if len(marjlar) >= 8 else None
+
     return {
+        "tufe": tufe_asof(gun) if gun else None,
+        "marj_medyan": marj_medyan,
+        "borc_ozk_esik": ust("borc_ozkaynak", poz_sart=True),
         "tahakkuk_esik": ust("tahakkuk"),
         "borc_esik": ust("net_borc_favok", poz_sart=True),
         "pddd_esik": ust("pd_dd", poz_sart=True),
@@ -296,7 +390,7 @@ def kombinasyon_calistir(kararlar, panel, gunler, fiyat, xu_ma,
         # --- karar gunu: secimi YAP, emri kuyruga al
         if gun in kararlar:
             ev = panel.get(gun, {})
-            esik = esikleri_hesapla(ev)
+            esik = esikleri_hesapla(ev, gun=gun)
             aday = []
             for kod, o in ev.items():
                 b = dict(esik)

@@ -114,11 +114,32 @@ HARITA = {
                             "III. NET FAİZ GELİRİ/GİDERİ (I - II)",
                             "III. NET KAR PAYI GELİRİ/GİDERİ (I-II)"],
         "faaliyet_kari":   ["XI. NET FAALİYET KARI/ZARARI (VIII-IX-X)"],
-        "odenmis_sermaye": ["Ödenmiş Sermaye", "1.1 Ödenmiş Sermaye"],
+        # BULUNAN HATA: harita "1.1 Odenmis Sermaye" ariyordu ama bankalar
+        # "16.1 Odenmis Sermaye" (11 banka) ya da "14.1" (1 banka) yaziyor.
+        # Sonuc: 12 bankanin 12'sinde de hisse sayisi None doniyor, piyasa
+        # degeri hesaplanamiyor, banka evrene HIC giremiyordu.
+        "odenmis_sermaye": ["16.1 Ödenmiş Sermaye", "14.1 Ödenmiş Sermaye",
+                            "Ödenmiş Sermaye", "1.1 Ödenmiş Sermaye"],
         # Katilim bankasinda "faiz" degil "kar payi" denir - ikisi de aday.
         "net_faiz_geliri": ["III. NET FAİZ GELİRİ/GİDERİ (I - II)",
                             "III. NET KAR PAYI GELİRİ/GİDERİ (I-II)"],
         "net_parasal_poz": ["XIV. NET PARASAL POZİSYON KARI/ZARARI"],
+
+        # --- BANKA TEMEL KATMANI (29 Agu 2026) ---
+        # Bankalar testten tamamen dislaniyordu: "if fmt != SANAYI: continue".
+        # 18 sirket, BIST piyasa degerinin %14'u. BIST'in en likit hisseleri.
+        # Bankada FAVOK/net borc/tahakkuk yoktur; bankaya OZGU olculer gerekir.
+        # 12 bankanin 12'sinde de dogrulandi (ALBRK haric mevduat - katilim
+        # bankasi oldugu icin "TOPLANAN FONLAR" der, o da aday listesinde).
+        "toplam_varlik":   ["AKTİF TOPLAMI"],
+        "krediler":        ["VI. KREDİLER", "6.1 Krediler"],
+        "takipteki":       ["6.2 Takipteki Krediler"],
+        "ozel_karsilik":   ["6.3 Özel Karşılıklar (-)"],
+        "mevduat":         ["I. MEVDUAT", "I. TOPLANAN FONLAR"],
+        "kredi_karsiligi": ["IX. KREDİ VE DİĞER ALACAKLAR DEĞER DÜŞÜŞ KARŞILIĞI (-)"],
+        "komisyon_geliri": ["IV. NET ÜCRET VE KOMİSYON GELİRLERİ/GİDERLERİ"],
+        "faaliyet_geliri": ["VIII. FAALİYET GELİRLERİ/GİDERLERİ TOPLAMI (III+IV+V+VI+VII)",
+                            "VIII. FAALİYET GELİRLERİ/GİDERLERİ TOPLAMI"],
     },
     "SIGORTA": {
         "ozkaynak":        ["Özsermaye Toplamı"],
