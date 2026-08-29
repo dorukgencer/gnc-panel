@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portföy Testi — GNC Insight</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="ortak.css" rel="stylesheet">
+<style>
+  .pt-band{background:var(--surface-raised);border:1px solid var(--line);padding:22px 24px;margin-bottom:18px}
+  .pt-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px}
+  .pt-baslik{font-family:'Fraunces',serif;font-size:24px;color:var(--copper-dark);line-height:1.2}
+  .pt-ozet{font-size:12.5px;color:var(--ink-soft);margin-top:6px;max-width:660px;line-height:1.65}
+  .pt-kunye{display:flex;flex-wrap:wrap;gap:18px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .pt-kunye div{font-size:11.5px;color:var(--ink-soft)}
+  .pt-kunye b{display:block;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);margin-top:2px}
+
+  .uyari-kutu{background:var(--surface-raised);border:1px solid var(--line);border-left:3px solid var(--brick);padding:16px 18px;margin-bottom:18px}
+  .uyari-kutu h3{font-family:'Fraunces',serif;font-size:14px;margin:0 0 9px;color:var(--brick)}
+  .uyari-kutu ul{margin:0;padding-left:17px;font-size:12px;color:var(--ink-soft);line-height:1.7}
+  .uyari-kutu li{margin-bottom:5px}
+
+  .kartlar{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:18px}
+  .kart{background:var(--surface-raised);border:1px solid var(--line);padding:15px 16px;cursor:pointer;transition:border-color .15s}
+  .kart:hover{border-color:var(--line-strong)}
+  .kart.secili{border-color:var(--pine);border-width:2px;padding:14px 15px}
+  .kart .ad{font-family:'Fraunces',serif;font-size:15px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .kart .nokta{width:9px;height:9px;border-radius:50%;flex:none}
+  .kart .acik{font-size:11px;color:var(--ink-faint);line-height:1.45;min-height:31px;margin-bottom:10px}
+  .kart .ana{font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;line-height:1}
+  .kart .ana small{font-size:10px;color:var(--ink-faint);font-weight:400;letter-spacing:.05em;display:block;margin-top:3px;font-family:'IBM Plex Sans',sans-serif}
+  .kart .alt{display:flex;gap:14px;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
+  .kart .alt div{font-size:10px;color:var(--ink-faint)}
+  .kart .alt b{display:block;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);font-weight:500;margin-top:1px}
+
+  .grafik-kutu{background:var(--surface-raised);border:1px solid var(--line);padding:18px 20px;margin-bottom:18px}
+  .grafik-kutu h3{font-family:'Fraunces',serif;font-size:15px;margin:0 0 3px}
+  .grafik-alt{font-size:11.5px;color:var(--ink-faint);margin-bottom:14px}
+  .lejant{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11px}
+  .lejant span{display:flex;align-items:center;gap:5px;color:var(--ink-soft);cursor:pointer;opacity:.45}
+  .lejant span.acik{opacity:1;color:var(--ink)}
+  .lejant i{width:13px;height:3px;border-radius:2px;display:block}
+
+  .tablo-sar{overflow-x:auto;border:1px solid var(--line);background:var(--surface-raised);margin-bottom:18px}
+  table{border-collapse:collapse;width:100%;font-size:12px;min-width:720px}
+  caption{text-align:left;padding:15px 16px 4px;font-family:'Fraunces',serif;font-size:15px;color:var(--ink)}
+  caption span{display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;color:var(--ink-faint);margin-top:3px;font-weight:400;max-width:640px;line-height:1.55}
+  th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);text-align:right;font-weight:500;padding:10px 12px;border-bottom:1px solid var(--line-strong);background:var(--paper);white-space:nowrap}
+  th:first-child{text-align:left}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  td:first-child{text-align:left;font-family:'IBM Plex Sans',sans-serif;font-weight:500}
+  tr:last-child td{border-bottom:none}
+  tr.bench td{background:var(--paper);font-style:italic}
+  .iyi{color:var(--pine-dark)} .kotu{color:var(--brick)} .notr{color:var(--ink-faint)}
+  .en-iyi{background:var(--pine-soft)}
+  .en-kotu{background:var(--brick-soft)}
+
+  .bulgu{background:var(--surface-raised);border:1px solid var(--line);border-left:3px solid var(--ochre);padding:15px 18px;margin-bottom:12px}
+  .bulgu h4{font-family:'Fraunces',serif;font-size:14px;margin:0 0 6px;color:var(--ink)}
+  .bulgu p{font-size:12.5px;color:var(--ink-soft);line-height:1.65;margin:0}
+  .bulgu.kirmizi{border-left-color:var(--brick)}
+  .bulgu.yesil{border-left-color:var(--pine)}
+
+  .poz{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .poz span{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 7px;background:var(--paper);border:1px solid var(--line);border-radius:3px}
+  .sr-veri-zaman{font-size:11px;color:var(--ink-faint);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="gnc-shell">
+  <aside class="gnc-sidebar" id="gnc-sidebar"></aside>
+  <main class="gnc-main">
+    <div class="gnc-topbar">
+      <div class="baslik-satiri"><h1>Portföy Testi</h1></div>
+      <span class="gnc-donem" id="donem-etiketi">—</span>
+    </div>
+    <div class="gnc-content">
+
+      <div class="pt-band">
+        <div class="pt-eyebrow">Geçmişe dönük sınama · 8 strateji</div>
+        <div class="pt-baslik">Bu kurallarla 5 yıl önce başlasaydık ne olurdu?</div>
+        <div class="pt-ozet">
+          Her strateji diğerlerinden <b>tek bir boyutta</b> ayrılır — böylece biri öne
+          çıktığında farkın nereden geldiği bilinir. Hepsinde aynı evren, aylık karar,
+          eşit ağırlık ve aynı işlem maliyeti kullanılır. Bilançolar, açıklanmalarından
+          önce görülemez.
+        </div>
+        <div class="pt-kunye" id="kunye"></div>
+      </div>
+
+      <div class="uyari-kutu">
+        <h3>Bu sonuçlara nasıl bakılmalı</h3>
+        <ul id="uyarilar"></ul>
+      </div>
+
+      <div class="kartlar" id="kartlar"></div>
+
+      <div class="grafik-kutu">
+        <h3>Portföy değeri</h3>
+        <div class="grafik-alt">100.000 TL ile başlayan portföyün seyri. Logaritmik ölçek —
+          yüzde değişimler her seviyede aynı görünür.</div>
+        <canvas id="grafik" style="width:100%;height:340px"></canvas>
+        <div class="lejant" id="lejant"></div>
+      </div>
+
+      <div class="tablo-sar">
+        <table id="t-kayan1">
+          <caption>Kayan pencere — 1 yıl: "o ay başlasaydım ne olurdu?"
+            <span>Tek bir 5 yıllık rakam yanıltır: getirinin tamamı birkaç aya sıkışmışsa,
+            başka bir ayda başlayan hiçbir şey kazanmamış olabilir. Burada <b>her ay
+            başlamış gibi</b> hesaplanıyor. Sermaye koruması önceliğinde bakılacak sütun
+            ortalama değil, <b>en kötü pencere</b> ve <b>eksi biten oranı</b>.</span>
+          </caption>
+        </table>
+      </div>
+
+      <div class="tablo-sar">
+        <table id="t-kayan3">
+          <caption>Kayan pencere — 3 yıl
+            <span>Uzun tutulunca fark ortaya çıkıyor mu? "BIST'i geçen" sütunu %55 civarıysa
+            sistem yazı-turadan az farklıdır; %90+ ise tutarlı bir üstünlük vardır.</span>
+          </caption>
+        </table>
+      </div>
+
+      <div class="tablo-sar">
+        <table id="t-yillik">
+          <caption>Yıl yıl getiri
+            <span>Tek bir iyi yıla mı bağlı, yoksa istikrarlı mı? Bir stratejinin en kötü yılı,
+            ortalamasından daha çok şey anlatır.</span>
+          </caption>
+        </table>
+      </div>
+
+      <div class="tablo-sar">
+        <table id="t-donem">
+          <caption>Dönem ayrımı — enflasyon muhasebesi
+            <span>2024 öncesi bilanço verisi TMS 29 ile yeniden ifade edildi; o dönemin
+            bilanço temelli sonuçlarında kısmi bilgi sızması var. 2024 sonrası temiz.
+            Ama dikkat: 2024 sonrası getiriler BIST 100 dahil her yerde düştü —
+            bu sadece veri değil, enflasyonun gerilemesiyle nominal getirilerin daralması.</span>
+          </caption>
+        </table>
+      </div>
+
+      <div class="tablo-sar">
+        <table id="t-kirilgan">
+          <caption>Kırılganlık testi — likidite tabanı
+            <span>Geçmiş işlem hacmi verisi yok; piyasa değeri tabanı vekil olarak kullanıldı.
+            Bir stratejinin sonucu bu tabanı kaldırınca çok değişiyorsa, o sonuç küçük ve
+            ince işlem gören hisselere dayanıyor demektir — yani gerçekte alınamaz.</span>
+          </caption>
+        </table>
+      </div>
+
+      <div id="bulgular"></div>
+
+      <div class="grafik-kutu">
+        <h3>Son portföyler</h3>
+        <div class="grafik-alt">Her stratejinin son karar gününde tuttuğu hisseler.</div>
+        <div id="portfoyler"></div>
+      </div>
+
+      <div class="sr-veri-zaman" id="veri-zaman"></div>
+    </div>
+  </main>
+</div>
+
+<script src="ortak.js"></script>
+<script>
+const RENK = {piyasa:"#8D958E", saglam:"#1D6555", ucuz:"#A8552A", nakit_kalite:"#8C6C28",
+              trend:"#9B3A2C", ters:"#5E7A8C", buyume:"#124B3F", sistem:"#823F1C"};
+const BENCH = "#B7C0B2";
+let V=null, GORUNUR=new Set();
+
+const yz = (v,d=1) => v===null||v===undefined ? "—" : (v>=0?"+":"")+v.toFixed(d)+"%";
+const sinif = v => v===null||v===undefined ? "notr" : (v>0?"iyi":(v<0?"kotu":"notr"));
+
+function kartlar(){
+  document.getElementById("kartlar").innerHTML = V.stratejiler.map(s=>{
+    const o=s.olcut, enKotu=Math.min(...s.alt_donemler.yillik.map(y=>y.getiri??99));
+    return `<div class="kart ${GORUNUR.has(s.id)?'secili':''}" data-id="${s.id}">
+      <div class="ad"><span>${s.ad}</span><span class="nokta" style="background:${RENK[s.id]}"></span></div>
+      <div class="acik">${s.aciklama}</div>
+      <div class="ana" style="color:${RENK[s.id]}">${yz(o.yillik_getiri)}<small>YILLIK BİLEŞİK</small></div>
+      <div class="alt">
+        <div>MAKS. DÜŞÜŞ<b class="kotu">${yz(o.max_dusus)}</b></div>
+        <div>EN KÖTÜ YIL<b class="${sinif(enKotu)}">${yz(enKotu,0)}</b></div>
+        <div>İŞLEM<b>${s.islem_sayisi}</b></div>
+      </div></div>`;
+  }).join("");
+  document.querySelectorAll(".kart").forEach(k=>k.onclick=()=>{
+    GORUNUR.has(k.dataset.id) ? GORUNUR.delete(k.dataset.id) : GORUNUR.add(k.dataset.id);
+    kartlar(); lejant(); ciz();
+  });
+}
+
+function lejant(){
+  const o = V.stratejiler.map(s=>
+    `<span class="${GORUNUR.has(s.id)?'acik':''}" data-id="${s.id}">
+       <i style="background:${RENK[s.id]}"></i>${s.ad}</span>`).join("")
+    + `<span class="acik" style="cursor:default"><i style="background:${BENCH}"></i>BIST 100</span>`;
+  document.getElementById("lejant").innerHTML = o;
+  document.querySelectorAll(".lejant span[data-id]").forEach(e=>e.onclick=()=>{
+    GORUNUR.has(e.dataset.id) ? GORUNUR.delete(e.dataset.id) : GORUNUR.add(e.dataset.id);
+    kartlar(); lejant(); ciz();
+  });
+}
+
+function ciz(){
+  const c=document.getElementById("grafik"), dpr=window.devicePixelRatio||1;
+  const W=c.clientWidth, H=340;
+  c.width=W*dpr; c.height=H*dpr;
+  const x=c.getContext("2d"); x.scale(dpr,dpr); x.clearRect(0,0,W,H);
+  const P={l:56,r:12,t:12,b:26};
+
+  const seriler=[{seri:V.benchmark.seri,renk:BENCH,kalin:1.5}];
+  V.stratejiler.filter(s=>GORUNUR.has(s.id))
+    .forEach(s=>seriler.push({seri:s.seri,renk:RENK[s.id],kalin:1.8}));
+
+  let mn=Infinity,mx=-Infinity, t0=null,t1=null;
+  seriler.forEach(s=>s.seri.forEach(r=>{
+    mn=Math.min(mn,r.deger); mx=Math.max(mx,r.deger);
+    if(!t0||r.tarih<t0)t0=r.tarih; if(!t1||r.tarih>t1)t1=r.tarih;
+  }));
+  if(!isFinite(mn)) return;
+  const lmn=Math.log10(Math.max(mn*0.95,1)), lmx=Math.log10(mx*1.05);
+  const gx=t=>P.l+(new Date(t)-new Date(t0))/(new Date(t1)-new Date(t0))*(W-P.l-P.r);
+  const gy=v=>P.t+(1-(Math.log10(Math.max(v,1))-lmn)/(lmx-lmn))*(H-P.t-P.b);
+
+  // yatay izgara: 100k, 200k, 500k, 1M, 2M
+  x.font="10px 'IBM Plex Mono',monospace"; x.textAlign="right";
+  [100000,200000,500000,1000000,2000000,5000000].filter(v=>v>=mn*0.9&&v<=mx*1.1).forEach(v=>{
+    const y=gy(v);
+    x.strokeStyle="#CFD6CC"; x.lineWidth=1; x.setLineDash([2,3]);
+    x.beginPath(); x.moveTo(P.l,y); x.lineTo(W-P.r,y); x.stroke(); x.setLineDash([]);
+    x.fillStyle="#8D958E";
+    x.fillText(v>=1e6 ? (v/1e6)+"M" : (v/1000)+"K", P.l-7, y+3);
+  });
+  // yil etiketleri
+  x.textAlign="center";
+  for(let y=2022;y<=2026;y++){
+    const t=y+"-01-01"; if(t<t0||t>t1) continue;
+    x.fillStyle="#8D958E"; x.fillText(y, gx(t), H-8);
+  }
+
+  seriler.forEach(s=>{
+    x.strokeStyle=s.renk; x.lineWidth=s.kalin; x.beginPath();
+    s.seri.forEach((r,i)=> i? x.lineTo(gx(r.tarih),gy(r.deger)) : x.moveTo(gx(r.tarih),gy(r.deger)));
+    x.stroke();
+  });
+}
+
+function tabloKayan(n, hedef){
+  const t=document.getElementById(hedef);
+  if(!t) return;
+  const anahtar = n===12 ? "bir_yil" : "uc_yil";
+  const sat = V.stratejiler
+    .map(s=>({ad:s.ad, id:s.id, k:(s.kayan||{})[anahtar]}))
+    .filter(x=>x.k);
+  if(!sat.length){ t.closest(".tablo-sar").style.display="none"; return; }
+  const b=(V.benchmark.kayan||{})[anahtar];
+  sat.sort((a,c)=>(c.k.kiyas_gecen_oran??-1)-(a.k.kiyas_gecen_oran??-1));
+  const yz=(v,d=0)=>v==null?"—":(v>=0?"+":"")+v.toFixed(d)+"%";
+  const sinif=v=>v==null?"":(v>0?"iyi":v<0?"kotu":"");
+  const satir=x=>{
+    const k=x.k, g=k.kiyas_gecen_oran;
+    const gs = g==null?"":(g>=80?"iyi":g<=55?"kotu":"");
+    return `<tr class="${GORUNUR.has(x.id)?'secili':''}">
+      <td style="text-align:left">${x.ad}</td>
+      <td class="notr">${k.adet}</td>
+      <td>${yz(k.ortanca)}</td>
+      <td class="${sinif(k.en_kotu)}"><b>${yz(k.en_kotu)}</b></td>
+      <td class="notr">${yz(k.en_iyi)}</td>
+      <td class="${k.eksi_oran>0?'kotu':'iyi'}"><b>%${k.eksi_oran}</b></td>
+      <td class="${gs}">${g==null?"—":"%"+g}</td></tr>`;
+  };
+  t.querySelectorAll("thead,tbody").forEach(e=>e.remove());
+  t.insertAdjacentHTML("beforeend",
+    `<thead><tr><th style="text-align:left">Strateji</th><th>Pencere</th><th>Ortanca</th>
+     <th>En kötü</th><th>En iyi</th><th>Eksi biten</th><th>BIST'i geçen</th></tr></thead><tbody>`
+    + sat.map(satir).join("")
+    + (b?`<tr class="kiyas"><td style="text-align:left"><b>BIST 100</b></td>
+        <td class="notr">${b.adet}</td><td>${yz(b.ortanca)}</td>
+        <td class="${sinif(b.en_kotu)}">${yz(b.en_kotu)}</td>
+        <td class="notr">${yz(b.en_iyi)}</td>
+        <td class="${b.eksi_oran>0?'kotu':'iyi'}">%${b.eksi_oran}</td><td>—</td></tr>`:"")
+    + `</tbody>`);
+}
+
+function tabloYillik(){
+  const yillar=V.stratejiler[0].alt_donemler.yillik.map(y=>y.etiket);
+  const satir=(ad,ad2,cls="")=>`<tr class="${cls}"><td>${ad}</td>${ad2}</tr>`;
+  let h=`<thead><tr><th>Strateji</th>${yillar.map(y=>`<th>${y}</th>`).join("")}<th>En kötü yıl</th></tr></thead><tbody>`;
+  const hepsi=[...V.stratejiler.map(s=>({ad:s.ad,y:s.alt_donemler.yillik,b:false})),
+               {ad:"BIST 100",y:V.benchmark.alt_donemler.yillik,b:true}];
+  // her yil icin en iyi/en kotu
+  const enIyi={},enKotu={};
+  yillar.forEach((_,i)=>{
+    const v=V.stratejiler.map(s=>s.alt_donemler.yillik[i]?.getiri).filter(x=>x!=null);
+    enIyi[i]=Math.max(...v); enKotu[i]=Math.min(...v);
+  });
+  hepsi.forEach(r=>{
+    const kotu=Math.min(...r.y.map(y=>y.getiri??99));
+    h+=satir(r.ad, r.y.map((y,i)=>{
+      const v=y.getiri, mark=!r.b&&v===enIyi[i]?"en-iyi":(!r.b&&v===enKotu[i]?"en-kotu":"");
+      return `<td class="${sinif(v)} ${mark}">${yz(v,0)}</td>`;
+    }).join("")+`<td class="${sinif(kotu)}"><b>${yz(kotu,0)}</b></td>`, r.b?"bench":"");
+  });
+  document.getElementById("t-yillik").insertAdjacentHTML("beforeend", h+"</tbody>");
+}
+
+function tabloDonem(){
+  let h=`<thead><tr><th>Strateji</th><th>2021/08 – 2023/12<br><span style="font-weight:400;text-transform:none;letter-spacing:0">kirlenmiş</span></th>
+    <th>2024/01 – 2026/07<br><span style="font-weight:400;text-transform:none;letter-spacing:0">temiz</span></th>
+    <th>Temiz dönem max. düşüş</th></tr></thead><tbody>`;
+  const hepsi=[...V.stratejiler.map(s=>({ad:s.ad,d:s.alt_donemler.donem,b:false})),
+               {ad:"BIST 100",d:V.benchmark.alt_donemler.donem,b:true}];
+  hepsi.forEach(r=>{
+    const [a,b]=r.d;
+    h+=`<tr class="${r.b?'bench':''}"><td>${r.ad}</td>
+        <td class="${sinif(a?.getiri)}">${yz(a?.getiri,0)}</td>
+        <td class="${sinif(b?.getiri)}">${yz(b?.getiri,0)}</td>
+        <td class="kotu">${yz(b?.max_dusus,0)}</td></tr>`;
+  });
+  document.getElementById("t-donem").insertAdjacentHTML("beforeend", h+"</tbody>");
+}
+
+function tabloKirilgan(){
+  let h=`<thead><tr><th>Strateji</th><th>Likidite tabanlı</th><th>Tabansız</th><th>Fark</th><th>Yorum</th></tr></thead><tbody>`;
+  V.stratejiler.forEach(s=>{
+    const a=s.olcut.yillik_getiri, b=s.olcut_filtresiz.yillik_getiri, f=b-a;
+    const yorum = Math.abs(f)>15 ? "Küçük hisselere bağımlı" : (Math.abs(f)>5 ? "Kısmen duyarlı" : "Dayanıklı");
+    h+=`<tr><td>${s.ad}</td><td>${yz(a)}</td><td>${yz(b)}</td>
+        <td class="${Math.abs(f)>15?'kotu':'notr'}">${f>=0?"+":""}${f.toFixed(1)}p</td>
+        <td style="font-family:'IBM Plex Sans',sans-serif;text-align:left;color:var(--ink-soft)">${yorum}</td></tr>`;
+  });
+  document.getElementById("t-kirilgan").insertAdjacentHTML("beforeend", h+"</tbody>");
+}
+
+function bulgular(){
+  const g=id=>V.stratejiler.find(s=>s.id===id);
+  const b=V.benchmark.olcut, sis=g("sistem"), tr=g("trend"), nk=g("nakit_kalite"),
+        ters=g("ters"), sag=g("saglam"), piy=g("piyasa");
+  const enKotuYil=s=>Math.min(...s.alt_donemler.yillik.map(y=>y.getiri??99));
+  const liste=[
+    {t:"kirmizi", b:"Trend'in sonucuna güvenme", m:`Yıllık ${yz(tr.olcut.yillik_getiri)} çıktı ama bu tek yıla bağlı:
+      son 12 ayda ${yz(tr.alt_donemler.yillik.at(-1).getiri,0)}, diğer yıllarda diğer stratejilerden farkı yok.
+      Üstelik hayatta kalma yanlılığı en çok momentum stratejisini şişirir — bugün veride olan şirketler,
+      tanımı gereği yükselip ayakta kalanlardır. Akademik kanıt da BIST'te uzun örneklemde momentumu desteklemiyor.`},
+    {t:"kirmizi", b:"Nakit Kalite temiz dönemde çöktü", m:`Kanıtı en güçlü faktör buydu ama likidite tabanı
+      uygulanınca yıllık getirisi ${yz(nk.olcut_filtresiz.yillik_getiri)}'ten ${yz(nk.olcut.yillik_getiri)}'e düştü —
+      yani sonucu küçük hisselere dayanıyordu. Temiz dönemde (2024 sonrası) ${yz(nk.alt_donemler.donem[1].getiri,0)} ile
+      BIST 100'ün ${yz(V.benchmark.alt_donemler.donem[1].getiri,0)} gerisinde kaldı. Tek başına kullanılamaz.`},
+    {t:"kirmizi", b:"Ters strateji açık ara en kötü", m:`Yıllık ${yz(ters.olcut.yillik_getiri)} ile
+      BIST 100'ün (${yz(b.yillik_getiri)}) çok altında, üstelik iki yıl eksi verdi. Bu örneklemde
+      "düşeni al" yaklaşımı çalışmıyor. Akademideki çelişkinin bir tarafı bu dönemde desteklenmedi.`},
+    {t:"", b:"“Sağlam” isminin hakkını vermedi", m:`Dayanıklılık filtreleri tek başına en düşük getiriyi
+      (${yz(sag.olcut.yillik_getiri)}) ve en derin düşüşlerden birini (${yz(sag.olcut.max_dusus,0)}) verdi.
+      Sağlam bilanço tek başına koruma sağlamıyor — değerleme ve zamanlama ile birleşmesi gerekiyor.`},
+    {t:"yesil", b:"Sistem her yıl artı, en dengeli olan", m:`Tam kural seti yıllık ${yz(sis.olcut.yillik_getiri)},
+      maksimum düşüş ${yz(sis.olcut.max_dusus,0)} — BIST 100'e (${yz(b.yillik_getiri)} / ${yz(b.max_dusus,0)}) göre
+      daha yüksek getiri, benzer düşüş. En kötü yılı ${yz(enKotuYil(sis),0)} ve beş yılın hiçbirinde eksi vermedi.
+      Getiri/düşüş oranı ${sis.olcut.getiri_dusus_orani} ile en iyilerden. Tek bir filtreye değil, birleşimine dayanıyor.`},
+    {t:"", b:"Kontrol grubunu unutma", m:`Hiç seçim yapmayan "Piyasa" portföyü yıllık ${yz(piy.olcut.yillik_getiri)} verdi.
+      Bir stratejinin bunu geçememesi, o stratejinin seçim yapmamaktan daha kötü olduğu anlamına gelir.
+      Sağlam, Nakit Kalite ve Ters bu eşiği geçemedi.`},
+  ];
+  document.getElementById("bulgular").innerHTML = liste.map(x=>
+    `<div class="bulgu ${x.t}"><h4>${x.b}</h4><p>${x.m}</p></div>`).join("");
+}
+
+function portfoyler(){
+  document.getElementById("portfoyler").innerHTML = V.stratejiler.map(s=>
+    `<div style="margin-bottom:13px">
+       <div style="font-size:12px;font-weight:600;color:${RENK[s.id]}">${s.ad}
+         <span style="color:var(--ink-faint);font-weight:400">· ${s.son_portfoy.length} pozisyon</span></div>
+       <div class="poz">${s.son_portfoy.slice(0,24).map(k=>`<span>${k}</span>`).join("")}
+         ${s.son_portfoy.length>24?`<span style="border:none">+${s.son_portfoy.length-24}</span>`:""}</div>
+     </div>`).join("");
+}
+
+async function yukle(){
+  V = await gncVeriCek("gnc-panel/gecmis_test.json");
+  if(!V) V = await (await fetch("gecmis_test.json?v="+Date.now())).json();
+
+  ["sistem","piyasa","trend"].forEach(i=>GORUNUR.add(i));
+
+  document.getElementById("donem-etiketi").textContent = V.baslangic+" → "+V.bitis;
+  document.getElementById("kunye").innerHTML = `
+    <div>Dönem<b>${V.karar_sayisi} ay</b></div>
+    <div>Başlangıç<b>${(V.baslangic_sermaye/1000)}K TL</b></div>
+    <div>Pozisyon<b>${V.pozisyon} eşit ağırlık</b></div>
+    <div>İşlem maliyeti<b>%${(V.islem_maliyeti_tek_yon*100).toFixed(1)} tek yön</b></div>
+    <div>Bilanço gecikmesi<b>${V.bilanco_gecikme_gun} gün</b></div>
+    <div>Evren<b>${V.evren_boyu[0].evren} → ${V.evren_boyu.at(-1).evren}</b></div>`;
+  document.getElementById("uyarilar").innerHTML = V.uyarilar.map(u=>`<li>${u}</li>`).join("");
+
+  kartlar(); lejant(); ciz(); tabloKayan(12,'t-kayan1'); tabloKayan(36,'t-kayan3'); tabloYillik(); tabloDonem(); tabloKirilgan(); bulgular(); portfoyler();
+  document.getElementById("veri-zaman").textContent =
+    `Test tarihi: ${V.tarih} · Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir. Geçmiş performans gelecek için gösterge değildir.`;
+  window.addEventListener("resize", ciz);
+}
+
+gncSidebarOlustur("portfoy-test","gnc-sidebar");
+yukle().catch(e=>{
+  document.getElementById("kartlar").innerHTML =
+    `<div style="color:var(--brick);padding:20px">gecmis_test.json yüklenemedi: ${e.message}<br>
+     <span style="font-size:11px;color:var(--ink-faint)">Önce <code>python gecmis_test.py</code> çalıştırılmalı.</span></div>`;
+});
+</script>
+</body>
+</html>

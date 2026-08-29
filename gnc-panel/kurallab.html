@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kural Laboratuvarı — GNC Insight</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="ortak.css" rel="stylesheet">
+<style>
+  .kl-band{background:var(--surface-raised);border:1px solid var(--line);padding:20px 22px;margin-bottom:16px}
+  .kl-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+  .kl-baslik{font-family:'Fraunces',serif;font-size:23px;color:var(--copper-dark);line-height:1.2}
+  .kl-ozet{font-size:12.5px;color:var(--ink-soft);margin-top:6px;max-width:660px;line-height:1.65}
+
+  .duzen{display:grid;grid-template-columns:minmax(250px,300px) 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.duzen{grid-template-columns:1fr}}
+
+  .panel{background:var(--surface-raised);border:1px solid var(--line);padding:15px 16px}
+  .panel h3{font-family:'Fraunces',serif;font-size:14px;margin:0 0 4px}
+  .panel .alt{font-size:11px;color:var(--ink-faint);margin-bottom:11px;line-height:1.5}
+  .panel + .panel{margin-top:14px}
+
+  .kural{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+  .kural:last-child{border-bottom:none}
+  .kural input{margin-top:2px;flex:none;accent-color:var(--pine)}
+  .kural .ad{font-size:12.5px;font-weight:500;line-height:1.35}
+  .kural .ac{font-size:10.5px;color:var(--ink-faint);line-height:1.4;margin-top:1px}
+  .kural.pasif{opacity:.42}
+  .kural .rozet{font-size:9px;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:2px;background:var(--ochre-soft);color:var(--ochre);margin-left:5px;white-space:nowrap}
+
+  select.tam{width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--radius-sm)}
+
+  .sonuc-ust{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:14px}
+  .sonuc-ust div{background:var(--surface-raised);padding:12px 13px}
+  .sonuc-ust .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;line-height:1}
+  .sonuc-ust .l{font-size:10px;color:var(--ink-faint);margin-top:4px;letter-spacing:.05em;text-transform:uppercase}
+
+  .uyarilar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .uyarilar span{font-size:11px;padding:3px 9px;background:var(--brick-soft);color:var(--brick);border-radius:2px}
+  .uyarilar span.iyi{background:var(--pine-soft);color:var(--pine-dark)}
+
+  .tablo-sar{overflow-x:auto;border:1px solid var(--line);background:var(--surface-raised);margin-bottom:14px}
+  table{border-collapse:collapse;width:100%;font-size:12px}
+  caption{text-align:left;padding:13px 15px 3px;font-family:'Fraunces',serif;font-size:14px}
+  caption span{display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:var(--ink-faint);margin-top:3px;font-weight:400;line-height:1.5}
+  th{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);text-align:right;font-weight:500;padding:9px 11px;border-bottom:1px solid var(--line-strong);background:var(--paper);white-space:nowrap}
+  th:first-child{text-align:left}
+  td{padding:8px 11px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  td:first-child{text-align:left;font-family:'IBM Plex Sans',sans-serif}
+  tr:last-child td{border-bottom:none}
+  tr.vurgu td{background:var(--pine-soft)}
+  tr.bench td{background:var(--paper);font-style:italic}
+  tbody tr.tikla{cursor:pointer}
+  tbody tr.tikla:hover td{background:var(--paper)}
+  .iyi{color:var(--pine-dark)} .kotu{color:var(--brick)} .notr{color:var(--ink-faint)}
+
+  .grafik-kutu{background:var(--surface-raised);border:1px solid var(--line);padding:16px 18px;margin-bottom:14px}
+  .lejant{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:var(--ink-soft)}
+  .lejant span{display:flex;align-items:center;gap:5px}
+  .lejant i{width:13px;height:3px;border-radius:2px;display:block}
+
+  .yok{padding:26px;text-align:center;color:var(--ink-faint);font-size:12.5px;background:var(--surface-raised);border:1px solid var(--line)}
+  .not{font-size:11.5px;color:var(--ink-faint);line-height:1.6}
+  .kucuk-btn{font-family:inherit;font-size:11px;padding:4px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;border-radius:var(--radius-sm)}
+  .kucuk-btn:hover{border-color:var(--line-strong);color:var(--ink)}
+  .kucuk-btn.acik{background:var(--pine);color:#fff;border-color:var(--pine)}
+</style>
+</head>
+<body>
+<div class="gnc-shell">
+  <aside class="gnc-sidebar" id="gnc-sidebar"></aside>
+  <main class="gnc-main">
+    <div class="gnc-topbar">
+      <div class="baslik-satiri"><h1>Kural Laboratuvarı</h1></div>
+      <span class="gnc-donem" id="donem">—</span>
+    </div>
+    <div class="gnc-content">
+
+      <div class="kl-band">
+        <div class="kl-eyebrow">Kombinasyon sınaması</div>
+        <div class="kl-baslik">Hangi kurallarla, kaç kuralla?</div>
+        <div class="kl-ozet">
+          Soldan istediğin kuralları seç. Aynı evren, aynı dönem, aynı işlem maliyetiyle
+          hesaplanmış sonuç anında gelir. Kural sayısını değiştirip karşılaştırabilir,
+          nakde geçme koşulunu açıp kapatabilirsin.
+          <b>Bir kuralı eklediğinde sonuç değişmiyorsa</b> o kural işaretlenir — olmayan
+          bir korumaya güvenmek, sistemin en sinsi hatasıdır.
+        </div>
+      </div>
+
+      <div class="duzen">
+        <div>
+          <div class="panel">
+            <h3>Süzgeçler</h3>
+            <div class="alt">Şirketi eler ya da bırakır. İstediğin kadar seç.</div>
+            <div id="suzgecler"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Sıralama</h3>
+            <div class="alt">Kalanları neye göre sıralayalım? Tam olarak biri.</div>
+            <select class="tam" id="siralama"></select>
+          </div>
+
+          <div class="panel">
+            <h3>Nakde geçme</h3>
+            <div class="alt">Portföy seviyesinde savunma koşulu.</div>
+            <select class="tam" id="koruma"></select>
+          </div>
+
+          <div class="panel">
+            <h3>Hızlı seçim</h3>
+            <div class="alt">Referans setler</div>
+            <div id="hazir" style="display:flex;flex-direction:column;gap:5px"></div>
+          </div>
+        </div>
+
+        <div>
+          <div id="sonuc-alani"></div>
+
+          <div class="panel" id="one-panel" style="margin-bottom:14px">
+            <h3>Öne çıkanlar</h3>
+            <div class="alt" id="one-alt"></div>
+            <div class="tablo-sar" style="margin:0"><table id="t-one"></table></div>
+            <div class="not" id="one-not" style="margin-top:10px"></div>
+          </div>
+
+          <div class="tablo-sar">
+            <table id="t-lider">
+              <caption>En iyi kombinasyonlar
+                <span>Getiri/düşüş oranına göre, uyarı başına ceza uygulanmış. Satıra tıkla — kurallar sola yüklenir.</span>
+              </caption>
+            </table>
+          </div>
+
+          <div class="panel">
+            <h3>Kaç kural en iyisi?</h3>
+            <div class="alt">Her kural sayısının en iyi ve ortanca sonucu. Kural eklemek her zaman iyileştirmez.</div>
+            <div class="tablo-sar" style="margin:0"><table id="t-k"></table></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="not" style="margin-top:16px" id="dip"></div>
+    </div>
+  </main>
+</div>
+
+<script src="ortak.js"></script>
+<script>
+let V=null, SEC=new Set(), SIRA="ucuz", KOR="yok";
+
+const yz=(v,d=1)=>v===null||v===undefined?"—":(v>=0?"+":"")+v.toFixed(d)+"%";
+const sinif=v=>v===null||v===undefined?"notr":(v>0?"iyi":(v<0?"kotu":"notr"));
+
+function anahtar(suz,sira,kor){return [...suz].sort().join("|")+"::"+sira+"::"+kor;}
+
+function indeksle(){
+  V._ix={};
+  V.sonuclar.forEach(s=>{ V._ix[anahtar(s.suzgecler,s.siralama,s.koruma)]=s; });
+}
+
+function bul(){ return V._ix[anahtar([...SEC],SIRA,KOR)] || null; }
+
+function solPanel(){
+  const s=bul();
+  const etkisiz=new Set(s?s.etkisiz_kurallar:[]);
+  document.getElementById("suzgecler").innerHTML=Object.entries(V.suzgec_katalogu).map(([k,v])=>
+    `<label class="kural ${etkisiz.has(k)?'pasif':''}">
+       <input type="checkbox" data-k="${k}" ${SEC.has(k)?"checked":""}>
+       <span><span class="ad">${v.ad}${etkisiz.has(k)?'<span class="rozet">etkisiz</span>':''}</span>
+       <span class="ac">${v.aciklama}</span></span></label>`).join("");
+  document.querySelectorAll('#suzgecler input').forEach(e=>e.onchange=()=>{
+    e.checked?SEC.add(e.dataset.k):SEC.delete(e.dataset.k); ciz();
+  });
+}
+
+function sonucAlani(){
+  const s=bul(), el=document.getElementById("sonuc-alani");
+  if(!s){
+    el.innerHTML=`<div class="yok">Bu kombinasyon önceden hesaplanmadı.<br>
+      <span style="font-size:11px">Laboratuvar 2–6 süzgeçli kombinasyonları "ucuz" sıralamasıyla ve
+      iki koruma seçeneğiyle tarar. Seçimini o aralığa getir ya da
+      <code>python kural_lab.py</code> ile yeni tarama çalıştır.</span></div>`;
+    return;
+  }
+  const o=s.olcut, b=V.benchmark.olcut;
+  const enKotu=Math.min(...s.alt_donemler.yillik.map(y=>y.getiri??99));
+  el.innerHTML=`
+    <div class="sonuc-ust">
+      <div><div class="v ${sinif(o.yillik_getiri)}">${yz(o.yillik_getiri)}</div><div class="l">Yıllık bileşik</div></div>
+      <div><div class="v kotu">${yz(o.max_dusus)}</div><div class="l">Maks. düşüş</div></div>
+      <div><div class="v ${sinif(enKotu)}">${yz(enKotu,0)}</div><div class="l">En kötü yıl</div></div>
+      <div><div class="v">${o.getiri_dusus_orani??"—"}</div><div class="l">Getiri / düşüş</div></div>
+      <div><div class="v">${s.nakit_ay}</div><div class="l">Nakit ay</div></div>
+      <div><div class="v">${s.islem_sayisi}</div><div class="l">İşlem</div></div>
+    </div>
+    <div class="uyarilar">
+      ${s.uyarilar.length?s.uyarilar.map(u=>`<span>${u}</span>`).join("")
+        :'<span class="iyi">uyarı yok — her yıl artı, her rejimde ayakta</span>'}
+      <span class="${o.yillik_getiri>b.yillik_getiri?'iyi':''}">BIST 100: ${yz(b.yillik_getiri)} / ${yz(b.max_dusus,0)}</span>
+    </div>
+    <div class="grafik-kutu">
+      <canvas id="g" style="width:100%;height:250px"></canvas>
+      <div class="lejant">
+        <span><i style="background:#1D6555"></i>Seçili kombinasyon</span>
+        <span><i style="background:#B7C0B2"></i>BIST 100</span>
+        <span><i style="background:#A8552A"></i>Kontrol (kural yok)</span>
+      </div>
+    </div>
+    <div class="tablo-sar"><table id="t-yil"><caption>Yıl yıl<span>Ortalama değil, en kötü yıl daha çok şey anlatır.</span></caption></table></div>
+    <div class="tablo-sar"><table id="t-rejim"><caption>Rejime göre<span>Faiz ve enflasyondan türetilmiş dönemler. Bir kural setinin ortalaması, hangi ortamda çalıştığını gizler.</span></caption></table></div>`;
+  grafik(s); yilTablo(s); rejimTablo(s);
+}
+
+function grafik(s){
+  const c=document.getElementById("g"); if(!c||!s.seri_var) return;
+  const dpr=devicePixelRatio||1, W=c.clientWidth, H=250;
+  c.width=W*dpr; c.height=H*dpr;
+  const x=c.getContext("2d"); x.scale(dpr,dpr); x.clearRect(0,0,W,H);
+  const P={l:52,r:10,t:10,b:22};
+  const kontrol=V.sonuclar.find(z=>z.ad&&z.ad.startsWith("Kontrol"));
+  const seriler=[{s:V.benchmark.seri,c:"#B7C0B2",w:1.4}];
+  if(kontrol&&kontrol.seri_var) seriler.push({s:kontrol.seri,c:"#A8552A",w:1.4});
+  seriler.push({s:s.seri,c:"#1D6555",w:2});
+  let mn=1/0,mx=-1/0,t0=null,t1=null;
+  seriler.forEach(z=>z.s.forEach(r=>{mn=Math.min(mn,r.deger);mx=Math.max(mx,r.deger);
+    if(!t0||r.tarih<t0)t0=r.tarih; if(!t1||r.tarih>t1)t1=r.tarih;}));
+  if(!isFinite(mn))return;
+  const lmn=Math.log10(Math.max(mn*.95,1)), lmx=Math.log10(mx*1.05);
+  const gx=t=>P.l+(new Date(t)-new Date(t0))/(new Date(t1)-new Date(t0))*(W-P.l-P.r);
+  const gy=v=>P.t+(1-(Math.log10(Math.max(v,1))-lmn)/(lmx-lmn))*(H-P.t-P.b);
+  x.font="10px 'IBM Plex Mono',monospace"; x.textAlign="right";
+  [100000,200000,500000,1000000,2000000].filter(v=>v>=mn*.9&&v<=mx*1.1).forEach(v=>{
+    const y=gy(v); x.strokeStyle="#CFD6CC"; x.setLineDash([2,3]); x.beginPath();
+    x.moveTo(P.l,y); x.lineTo(W-P.r,y); x.stroke(); x.setLineDash([]);
+    x.fillStyle="#8D958E"; x.fillText(v>=1e6?(v/1e6)+"M":(v/1000)+"K",P.l-6,y+3);});
+  x.textAlign="center";
+  for(let y=2022;y<=2026;y++){const t=y+"-01-01"; if(t<t0||t>t1)continue;
+    x.fillStyle="#8D958E"; x.fillText(y,gx(t),H-6);}
+  seriler.forEach(z=>{x.strokeStyle=z.c;x.lineWidth=z.w;x.beginPath();
+    z.s.forEach((r,i)=>i?x.lineTo(gx(r.tarih),gy(r.deger)):x.moveTo(gx(r.tarih),gy(r.deger)));x.stroke();});
+}
+
+function yilTablo(s){
+  const y=s.alt_donemler.yillik, b=V.benchmark.alt_donemler.yillik;
+  document.getElementById("t-yil").insertAdjacentHTML("beforeend",
+    `<thead><tr><th>Seri</th>${y.map(r=>`<th>${r.etiket}</th>`).join("")}</tr></thead><tbody>
+     <tr><td>Seçili</td>${y.map(r=>`<td class="${sinif(r.getiri)}">${yz(r.getiri,0)}</td>`).join("")}</tr>
+     <tr class="bench"><td>BIST 100</td>${b.map(r=>`<td class="${sinif(r.getiri)}">${yz(r.getiri,0)}</td>`).join("")}</tr>
+     </tbody>`);
+}
+
+function rejimTablo(s){
+  const adlar=V.rejim_adlari;
+  const anahtarlar=Object.keys(adlar).filter(k=>k!=="bilinmiyor"&&(s.rejim[k]||V.benchmark.rejim[k]));
+  document.getElementById("t-rejim").insertAdjacentHTML("beforeend",
+    `<thead><tr><th>Rejim</th><th>Süre</th><th>Seçili</th><th>BIST 100</th><th>Fark</th></tr></thead><tbody>`+
+    anahtarlar.map(k=>{
+      const a=s.rejim[k]||{}, b=V.benchmark.rejim[k]||{};
+      const f=(a.yillik_getiri!=null&&b.yillik_getiri!=null)?a.yillik_getiri-b.yillik_getiri:null;
+      return `<tr><td>${adlar[k]}</td><td class="notr">${a.yaklasik_ay??b.yaklasik_ay??"—"} ay</td>
+        <td class="${sinif(a.yillik_getiri)}">${yz(a.yillik_getiri)}</td>
+        <td class="notr">${yz(b.yillik_getiri)}</td>
+        <td class="${sinif(f)}">${f==null?"—":(f>=0?"+":"")+f.toFixed(0)+"p"}</td></tr>`;
+    }).join("")+`</tbody>`);
+}
+
+function liderTablo(){
+  const t=document.getElementById("t-lider");
+  t.querySelectorAll("thead,tbody").forEach(e=>e.remove());
+  const puan=s=>{const o=s.olcut;return (o.yillik_getiri||0)/Math.abs(o.max_dusus||1)-s.uyarilar.length*0.15;};
+  const l=V.sonuclar.filter(s=>s.tip==="tarama").sort((a,b)=>puan(b)-puan(a)).slice(0,18);
+  const secili=anahtar([...SEC],SIRA,KOR);
+  t.insertAdjacentHTML("beforeend",
+    `<thead><tr><th>Kurallar</th><th>Adet</th><th>Yıllık</th><th>Düşüş</th><th>En kötü yıl</th><th>Nakit</th><th>Uyarı</th></tr></thead><tbody>`+
+    l.map(s=>{
+      const o=s.olcut, ek=Math.min(...s.alt_donemler.yillik.map(y=>y.getiri??99));
+      const v=anahtar(s.suzgecler,s.siralama,s.koruma)===secili?"vurgu":"";
+      return `<tr class="tikla ${v}" data-a="${anahtar(s.suzgecler,s.siralama,s.koruma)}">
+        <td style="max-width:340px;white-space:normal;line-height:1.4">${s.suzgecler.map(k=>V.suzgec_katalogu[k]?.ad||k).join(" · ")}${s.koruma!=="yok"?' <span class="rozet">nakit korumalı</span>':''}</td>
+        <td>${s.suzgecler.length}</td>
+        <td class="${sinif(o.yillik_getiri)}">${yz(o.yillik_getiri)}</td>
+        <td class="kotu">${yz(o.max_dusus,0)}</td>
+        <td class="${sinif(ek)}">${yz(ek,0)}</td>
+        <td class="notr">${s.nakit_ay}</td>
+        <td class="${s.uyarilar.length?'kotu':'iyi'}">${s.uyarilar.length||"—"}</td></tr>`;
+    }).join("")+`</tbody>`);
+  t.querySelectorAll("tr.tikla").forEach(r=>r.onclick=()=>{
+    const s=V.sonuclar.find(z=>anahtar(z.suzgecler,z.siralama,z.koruma)===r.dataset.a);
+    if(s){SEC=new Set(s.suzgecler);SIRA=s.siralama;KOR=s.koruma;
+      document.getElementById("siralama").value=SIRA;
+      document.getElementById("koruma").value=KOR; ciz();
+      window.scrollTo({top:0,behavior:"smooth"});}
+  });
+}
+
+function kTablo(){
+  const t=document.getElementById("t-k");
+  t.querySelectorAll("thead,tbody").forEach(e=>e.remove());
+  const grup={};
+  V.sonuclar.filter(s=>s.tip==="tarama").forEach(s=>{
+    (grup[s.suzgecler.length]=grup[s.suzgecler.length]||[]).push(s.olcut.yillik_getiri||0);});
+  t.insertAdjacentHTML("beforeend",
+    `<thead><tr><th>Kural sayısı</th><th>Kombinasyon</th><th>En iyi</th><th>Ortanca</th><th>En kötü</th></tr></thead><tbody>`+
+    Object.keys(grup).sort((a,b)=>a-b).map(k=>{
+      const v=grup[k].sort((a,b)=>a-b), m=v[Math.floor(v.length/2)];
+      return `<tr><td>${k} kural</td><td class="notr">${v.length}</td>
+        <td class="iyi">${yz(v.at(-1))}</td><td>${yz(m)}</td><td class="kotu">${yz(v[0])}</td></tr>`;
+    }).join("")+`</tbody>`);
+}
+
+
+function oneTablo(){
+  const o=V.one_cikanlar, p=document.getElementById("one-panel");
+  if(!o||!o.suzgecler){ p.style.display="none"; return; }
+  document.getElementById("one-alt").innerHTML =
+    `Tek bir sıralamaya bakmak yerine: bir süzgecin <b>kazananlar</b> arasındaki görülme oranı,
+     <b>genel</b> görülme oranıyla karşılaştırılır. Kazanan = kontrol grubunu
+     <b>getiri/düşüş oranında</b> geçen <b>ve hiç uyarı almayan</b> kombinasyon.
+     ${o.toplam} kombinasyondan ${o.gecen} tanesi kontrolü geçti, ${o.gecen_uyarisiz} tanesi uyarısız.
+     Kontrol: ${o.kontrol_yillik?.toFixed(1)}% yıllık · ${o.kontrol_dusus?.toFixed(1)}% düşüş · oran ${o.kontrol_oran}.`;
+  const t=document.getElementById("t-one");
+  t.querySelectorAll("thead,tbody").forEach(e=>e.remove());
+  const en=Math.max(...o.suzgecler.map(r=>Math.abs(r.fark)))||1;
+  t.insertAdjacentHTML("beforeend",
+    `<thead><tr><th>Süzgeç</th><th>Kazananlarda</th><th>Genelde</th><th>Fark</th><th style="width:34%">&nbsp;</th></tr></thead><tbody>`+
+    o.suzgecler.map(r=>{
+      const ad=V.suzgec_katalogu[r.suzgec]?.ad||r.suzgec;
+      const g=r.fark>=0, w=Math.abs(r.fark)/en*50;
+      const cb=g?"var(--iyi,#1a7f4b)":"var(--kotu,#b3261e)";
+      return `<tr><td>${ad}</td>
+        <td class="notr">%${r.ust_oran.toFixed(0)}</td>
+        <td class="notr">%${r.genel_oran.toFixed(0)}</td>
+        <td class="${g?'iyi':'kotu'}">${g?'+':''}${r.fark.toFixed(1)}p</td>
+        <td><div style="position:relative;height:9px">
+          <div style="position:absolute;left:50%;top:0;width:1px;height:9px;background:currentColor;opacity:.35"></div>
+          <div style="position:absolute;top:0;height:9px;background:${cb};border-radius:2px;
+               left:${g?50:50-w}%;width:${w}%"></div></div></td></tr>`;
+    }).join("")+`</tbody>`);
+  document.getElementById("one-not").textContent = o.not || "";
+}
+
+function ciz(){ solPanel(); sonucAlani(); oneTablo(); liderTablo(); kTablo(); }
+
+async function yukle(){
+  V = await gncVeriCek("gnc-panel/kural_lab.json");
+  if(!V) V = await (await fetch("kural_lab.json?v="+Date.now())).json();
+  // Seriler dosyada yer kaplamasin diye SADECE DEGER dizisi olarak yazilir;
+  // tarihler bir kez üstte durur. Burada {tarih,deger} biçimine geri açılır,
+  // böylece grafik kodu değişmez.
+  if(V && V.seri_tarihleri){
+    const T=V.seri_tarihleri;
+    const ac=o=>{ if(!o||!Array.isArray(o.seri)) return;
+      const t=T[o.seri_tip]||T.seyrek||T.sik; if(!t) return;
+      if(typeof o.seri[0]==="number") o.seri=o.seri.map((d,i)=>({tarih:t[i],deger:d})); };
+    (V.sonuclar||[]).forEach(ac);
+    if(V.benchmark && Array.isArray(V.benchmark.seri) && typeof V.benchmark.seri[0]==="number"){
+      const t=T.sik||T.seyrek;
+      if(t) V.benchmark.seri=V.benchmark.seri.map((d,i)=>({tarih:t[i],deger:d}));
+    }
+  }
+  indeksle();
+
+  document.getElementById("donem").textContent=V.baslangic+" → "+V.bitis;
+  document.getElementById("siralama").innerHTML=Object.entries(V.siralama_katalogu)
+    .map(([k,v])=>`<option value="${k}">${v.ad}</option>`).join("");
+  document.getElementById("koruma").innerHTML=Object.entries(V.koruma_katalogu)
+    .map(([k,v])=>`<option value="${k}">${v.ad}</option>`).join("");
+  document.getElementById("siralama").value=SIRA;
+  document.getElementById("koruma").value=KOR;
+  document.getElementById("siralama").onchange=e=>{SIRA=e.target.value;ciz();};
+  document.getElementById("koruma").onchange=e=>{KOR=e.target.value;ciz();};
+
+  document.getElementById("hazir").innerHTML=V.sonuclar.filter(s=>s.tip==="referans")
+    .map((s,i)=>`<button class="kucuk-btn" data-i="${i}">${s.ad}</button>`).join("");
+  const ref=V.sonuclar.filter(s=>s.tip==="referans");
+  document.querySelectorAll("#hazir button").forEach(b=>b.onclick=()=>{
+    const s=ref[+b.dataset.i];
+    SEC=new Set(s.suzgecler);SIRA=s.siralama;KOR=s.koruma;
+    document.getElementById("siralama").value=SIRA;
+    document.getElementById("koruma").value=KOR; ciz();});
+
+  SEC=new Set(["nakit_akisi","faiz_karsilama","tahakkuk","ucuzluk"]);
+  document.getElementById("dip").textContent=V.uyari+
+    "  ·  Test: "+V.karar_sayisi+" ay, 10 pozisyon eşit ağırlık, sektör tavanı "+V.sektor_tavani+
+    ", işlem maliyeti tek yön %"+(V.islem_maliyeti_tek_yon*100).toFixed(1)+
+    ".  Eğitim ve araştırma amaçlıdır, yatırım tavsiyesi değildir.";
+  ciz();
+  addEventListener("resize",()=>{const s=bul(); if(s)grafik(s);});
+}
+gncSidebarOlustur("kural-lab","gnc-sidebar");
+yukle().catch(e=>{document.getElementById("sonuc-alani").innerHTML=
+  `<div class="yok" style="color:var(--brick)">kural_lab.json yüklenemedi: ${e.message}<br>
+   <span style="font-size:11px">Önce <code>python kural_lab.py</code> çalıştırılmalı.</span></div>`;});
+</script>
+</body>
+</html>
