@@ -1,0 +1,63 @@
+name: Kural laboratuvari (haftalik)
+
+# NEDEN AYRI VE HAFTALIK
+# Kombinasyon taramasi 900+ test calistirir, ~5 dakika surer. Gunluk
+# calistirmanin anlami yok: bilancolar ceyreklik, fiyat etkisi haftalik
+# olcekte anlamli. Pazar aksami calisir, hafta boyunca kullanilir.
+# Elle tetiklenerek farkli kural sayilariyla da calistirilabilir.
+
+on:
+  schedule:
+    - cron: "0 18 * * 0"       # Pazar 21:00 TR
+  workflow_dispatch:
+    inputs:
+      kural_sayilari:
+        description: "Taranacak kural sayilari (bosluklu, orn: 2 3 4 5 6)"
+        required: false
+        default: "2 3 4 5 6"
+      siralama:
+        description: "Siralama kurali"
+        required: false
+        default: "ucuz"
+        type: choice
+        options: ["ucuz", "dusuk_borc", "kaliteli", "buyuyen", "momentumlu", "buyuk", "karli"]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: veri-kural-lab
+  cancel-in-progress: false
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/py
+
+      - name: Kural laboratuvarini calistir
+        run: |
+          K="${{ github.event.inputs.kural_sayilari }}"
+          S="${{ github.event.inputs.siralama }}"
+          python kural_lab.py --k ${K:-2 3 4 5 6} --siralama "${S:-ucuz}"
+
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/kural_lab.json
+          git commit -m "Kural laboratuvari guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          for d in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Hata bildir
+        if: failure()
+        uses: ./.github/actions/hata-bildir
+        with:
+          isim: "Kural laboratuvari"

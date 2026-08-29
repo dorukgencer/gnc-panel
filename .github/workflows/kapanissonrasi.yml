@@ -33,6 +33,9 @@ jobs:
         run: python hisse_gecmis_cek.py
       - name: 2) Endeks fiyat gecmisi
         run: python endeks_gecmis_cek.py
+      - name: 2b) Sektor haritasi tanisi (alt endeks kontrolu)
+        continue-on-error: true
+        run: python sektor_haritasi.py
       - name: 3) Sektor F/K degerleme (1 ve 2'den turetilir)
         run: python deger_hesapla.py
       - name: 4) Gunluk arsiv
