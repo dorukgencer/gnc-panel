@@ -1,0 +1,81 @@
+name: KAP evren + VBTS tedbir (gunluk)
+
+on:
+  schedule:
+    - cron: "0 17 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      tam_tedbir_dolumu:
+        description: "VBTS arsivini 2021'den bugune BASTAN cek (UZUN SURER, tek seferlik)"
+        required: false
+        default: "hayir"
+        type: choice
+        options: ["hayir", "evet"]
+      cikan_fiyat_dolumu:
+        description: "Borsadan cikmis sirketlerin fiyat gecmisini cek (tek seferlik)"
+        required: false
+        default: "hayir"
+        type: choice
+        options: ["hayir", "evet"]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: veri-kap
+  cancel-in-progress: false
+
+jobs:
+  kap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/py
+
+      - name: KAP evren (aktif / islem gormeyen / pasif)
+        continue-on-error: true
+        run: |
+          if [ "${{ github.event.inputs.cikan_fiyat_dolumu }}" = "evet" ]; then
+            python kap_evren_cek.py --doldur
+          else
+            python kap_evren_cek.py
+          fi
+
+      - name: VBTS tedbir kayitlari
+        continue-on-error: true
+        run: |
+          if [ "${{ github.event.inputs.tam_tedbir_dolumu }}" = "evet" ]; then
+            python kap_tedbir_cek.py --bas 2021-01-01
+          else
+            python kap_tedbir_cek.py --gunluk
+          fi
+
+      - name: Tarama ve gecmis testi yeni veriyle yenile
+        continue-on-error: true
+        run: |
+          python tarama_hesapla.py
+          python gecmis_test.py
+
+      - name: Kaydet
+        run: |
+          git config user.name "gnc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add gnc-panel/kap_evren.json gnc-panel/kap_cikanlar.json \
+                  gnc-panel/kap_evren_gecmis/ gnc-panel/tedbir.json \
+                  gnc-panel/tedbir_ara/ \
+                  gnc-panel/tarama.json gnc-panel/gecmis_test.json \
+                  gnc-panel/hisse_gecmis_cikan/ 2>/dev/null || true
+          git commit -m "KAP evren + VBTS tedbir guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          for d in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Hata bildir
+        if: failure()
+        uses: ./.github/actions/hata-bildir
+        with:
+          isim: "KAP evren + VBTS tedbir"
