@@ -217,7 +217,17 @@ def main():
     if not FINANSAL_KLASOR.exists() or not GECMIS_KLASOR.exists():
         raise SystemExit("finansal/ veya hisse_gecmis/ klasoru bulunamadi. Once ilgili pipeline'lar calismis olmali.")
 
-    sektor_map = sektor_haritasi()
+    # KANONIK HARITA (29 Agu 2026): XUTEK (Teknoloji) XBLSM'i (Bilisim)
+    # TAMAMEN iceriyor. Eski esleme ikisini ayri sektor sanip "son gelen
+    # kazanir" davraniyordu; XUTEK'te 2 sirket kaliyor, F/K 65.6 gibi anlamsiz
+    # bir medyan cikiyordu. Ayrica ayni sirketler iki sektorde birden
+    # degerleniyordu. sektor_haritasi.py alt endeksi otomatik cikariyor.
+    try:
+        from sektor_haritasi import kanonik_harita
+        sektor_map, _kumeler, _rapor = kanonik_harita(sessiz=True)
+    except Exception as e:
+        print(f"  [UYARI] kanonik harita kullanilamadi ({e}) - eski esleme")
+        sektor_map = sektor_haritasi()
     if not sektor_map:
         raise SystemExit("sektor_hisseler.json okunamadi, sektor eslemesi yapilamiyor.")
 

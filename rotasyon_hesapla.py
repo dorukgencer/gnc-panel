@@ -45,8 +45,25 @@ MAX_YARICAP = 240  # 260'in biraz altinda, kenara yapismasin diye pay birakildi
 
 
 def sektor_listesi():
-    dosyalar = [d for d in ENDEKS_KLASOR.glob("*.json") if d.stem != "XU100"]
-    return [d.stem for d in dosyalar]
+    """
+    Rotasyona girecek sektorler. ALT ENDEKSLER DISLANIR.
+
+    NEDEN: XBLSM (Bilisim) hisselerinin tamami XUTEK (Teknoloji) icinde. Ikisini
+    de grafige koymak ayni hisseleri IKI KEZ temsil etmek, ve iki baloncugun
+    neredeyse ayni yerde hareket etmesi demektir - hem gorsel gurultu hem
+    yanlis bir "iki sektor ayni yone gidiyor" izlenimi yaratir.
+    """
+    dosyalar = [d.stem for d in ENDEKS_KLASOR.glob("*.json") if d.stem != "XU100"]
+    try:
+        from sektor_haritasi import ham_listeler, kapsamalari_bul
+        kume = ham_listeler()
+        alt = {b for bs in kapsamalari_bul(kume).values() for b in bs}
+        if alt:
+            print(f"  [ROTASYON] alt endeksler rotasyondan cikarildi: {sorted(alt)}")
+        return [d for d in dosyalar if d not in alt]
+    except Exception as e:
+        print(f"  [ROTASYON][UYARI] alt endeks tespiti yapilamadi ({e}) - tumu dahil")
+        return dosyalar
 
 
 def seriyi_yukle(kod):
@@ -85,16 +102,26 @@ def getiri(haftalik, i, pencere):
 
 
 def x_serisi_hesapla(sek_haftalik, xu_haftalik):
-    """Her hafta indeksi icin X(t) = sektor_13hf_getiri(t) - xu100_13hf_getiri(t)."""
-    n = min(len(sek_haftalik), len(xu_haftalik))
+    """
+    X(t) = sektor_13hf_getiri(t) - xu100_13hf_getiri(t)
+
+    DUZELTME (29 Agu 2026): Onceki surum iki seriyi INDEKS ile eslestiriyordu
+    (i'inci eleman iki seride de ayni hafta varsayiliyordu). Su anki veride
+    haftalar birebir ortusuyor, yani sonuc DOGRUYDU - ama bir sektor serisinde
+    tek bir hafta eksik olsa hesap SESSIZCE kayar ve YANLIS HAFTALARI
+    karsilastirmaya baslardi. Artik eslestirme HAFTA ANAHTARI uzerinden
+    yapiliyor; eksik hafta varsa o hafta None doner, kaymaz.
+    """
+    xu_ix = {h["hafta"]: i for i, h in enumerate(xu_haftalik)}
     x_serisi = []
-    for i in range(n):
-        sek_g = getiri(sek_haftalik, i, X_PENCERE_HAFTA)
-        xu_g = getiri(xu_haftalik, i, X_PENCERE_HAFTA)
-        if sek_g is None or xu_g is None:
+    for i, h in enumerate(sek_haftalik):
+        j = xu_ix.get(h["hafta"])
+        if j is None:
             x_serisi.append(None)
-        else:
-            x_serisi.append(sek_g - xu_g)
+            continue
+        sek_g = getiri(sek_haftalik, i, X_PENCERE_HAFTA)
+        xu_g = getiri(xu_haftalik, j, X_PENCERE_HAFTA)
+        x_serisi.append(None if (sek_g is None or xu_g is None) else sek_g - xu_g)
     return x_serisi
 
 
@@ -186,17 +213,15 @@ def sektor_agirliklari():
     try:
         hisse_veri = json.loads((KLASOR / "gnc-panel" / "sektor_hisse_veri.json").read_text(encoding="utf-8"))
         sektor_harita = json.loads((KLASOR / "gnc-panel" / "sektor_hisseler.json").read_text(encoding="utf-8"))
-        kod_to_sektor = {}
-        for sektor_kod, hisseler in sektor_harita.get("hisseler", {}).items():
-            for h in hisseler:
-                if h["kod"] in kod_to_sektor and kod_to_sektor[h["kod"]] != sektor_kod:
-                    # GUVENLIK: bir hisse BIRDEN FAZLA sektor listesinde varsa
-                    # (orn. ASELS hem XUTEK hem baska bir listede) sessizce
-                    # UZERINE YAZMAK yerine logla - bu tam da agirlik
-                    # sismesine yol acabilecek turden bir veri tutarsizligi.
-                    print(f"  [UYARI] {h['kod']} birden fazla sektorde listeleniyor: "
-                          f"once {kod_to_sektor[h['kod']]}, simdi {sektor_kod} (SONUNCU kazanir)")
-                kod_to_sektor[h["kod"]] = sektor_kod
+        # KOK NEDEN COZULDU (29 Agu 2026): "Teknoloji %37" anomalisinin sebebi
+        # XUTEK (Teknoloji, 42 hisse) endeksinin XBLSM'i (Bilisim, 38 hisse)
+        # TAMAMEN ICERMESIYDI. Eski kod ikisini ayri sektor sanip "son gelen
+        # kazanir" davraniyordu; 38 hisse XBLSM'e gidiyor, XUTEK'te sadece 4
+        # hisse kaliyordu - iclerinde ASELS oldugu icin agirlik siciyordu.
+        # sektor_haritasi.py kapsamalari VERIDEN otomatik bulup alt endeksi
+        # sektor evreninden cikariyor. Kapsam %91 -> %100 oldu.
+        from sektor_haritasi import kanonik_harita
+        kod_to_sektor, _kumeler, _rapor = kanonik_harita(sessiz=True)
 
         # Once HAO_PD (gercek, halka aciklik duzeltmeli) dene
         for alan, yaklasik_mi in [("hao_pd", False), ("pd", True)]:

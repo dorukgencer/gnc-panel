@@ -51,7 +51,7 @@ AYAR = {
 
 # Verisi OLMAYAN, bu yuzden calismayan filtreler. Panelde acikca gosterilir.
 EKSIK_FILTRELER = [
-    {"ad": "VBTS tedbiri", "neden": "Tedbir verisi henuz cekilmiyor (KAP bildirimleri)",
+    {"ad": "VBTS tedbiri", "neden": "tedbir.json yok - once kap_tedbir_cek.py calistirin",
      "onem": "yuksek"},
     {"ad": "Bagimsiz denetim gorusu", "neden": "Sartli/olumsuz gorus verisi cekilmiyor",
      "onem": "orta"},
@@ -180,7 +180,7 @@ def olcumleri_hesapla(kod, veri, piyasa, fiyat_serisi):
 
 # ----------------------------------------------------------------- kapilar
 
-def kapilari_uygula(olcumler, karantina, rotasyon_evre, bekl_donem):
+def kapilari_uygula(olcumler, karantina, rotasyon_evre, bekl_donem, tedbir=None, bugun=None):
     """
     Sirayla kapilar. Bir sirket elenince sonraki kapilara girmez ama olculeri
     korunur - panelde "nerede elendi" gosterilebilsin diye.
@@ -235,6 +235,21 @@ def kapilari_uygula(olcumler, karantina, rotasyon_evre, bekl_donem):
             return f"Karantina: {pencere} yıllarında kümülatif seri bozuk"
         return None
     kapi("Veri sağlığı", "Bayat bilanço ve karantinalı şirketler", veri_testi)
+
+    # K1b - VBTS TEDBIRI (risk katmaninin kaniti en saglam filtresi)
+    if tedbir:
+        def tedbir_testi(o):
+            for a in tedbir.get(o["kod"], ()):
+                if a["baslangic"] <= bugun <= a["bitis"]:
+                    t = ", ".join(a.get("turler") or []) or "tedbir"
+                    return f"VBTS tedbiri aktif ({t}, {a['baslangic']}→{a['bitis']})"
+            # son 12 ayda iki veya daha fazla tedbir gormus olmak da elemedir
+            yil_once = f"{int(bugun[:4])-1}{bugun[4:]}"
+            son = [a for a in tedbir.get(o["kod"], ()) if a["baslangic"] >= yil_once]
+            if len(son) >= 2:
+                return f"Son 12 ayda {len(son)} kez tedbir gördü"
+            return None
+        kapi("VBTS tedbiri", "Aktif tedbirli ve tekrarlayan tedbir görenler", tedbir_testi)
 
     # K2 - piyasa verisi
     kapi("Piyasa verisi", "Fiyat / piyasa değeri / hacim eksik olanlar",
@@ -363,6 +378,14 @@ def main():
     except FileNotFoundError:
         karantina = {}
 
+    # VBTS tedbir - risk katmaninin en onemli filtresi
+    tedbir, tedbir_guncelleme = {}, None
+    tp = PANEL / "tedbir.json"
+    if tp.exists():
+        td = json.loads(tp.read_text(encoding="utf-8"))
+        tedbir = td.get("kod_araliklari", {})
+        tedbir_guncelleme = td.get("guncelleme")
+
     rot_evre = {}
     try:
         rot = json.loads((PANEL / "rotasyon_gecmis.json").read_text(encoding="utf-8"))
@@ -393,7 +416,8 @@ def main():
         o["elenme_sebebi"] = None
         olcumler.append(o)
 
-    huni, adaylar, izleme = kapilari_uygula(olcumler, karantina, rot_evre, bekl)
+    huni, adaylar, izleme = kapilari_uygula(olcumler, karantina, rot_evre, bekl,
+                                            tedbir, b.date().isoformat())
 
     # Gecenleri sektor ici FD/FAVOK ucuzlugu ile sirala (skor degil, siralama)
     anahtar = lambda o: (o["fd_favok"] if o["fd_favok"] is not None else 9e9)
@@ -409,11 +433,15 @@ def main():
         s_ad = o.get("sektor_ad") or "Bilinmiyor"
         sektor_dagilim[s_ad] = sektor_dagilim.get(s_ad, 0) + 1
 
+    eksikler = [f for f in EKSIK_FILTRELER
+                if not (tedbir and f["ad"] == "VBTS tedbiri")]
     cikti = {
         "tarih": b.isoformat(),
+        "tedbir_verisi": {"var": bool(tedbir), "kod_sayisi": len(tedbir),
+                          "guncelleme": tedbir_guncelleme},
         "beklenen_donem": f"{bekl[0]}/{bekl[1]}",
         "ayarlar": AYAR,
-        "eksik_filtreler": EKSIK_FILTRELER,
+        "eksik_filtreler": eksikler,
         "huni": huni,
         "aday_sayisi": len(adaylar),
         "izleme_sayisi": len(izleme),

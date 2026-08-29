@@ -118,7 +118,11 @@ def main():
             "ortalama_buyume": round(sum(degerler) / len(degerler), 2),
             "sirket_sayisi": len(degerler),
         })
-    sonuc.sort(key=lambda x: x["donem"])
+    # HATA DUZELTMESI (29 Agu 2026): metin siralamasi "2024/12"yi "2024/3"ten
+    # ONCE koyuyordu ("1" < "3"). Donem serisi bozuk siralaniyor, panelde
+    # yanlis sirada gorunuyordu. Yil ve ceyrek SAYISAL olarak siralanmali.
+    sonuc.sort(key=lambda x: (int(x["donem"].split("/")[0]),
+                              int(x["donem"].split("/")[1])))
 
     cikti = {
         "not": (
