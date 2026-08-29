@@ -1,0 +1,26 @@
+name: "Hata bildir"
+description: "Is akisi hata verdiginde GitHub Issue acar. Sessiz bozulmayi engeller."
+inputs:
+  isim:
+    description: "Is akisinin adi"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        baslik="[VERI HATASI] ${{ inputs.isim }}"
+        mevcut=$(gh issue list --state open --search "$baslik in:title" \
+                  --json number --jq '.[0].number' 2>/dev/null || echo "")
+        govde="Calisma: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        Tarih: $(date -u '+%Y-%m-%d %H:%M UTC')
+
+        Bu is akisi hata verdi. Panel eski veriyi gostermeye devam ediyor olabilir."
+        if [ -n "$mevcut" ]; then
+          gh issue comment "$mevcut" --body "$govde"
+        else
+          gh issue create --title "$baslik" --body "$govde" --label "veri-hatasi" || \
+          gh issue create --title "$baslik" --body "$govde"
+        fi
