@@ -13,6 +13,10 @@ const GNC_NAV_GRUPLARI = [
     { id: "tarama",    ad: "Tarama",    href: "tarama.html" },
     { id: "sirketler", ad: "Şirketler", href: "sirketler.html" },
   ]},
+  { grup: "Sınama", ogeler: [
+    { id: "portfoy-test", ad: "Portföy Testi", href: "portfoy-test.html" },
+    { id: "kural-lab",    ad: "Kural Laboratuvarı", href: "kural-lab.html" },
+  ]},
 ];
 // NOT (29 Agu 2026): Menude 12 baglanti vardi, karsiliginda 3 sayfa mevcuttu -
 // 9 olu link. Yapilmayacak sayfalar menuden CIKARILDI. Sistem, metodoloji
@@ -50,13 +54,23 @@ function gncSidebarOlustur(aktifId, hedefElementId) {
  * kendi "veri yok" mesajini gostermekten sorumlu.
  */
 async function gncVeriCek(dosyaYolu) {
+  // 1) URETIM: Netlify proxy'si uzerinden PRIVATE repodan
   try {
     const res = await fetch('/.netlify/functions/veri?dosya=' + encodeURIComponent(dosyaYolu) + '&t=' + Date.now());
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
+    if (res.ok) return await res.json();
+  } catch (e) { /* proxy yok - asagidaki yedege dus */ }
+
+  // 2) YEREL GELISTIRME YEDEGI (29 Agu 2026 eklendi)
+  // Proxy sadece Netlify'da calisir. Yerelde "python -m http.server" ile
+  // acildiginda TUM sayfalar bos goruniyordu ("veri henuz yok") ve bu,
+  // gercek bir veri hatasindan ayirt edilemiyordu. Artik ayni klasordeki
+  // dosyaya dogrudan bakiliyor - uretimde bu satira hic gelinmez.
+  try {
+    const ad = dosyaYolu.split('/').pop();
+    const res = await fetch(ad + '?t=' + Date.now());
+    if (res.ok) return await res.json();
+  } catch (e) { /* gercekten yok */ }
+  return null;
 }
 
 /** Sayi formatlama: +/- isaretli yuzde. */
@@ -116,3 +130,51 @@ document.addEventListener("click", (e) => {
     e.stopPropagation();
   }
 });
+
+/* ============================================================
+   VERI ZAMANI YARDIMCILARI
+   HATA DUZELTMESI (29 Agu 2026): gnc_panel.html ve sektor-rotasyonu.html
+   bu iki fonksiyonu CAGIRIYOR ama hicbir yerde TANIMLI DEGILDI. Sonuc:
+   Genel Bakis sayfasi "gncVeriZamani is not defined" ile kiriliyor ve
+   veri zamani etiketlerinin HICBIRI yazilmiyordu. sektor-rotasyonu.html
+   icindeki yorum "Fonksiyon artik ortak.js'te" diyor - tasima yarim
+   kalmis. Buraya konuluyor.
+   ============================================================ */
+
+/** ISO zaman damgasini "20.08.2026 13:28" bicimine cevirir. */
+function gncZamanBicimle(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d)) return null;
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/**
+ * Bir kutunun "veri zamani" etiketini yazar.
+ * Veri yoksa SESSIZ KALMAZ - "veri zamani bilinmiyor" yazar. Bos birakmak,
+ * kullaniciyi verinin taze oldugu izlenimine birakir.
+ */
+function gncVeriZamani(elementId, iso) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const z = gncZamanBicimle(iso);
+  el.textContent = z ? `Veri: ${z}` : "Veri zamanı bilinmiyor";
+  el.title = z ? `Bu kutudaki verinin üretildiği an: ${z}` : "";
+}
+
+/**
+ * Birden fazla kaynagin EN ESKI zaman damgasini doner.
+ * Bilerek en eski: bir kutu birkac dosyadan besleniyorsa, en taze olani
+ * gostermek "her sey guncel" izlenimi verir - oysa kutu en eski kaynagi
+ * kadar tazedir.
+ */
+function gncEnEskiTarih(...tarihler) {
+  const gecerli = tarihler
+    .filter(Boolean)
+    .map((t) => ({ t, d: new Date(t) }))
+    .filter((x) => !isNaN(x.d));
+  if (!gecerli.length) return null;
+  gecerli.sort((a, b) => a.d - b.d);
+  return gecerli[0].t;
+}
