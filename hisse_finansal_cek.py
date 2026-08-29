@@ -303,7 +303,7 @@ def main():
     # KALDIRILDI - calisma suresini IKIYE KATLIYORDU, kazanci minimaldi.
     # Bulunamayan hisseler sonraki calismada zaten tekrar denenecek.
 
-    ok, birlesen, format_degisti = 0, 0, 0
+    ok, birlesen, format_degisti, gerileme = 0, 0, 0, 0
     now = datetime.now().isoformat()
     for kod, fin in veriler.items():
         # SADECE artimli guncellenen hisselerde birlestir. TAM cekilenlerde
@@ -323,6 +323,28 @@ def main():
             elif mevcut:
                 fin = birlestir(mevcut, fin)
                 birlesen += 1
+        # GERILEME KORUMASI (29 Agu 2026)
+        # BULUNAN RISK: TAM_YENILEME modunda birlestirme YAPILMIYOR - dosya
+        # taze cekimle tamamen degistiriliyor. Hisse icin HIC veri gelmezse
+        # dosya korunuyor (guvenli). Ama KISMI veri gelirse - orn. 2024 ve
+        # 2026 gelip 2025 gelmezse - dosya o eksik veriyle uzerine yaziliyor
+        # ve mevcut donemler SILINIYOR.
+        # GARAN'in 2025'inin tamamen bos olmasi buyuk olasilikla boyle olustu:
+        # 34 donem, digir bankalarda 40. Ayni grup (3), ayni guncelleme tarihi.
+        # Yani pahali calistirma veriyi DUZELTMEK yerine BOZABILIYOR.
+        # Kural: taze cekim mevcut dosyadan DAHA AZ donem tasiyorsa yazma.
+        # Muhasebe grubu degistiyse istisna - o zaman az donem NORMALDIR,
+        # cunku dosya bilerek yenileniyor.
+        mevcut_kontrol = mevcut_veriyi_yukle(kod)
+        if mevcut_kontrol:
+            eski_n = len(mevcut_kontrol.get("donemler", []))
+            yeni_n = len(fin.get("donemler", []))
+            grup_ayni = (mevcut_kontrol.get("kaynak_grup") == kullanilan_grup.get(kod))
+            if grup_ayni and yeni_n < eski_n:
+                print(f"  KORUMA: {kod} taze cekim {yeni_n} donem, mevcut {eski_n} - "
+                      f"GERILEME, dosya korundu")
+                gerileme += 1
+                continue
         fin["kod"] = kod
         fin["kaynak_grup"] = kullanilan_grup.get(kod)
         fin["guncelleme"] = now
@@ -331,7 +353,11 @@ def main():
 
     denenen = tam_gerekli + artimli
     bulunamayan = [k for k in denenen if k not in veriler]
-    print(f"\nTamamlandi: {ok} hisse yazildi ({birlesen} birlestirildi, {format_degisti} format degisimi)")
+    print(f"\nTamamlandi: {ok} hisse yazildi ({birlesen} birlestirildi, "
+          f"{format_degisti} format degisimi)")
+    if gerileme:
+        print(f"  KORUMA: {gerileme} hissede taze cekim mevcuttan AZ donem tasiyordu, "
+              f"dosyalari korundu (veri kaybi onlendi)")
     if bulunamayan:
         ornek = ', '.join(bulunamayan[:10]) + ('...' if len(bulunamayan) > 10 else '')
         print(f"  {len(bulunamayan)} hisse icin veri gelmedi (sonraki calismada tekrar denenecek): {ornek}")
