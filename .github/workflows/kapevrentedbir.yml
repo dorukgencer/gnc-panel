@@ -1,8 +1,15 @@
 name: KAP evren + VBTS tedbir (gunluk)
 
+# NEDEN VAR
+# Iki veri, sistemin iki buyuk acigini kapatir:
+#   1. kap_evren_cek.py  -> borsadan cikmis sirketler (hayatta kalma yanliligi)
+#   2. kap_tedbir_cek.py -> VBTS tedbir kayitlari (risk katmaninin eksik filtresi)
+# Ikisi de KAP'tan ucretsiz gelir. Gunluk calisir; tedbir kararlari seans
+# kapanisindan SONRA ilan edildigi icin aksam calistirilir.
+
 on:
   schedule:
-    - cron: "0 17 * * 1-5"
+    - cron: "0 17 * * 1-5"     # 20:00 TR - tedbir kararlari ilan edildikten sonra
   workflow_dispatch:
     inputs:
       tam_tedbir_dolumu:
@@ -29,11 +36,14 @@ concurrency:
 jobs:
   kap:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 180        # tam dolum saatler surebilir
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/py
 
+      # NOT: Bu is DEVAM EDEBILIR. Zaman asimina ugrarsa ayni is akisini
+      # tekrar calistirmak yeterli - tamamlanmis pencereler ve cekilmis
+      # kodlar atlanir, kaldigi yerden devam eder.
       - name: KAP evren (aktif / islem gormeyen / pasif)
         continue-on-error: true
         run: |
@@ -62,12 +72,28 @@ jobs:
         run: |
           git config user.name "gnc-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add gnc-panel/kap_evren.json gnc-panel/kap_cikanlar.json \
-                  gnc-panel/kap_evren_gecmis/ gnc-panel/tedbir.json \
-                  gnc-panel/tedbir_ara/ \
-                  gnc-panel/tarama.json gnc-panel/gecmis_test.json \
-                  gnc-panel/hisse_gecmis_cikan/ 2>/dev/null || true
-          git commit -m "KAP evren + VBTS tedbir guncellendi" || { echo "Degisiklik yok"; exit 0; }
+          # HATA (29 Agu 2026): "git add a b c" yollardan BIRI yoksa HICBIRINI
+          # eklemez (fatal: pathspec did not match). Ilk calistirmada
+          # tedbir_ara/ ve hisse_gecmis_cikan/ henuz yoktu; cekilen 1115
+          # sirketlik veri sessizce kayboldu, is yesil bitti.
+          # Artik her yol TEK TEK ve varligi kontrol edilerek eklenir.
+          for y in gnc-panel/kap_evren.json gnc-panel/kap_cikanlar.json \
+                   gnc-panel/kap_evren_gecmis gnc-panel/tedbir.json \
+                   gnc-panel/tedbir_ara gnc-panel/tarama.json \
+                   gnc-panel/gecmis_test.json gnc-panel/hisse_gecmis_cikan; do
+            if [ -e "$y" ]; then
+              git add "$y" && echo "eklendi : $y"
+            else
+              echo "yok     : $y (atlandi)"
+            fi
+          done
+          if git diff --cached --quiet; then
+            echo "::warning::Hicbir dosya degismedi. Ustteki adimlarin ciktisina bak."
+            exit 0
+          fi
+          echo "--- commit edilecekler ---"
+          git diff --cached --name-only
+          git commit -m "KAP evren + VBTS tedbir guncellendi"
           for d in 1 2 3; do
             git pull --rebase --autostash origin main && git push && exit 0
             sleep 10
